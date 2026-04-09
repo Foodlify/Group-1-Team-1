@@ -109,11 +109,11 @@ To deliver a reliable, intuitive, and scalable food delivery platform that simpl
 Follow these steps to set up the backend environment locally:
 
 ### Prerequisites
-- Node.js (v25.9.0)
+- Node.js (v25.9.0) - *We provide an `.nvmrc` file for easy switching via `nvm use`*
 - Docker & Docker Compose
 - Git
 
-### Installation Steps
+### Installation Steps (Local Environment)
 
 1. **Clone the repository:**
    ```bash
@@ -121,38 +121,42 @@ Follow these steps to set up the backend environment locally:
    cd Group-1-Team-1
    ```
 
-2. **Install Dependencies:**
+2. **Select the correct Node version:**
+   ```bash
+   nvm use
+   ```
+
+3. **Install Dependencies:**
    ```bash
    npm install
    ```
 
-3. **Environment Setup:**
-   Copy the example environment file and configure your database and port settings:
+4. **Environment Setup:**
+   Copy the example environment file:
    ```bash
    cp .env.example .env
    ```
    *Make sure your `.env` contains the correct `DATABASE_URL` (e.g., `postgresql://user:password@localhost:5432/foodlify?schema=public`).*
 
-4. **Start the Database (Docker):**
+5. **Start the Database (Docker):**
    ```bash
-   docker-compose up -d
+   docker-compose up -d db
    ```
 
-5. **Prisma Setup (Database Migration):**
-   Generate the Prisma client and push the schema to your database:
+6. **Database Migration:**
    ```bash
    npx prisma generate
    npx prisma db push
    ```
 
-6. **Start the Development Server:**
+3. **Start the Development Server:**
    ```bash
    npm run dev
    ```
 
-7. **API Documentation:**
-   Once the server is running, you can access the Swagger documentation at:
-   `http://localhost:<PORT>/api-docs`
+### API Documentation
+Once the server is running, explore the Swagger documentation at:
+`http://localhost:3000/api-docs`
 
 ---
 
