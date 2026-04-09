@@ -20,23 +20,23 @@
 ---
 
 ## 🗂️ Overview
-> *Written by: Sara*
 
-<!-- Provide a brief overview of the project: what it does, who it's for, and its key goals. -->
+
+Foodlify is an e-commerce platform dedicated to revolutionizing the dining and food delivery experience. It connects customers with various restaurants, allowing them to browse menus, manage shopping carts, and place orders intuitively. The system supports robust user management with distinct roles, extensive restaurant menu configurations, real-time order tracking, and secure multi-option payment integrations to ensure a smooth end-to-end transaction.
 
 ---
 
 ## 🧭 Vision
-> *Written by: Sara*
 
-<!-- Describe the long-term vision of the project. What future state does this project aim to achieve? -->
+
+To become the leading and most trusted food-commodity e-commerce ecosystem, providing a seamless bridge between culinary businesses and customers through innovative technology. We aim to make quality food globally accessible while empowering restaurants to scale their reach digitally.
 
 ---
 
 ## 🎯 Mission
-> *Written by: Sara*
 
-<!-- Describe the mission: the specific actions and purpose driving the project today. -->
+
+To deliver a reliable, intuitive, and scalable food delivery platform that simplifies the ordering process for customers. We strive to provide restaurants with robust tools to manage their menus, track orders, and process payments securely and efficiently.
 
 ---
 
@@ -93,16 +93,66 @@
 ---
 
 ## 🛠️ Tech Stack
-> *Written by: Sara*
 
-<!-- List the technologies, frameworks, languages, and tools used in this project. -->
+- **Runtime & Environment:** Node.js
+- **Backend Framework:** Express.js
+- **Database:** PostgreSQL
+- **ORM:** Prisma
+- **API Documentation:** Swagger / OpenAPI
+- **Containerization:** Docker
+- **Version Control:** Git & GitHub
 
 ---
 
 ## 🚀 Setup & Installation Guide
-> *Written by: Sara*
 
-<!-- Provide step-by-step instructions to set up and run the project locally. -->
+Follow these steps to set up the backend environment locally:
+
+### Prerequisites
+- Node.js (v25.9.0)
+- Docker & Docker Compose
+- Git
+
+### Installation Steps
+
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/Foodlify/Group-1-Team-1.git
+   cd Group-1-Team-1
+   ```
+
+2. **Install Dependencies:**
+   ```bash
+   npm install
+   ```
+
+3. **Environment Setup:**
+   Copy the example environment file and configure your database and port settings:
+   ```bash
+   cp .env.example .env
+   ```
+   *Make sure your `.env` contains the correct `DATABASE_URL` (e.g., `postgresql://user:password@localhost:5432/foodlify?schema=public`).*
+
+4. **Start the Database (Docker):**
+   ```bash
+   docker-compose up -d
+   ```
+
+5. **Prisma Setup (Database Migration):**
+   Generate the Prisma client and push the schema to your database:
+   ```bash
+   npx prisma generate
+   npx prisma db push
+   ```
+
+6. **Start the Development Server:**
+   ```bash
+   npm run dev
+   ```
+
+7. **API Documentation:**
+   Once the server is running, you can access the Swagger documentation at:
+   `http://localhost:<PORT>/api-docs`
 
 ---
 
