@@ -178,7 +178,7 @@ To deliver a reliable, intuitive, and scalable food delivery platform that simpl
 
 ## 📊 ERD
 > *Written by: Zahraa*
-
+![linke](https://github.com/Foodlify/Group-1-Team-1/blob/main/docmentation/Blank%20diagram.png)
 <!-- Include the Entity Relationship Diagram (ERD) here. You can embed an image or link to it. -->
 
 ---
