@@ -9,38 +9,39 @@
 - [Functional Requirements](#functional-requirements)
 - [Non-Functional Requirements](#non-functional-requirements)
 - [ERD](#erd)
+- [User Stories](#user-stories)
 - [Flow Charts](#flow-charts)
-- [Sequence Diagram](#sequence-diagram)
+- [Sequence Diagrams](#sequence-diagrams)
 - [Assumptions](#assumptions)
-- [API Contract](#api-contract)
 - [Tech Stack](#tech-stack)
 - [Setup & Installation Guide](#setup--installation-guide)
+- [API Documentation](#api-documentation)
 - [Testing Suite](#testing-suite)
 
 ---
 
-## 🗂️ Overview
+## 🗂️Overview
 
 
 Foodlify is an e-commerce platform dedicated to revolutionizing the dining and food delivery experience. It connects customers with various restaurants, allowing them to browse menus, manage shopping carts, and place orders intuitively. The system supports robust user management with distinct roles, extensive restaurant menu configurations, real-time order tracking, and secure multi-option payment integrations to ensure a smooth end-to-end transaction.
 
 ---
 
-## 🧭 Vision
+## 🧭Vision
 
 
 To become the leading and most trusted food-commodity e-commerce ecosystem, providing a seamless bridge between culinary businesses and customers through innovative technology. We aim to make quality food globally accessible while empowering restaurants to scale their reach digitally.
 
 ---
 
-## 🎯 Mission
+## 🎯Mission
 
 
 To deliver a reliable, intuitive, and scalable food delivery platform that simplifies the ordering process for customers. We strive to provide restaurants with robust tools to manage their menus, track orders, and process payments securely and efficiently.
 
 ---
 
-## 👥 Actors of the System
+## 👥Actors of the System
 1. **End User (Customer)** will be able to:
 
 - Discover many categories of restaurants.
@@ -80,7 +81,7 @@ To deliver a reliable, intuitive, and scalable food delivery platform that simpl
 
 ---
 
-## 📦 Functional Requirements
+## 📦Functional Requirements
 ### Features:
 1. User Registration & Authentication.
 2. Restaurant & Menu Management.
@@ -144,7 +145,6 @@ To deliver a reliable, intuitive, and scalable food delivery platform that simpl
 ---
 
 ## ⚙️ Non-Functional Requirements
-> *Written by: Radwa*
 
 <!-- List all non-functional requirements: performance, scalability, security, availability, etc. -->
 
@@ -173,11 +173,9 @@ To deliver a reliable, intuitive, and scalable food delivery platform that simpl
 | 20  | Network             | Handle poor network conditions             | Retry logic, timeout handling                                                          | Client + Server logic                            |
 | 21  | Network             | Improve perceived performance              | Offline UI fallback (cached data)                                                      | Browser cache                                    |
 | 22  | Testability         | Ensure code quality                        | Unit and integration testing                                                           | Jest, Supertest                                  |
-                                         |
 ---
 
 ## 📊 ERD
-> *Written by: Zahraa*
 ![linke](https://github.com/Foodlify/Group-1-Team-1/blob/main/docmentation/foodlifyERD.png)
 <!-- Include the Entity Relationship Diagram (ERD) here. You can embed an image or link to it. -->
 
@@ -282,7 +280,7 @@ Happy_cases:
 
 ---
 
-## 🔄 Flow Charts
+## 🔄Flow Charts
 ### 3- Cart Management
 ```mermaid
 flowchart TD
@@ -339,7 +337,7 @@ X --> Y
 
 ---
 
-## 🧩 Sequence Diagrams
+## 🧩Sequence Diagrams
 ### 3- Cart Management
 ```mermaid
 sequenceDiagram
@@ -401,19 +399,14 @@ sequenceDiagram
 
 ---
 
-## 🧾 Assumptions
+## 🧾Assumptions
 
 <!-- List any assumptions made during design or development of the system. -->
 
 ---
 
-## 📡 API Contract
 
-<!-- Document the API endpoints, request/response formats, authentication, and error codes. -->
-
----
-
-## 🛠️ Tech Stack
+## 🛠️Tech Stack
 
 - **Runtime & Environment:** Node.js
 - **Backend Framework:** Express.js
@@ -425,7 +418,7 @@ sequenceDiagram
 
 ---
 
-## 🚀 Setup & Installation Guide
+## 🚀Setup & Installation Guide
 
 Follow these steps to set up the backend environment locally:
 
@@ -474,14 +467,15 @@ Follow these steps to set up the backend environment locally:
    ```bash
    npm run dev
    ```
+---
 
-### API Documentation
+## API Documentation
 Once the server is running, explore the Swagger documentation at:
 `http://localhost:3000/api-docs`
 
 ---
 
-## 🧪 Testing Suite
+## 🧪Testing Suite
 
 <!-- Describe the testing strategy, tools used, and how to run the tests. -->
 
