@@ -7,7 +7,7 @@
 - [Mission](#mission)
 - [Actors of the System](#actors-of-the-system)
 - [Functional Requirements](#functional-requirements)
-- [Non-Functional Requirements](#non-functional-requirements)
+- [Non Functional Requirements](#non-functional-requirements)
 - [ERD](#erd)
 - [User Stories](#user-stories)
 - [Flow Charts](#flow-charts)
@@ -404,7 +404,7 @@ sequenceDiagram
 
 ---
 
-##  🛠️Tech Stack
+##  Tech Stack
 
 - **Runtime & Environment:** Node.js
 - **Backend Framework:** Express.js
