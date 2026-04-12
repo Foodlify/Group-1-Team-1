@@ -22,7 +22,6 @@
 
 ## 🗂️Overview
 
-
 Foodlify is an e-commerce platform dedicated to revolutionizing the dining and food delivery experience. It connects customers with various restaurants, allowing them to browse menus, manage shopping carts, and place orders intuitively. The system supports robust user management with distinct roles, extensive restaurant menu configurations, real-time order tracking, and secure multi-option payment integrations to ensure a smooth end-to-end transaction.
 
 ---
@@ -144,7 +143,7 @@ To deliver a reliable, intuitive, and scalable food delivery platform that simpl
         4. Customer Add Card
 ---
 
-## ⚙️ Non-Functional Requirements
+## ⚙️Non Functional Requirements
 
 <!-- List all non-functional requirements: performance, scalability, security, availability, etc. -->
 
@@ -175,7 +174,7 @@ To deliver a reliable, intuitive, and scalable food delivery platform that simpl
 | 22  | Testability         | Ensure code quality                        | Unit and integration testing                                                           | Jest, Supertest                                  |
 ---
 
-## 📊 ERD
+## 📊ERD
 ![linke](https://github.com/Foodlify/Group-1-Team-1/blob/main/docmentation/foodlifyERD.png)
 <!-- Include the Entity Relationship Diagram (ERD) here. You can embed an image or link to it. -->
 
@@ -405,8 +404,7 @@ sequenceDiagram
 
 ---
 
-
-## 🛠️Tech Stack
+##  🛠️Tech Stack
 
 - **Runtime & Environment:** Node.js
 - **Backend Framework:** Express.js
