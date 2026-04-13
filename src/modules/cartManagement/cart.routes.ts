@@ -1,23 +1,19 @@
 import express from 'express';
-import { addToCartController } from './cart.controller';
-import { clearCartController } from './cart.controller';
-import { viewCartController } from './cart.controller';
-import { deleteItemController } from './cart.controller';
-import { updateQuantityController } from './cart.controller';
-
+import { CartController } from './cart.controller';
 
 const router = express.Router();
+const cartController = new CartController();
 
+// POST   /api/v1/cart/add
+router.post('/add', cartController.addToCart);
 
-router.route('/add').post(addToCartController);
+// GET    /api/v1/cart/:cartId
+router.get('/:cartId', cartController.viewCart);
 
-router
-  .route('modify/:cart-id')
-  .put(updateQuantityController)
-  .delete(deleteItemController);
+// PUT    /api/v1/cart/modify/:cartId  — update item quantity
+router.put('/modify/:cartId', cartController.updateQuantity);
 
-router
-.route('/:cart-id').get(viewCartController)
-.delete(clearCartController);
+// DELETE /api/v1/cart/:cartId  — clear entire cart
+router.delete('/:cartId', cartController.clearCart);
 
 export { router as cartRouter };
