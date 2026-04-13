@@ -5,7 +5,7 @@ import {
   updateQuantityService,
   viewCartService,
   clearCartService,
-} from '../services/cart.service';
+} from './cart.service';
 
 export const addToCartController = (req: Request, res: Response) => {
   addToCartService();

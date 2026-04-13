@@ -1,9 +1,9 @@
 import express from 'express';
-import { addToCartController } from './controllers/cart.controller';
-import { clearCartController } from './controllers/cart.controller';
-import { viewCartController } from './controllers/cart.controller';
-import { deleteItemController } from './controllers/cart.controller';
-import { updateQuantityController } from './controllers/cart.controller';
+import { addToCartController } from './cart.controller';
+import { clearCartController } from './cart.controller';
+import { viewCartController } from './cart.controller';
+import { deleteItemController } from './cart.controller';
+import { updateQuantityController } from './cart.controller';
 
 
 const router = express.Router();
