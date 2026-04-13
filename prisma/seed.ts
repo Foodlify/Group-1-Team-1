@@ -1,4 +1,4 @@
-import prisma from "../lib/prisma";
+import prisma from '../lib/prisma';
 
 async function main() {
   console.log('🌱 Seeding database...');
@@ -84,22 +84,22 @@ async function main() {
   await prisma.menuItem.createMany({
     data: [
       // Burger Palace
-      { menuId: menu1.id, itemName: 'Classic Burger',      price: 35 },
-      { menuId: menu1.id, itemName: 'Cheese Burger',       price: 40 },
-      { menuId: menu1.id, itemName: 'Crispy Chicken',      price: 38 },
-      { menuId: menu1.id, itemName: 'French Fries',        price: 15 },
+      { menuId: menu1.id, itemName: 'Classic Burger', price: 35, quantity: 100 },
+      { menuId: menu1.id, itemName: 'Cheese Burger', price: 40, quantity: 150 },
+      { menuId: menu1.id, itemName: 'Crispy Chicken', price: 38, quantity: 80 },
+      { menuId: menu1.id, itemName: 'French Fries', price: 15, quantity: 200 },
 
       // Pizza Heaven
-      { menuId: menu2.id, itemName: 'Margherita Pizza',    price: 55 },
-      { menuId: menu2.id, itemName: 'Pepperoni Pizza',     price: 65 },
-      { menuId: menu2.id, itemName: 'BBQ Chicken Pizza',   price: 70 },
-      { menuId: menu2.id, itemName: 'Garlic Bread',        price: 20 },
+      { menuId: menu2.id, itemName: 'Margherita Pizza', price: 55, quantity: 50 },
+      { menuId: menu2.id, itemName: 'Pepperoni Pizza', price: 65, quantity: 60 },
+      { menuId: menu2.id, itemName: 'BBQ Chicken Pizza', price: 70, quantity: 45 },
+      { menuId: menu2.id, itemName: 'Garlic Bread', price: 20, quantity: 120 },
 
       // Sushi World
-      { menuId: menu3.id, itemName: 'Salmon Roll',         price: 80 },
-      { menuId: menu3.id, itemName: 'Tuna Nigiri (6 pcs)', price: 90 },
-      { menuId: menu3.id, itemName: 'Veggie Roll',         price: 60 },
-      { menuId: menu3.id, itemName: 'Miso Soup',           price: 25 },
+      { menuId: menu3.id, itemName: 'Salmon Roll', price: 80, quantity: 30 },
+      { menuId: menu3.id, itemName: 'Tuna Nigiri (6 pcs)', price: 90, quantity: 25 },
+      { menuId: menu3.id, itemName: 'Veggie Roll', price: 60, quantity: 40 },
+      { menuId: menu3.id, itemName: 'Miso Soup', price: 25, quantity: 90 },
     ],
   });
 
