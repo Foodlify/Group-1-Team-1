@@ -34,4 +34,10 @@ app.get('/api/health', async (req: Request, res: Response) => {
   }
 });
 
+// Global error handler
+app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
+  console.error(err);
+  res.status(500).json({ status: 'error', message: 'Internal server error' });
+});
+
 export default app;

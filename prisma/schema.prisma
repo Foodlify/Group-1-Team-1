@@ -8,7 +8,6 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 // ─────────────────────────────────────────
@@ -63,6 +62,7 @@ model MenuItem {
   menuId    Int        @map("menu_id")
   itemName  String     @map("item_name")
   price     Int
+  quantity  Int        @default(0)
   menu      Menu       @relation(fields: [menuId], references: [id])
   cartItems CartItem[]
 }
