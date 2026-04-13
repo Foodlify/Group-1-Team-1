@@ -28,19 +28,18 @@ Foodlify is an e-commerce platform dedicated to revolutionizing the dining and f
 
 ## 🧭Vision
 
-
 To become the leading and most trusted food-commodity e-commerce ecosystem, providing a seamless bridge between culinary businesses and customers through innovative technology. We aim to make quality food globally accessible while empowering restaurants to scale their reach digitally.
 
 ---
 
 ## 🎯Mission
 
-
 To deliver a reliable, intuitive, and scalable food delivery platform that simplifies the ordering process for customers. We strive to provide restaurants with robust tools to manage their menus, track orders, and process payments securely and efficiently.
 
 ---
 
 ## 👥Actors of the System
+
 1. **End User (Customer)** will be able to:
 
 - Discover many categories of restaurants.
@@ -71,7 +70,7 @@ To deliver a reliable, intuitive, and scalable food delivery platform that simpl
 - access to dashboards and reporting tools.
 
 5. **System** Should be able to:
- 
+
 - Ensure reliable order processing.
 - Maintain data consistency.
 - Enable real-time communication.
@@ -81,7 +80,9 @@ To deliver a reliable, intuitive, and scalable food delivery platform that simpl
 ---
 
 ## 📦Functional Requirements
+
 ### Features:
+
 1. User Registration & Authentication.
 2. Restaurant & Menu Management.
 3. Cart Management.
@@ -90,38 +91,47 @@ To deliver a reliable, intuitive, and scalable food delivery platform that simpl
 6. Customer Support Management.
 7. Notification & Email Management
 8. Dashboard & Reports
+
 ### Functions:
+
 ### 1. User Registration & Authentication
+
         1. Create Account /Sign Up
         2. Login
         3. Logout
         4. Forget Password
         5. Enable/Disable Account
         7. User Profile: Show, Edit.
+
 ### 2. Restaurant & Menu Management
-        1. Add Restaurant         
-        2. Update Restaurant      
+
+        1. Add Restaurant
+        2. Update Restaurant
         3. Delete Restaurant
-        4. View Restaurants - Categories Tabs - Recommendations - Near You - Daily Offers- Top Rating ...      
-        5. View Single Restaurant 
-        6. Search Restaurant       
-        7. Add Menu              
-        8. Update Menu           
-        9. Delete Menu          
-        10. View Menu            
-        11. Filter Menu / Item    
+        4. View Restaurants - Categories Tabs - Recommendations - Near You - Daily Offers- Top Rating ...
+        5. View Single Restaurant
+        6. Search Restaurant
+        7. Add Menu
+        8. Update Menu
+        9. Delete Menu
+        10. View Menu
+        11. Filter Menu / Item
+
 ### 3. Cart Management
-        1. Add to cart 
+
+        1. Add to cart
         2. Modify cart
             2.1 Add items
             2.2 Remove items
             2.3 Change quantity (+, -)
-        3. Clear cart  
+        3. Clear cart
         4. Checkout
+
 ### 4. Order Management
-        1. Place Order     
+
+        1. Place Order
         2. Receive order by restaurant
-        3. Cancel Order by customer/restaurant    
+        3. Cancel Order by customer/restaurant
         4. Track Order
         5. View Order summary
         6. View Order details
@@ -129,58 +139,68 @@ To deliver a reliable, intuitive, and scalable food delivery platform that simpl
         8. Update Order Status
         9. Send Email confirmation
         10. Send order status notification
+
 ### 5. Payment Integration Management
+
         1. Payment Integration with 3rd Party
         2. Select Payment method
         3. Create Transaction
         4. View Payment Transaction
         5. Create Transaction Receipt
-        6. send Email Notification 
+        6. send Email Notification
+
 ### 6. Customer support Management
+
         1. Raise a Complain
         2. Add Rate to restaurant
-        3. Need Help     
+        3. Need Help
         4. Customer Add Card
+
 ---
 
 ## ⚙️Non Functional Requirements
 
 <!-- List all non-functional requirements: performance, scalability, security, availability, etc. -->
 
+| #   | NFR Category        | Detailed Requirement                       | Architecture Decisions                                                | Technologies / Tools                             |
+| --- | ------------------- | ------------------------------------------ | --------------------------------------------------------------------- | ------------------------------------------------ | --- | ------------------- |
+| 1   | Performance         | API response time ≤ 300 ms, page load ≤ 2s | Use in-memory caching, CDN for static assets, DB indexing, pagination | Redis, Cloudflare / AWS CloudFront               |
+| 2   | Performance         | Handle high read traffic efficiently       | Cache frequently accessed data (restaurants, menus)                   | Redis                                            |
+| 3   | Scalability         | Support 10k+ concurrent users              | Horizontal scaling with stateless services                            | Docker, Kubernetes                               |
+| 4   | Security            | Encrypt all data in transit                | Enforce HTTPS (TLS) across all services                               | TLS                                              |
+| 5   | Security            | Secure password storage                    | Hash passwords with strong algorithms                                 | bcrypt                                           |
+| 6   | Security            | Secure authentication                      | Token-based authentication                                            | JWT                                              |
+| 7   | Security            | Prevent common attacks (SQLi, XSS, CSRF)   | Rate limiting, Input validation, WAF, API protection                  | NGINX, API Gateway                               |
+| 8   | Security            | Secure payment processing                  | Use PCI-compliant payment gateway                                     | Stripe                                           |
+| 9   | Availability        | System uptime ≥ 99.9%                      | Multi-instance deployment, no single point of failure                 | Kubernetes                                       |
+| 10  | Availability        | Ensure service continuity                  | Health checks + auto-restart failed services                          | Kubernetes                                       |
+| 11  | Reliability         | No data loss in orders                     | Use transactional DB operations                                       | PostgreSQL                                       |
+| 12  | Reliability         | Prevent duplicate orders/payments          | Idempotency keys for critical APIs                                    | Redis / DB                                       |
+| 13  | Reliability         | Handle partial failures                    | Retry mechanisms + circuit breakers                                   | App logic / middleware                           |
+| 14  | Usability           | Smooth and fast UX                         | Lazy loading, optimized UI, minimal steps                             | React / NextJs                                   |
+| 15  | Compatibility       | Support web and mobile platforms           | API-first architecture                                                | REST API                                         |
+| 16  | Maintainability     | Easy to extend and modify                  | Clean architecture (layered design [controller->service->repository]) | Service-based structure / System design patterns |
+| 17  | Maintainability     | Code consistency                           | Linting and formatting tools                                          | ESLint, Prettier                                 |     | Prometheus, Grafana |
+| 18  | Observability       | Log all critical events                    | Structured logging system                                             | Winston                                          |     |
+| 19  | Payment Reliability | Payment success rate ≥ 99%                 | Retry failed payments, use webhooks                                   | Stripe, Queues                                   |
+| 20  | Network             | Handle poor network conditions             | Retry logic, timeout handling                                         | Client + Server logic                            |
+| 21  | Network             | Improve perceived performance              | Offline UI fallback (cached data)                                     | Browser cache                                    |
+| 22  | Testability         | Ensure code quality                        | Unit and integration testing                                          | Jest, Supertest                                  |
 
-| #   | NFR Category        | Detailed Requirement                       | Architecture Decisions                                                                 | Technologies / Tools                             |
-| --- | ------------------- | ------------------------------------------ | -------------------------------------------------------------------------------------- | ------------------------------------------------ |
-| 1   | Performance         | API response time ≤ 300 ms, page load ≤ 2s | Use in-memory caching, CDN for static assets, DB indexing, pagination                  | Redis, Cloudflare / AWS CloudFront               |
-| 2   | Performance         | Handle high read traffic efficiently       | Cache frequently accessed data (restaurants, menus)                                    | Redis                                            |
-| 3   | Scalability         | Support 10k+ concurrent users              | Horizontal scaling with stateless services                                             | Docker, Kubernetes                               |
-| 4   | Security            | Encrypt all data in transit                | Enforce HTTPS (TLS) across all services                                                | TLS                                              |
-| 5   | Security            | Secure password storage                    | Hash passwords with strong algorithms                                                  | bcrypt                                           |
-| 6   | Security            | Secure authentication                      | Token-based authentication                                                             | JWT                                              |
-| 7   | Security            | Prevent common attacks (SQLi, XSS, CSRF)   | Rate limiting, Input validation, WAF, API protection                                   | NGINX, API Gateway                               |
-| 8  | Security            | Secure payment processing                  | Use PCI-compliant payment gateway                                                      | Stripe                                           |
-| 9 | Availability        | System uptime ≥ 99.9%                      | Multi-instance deployment, no single point of failure                                  | Kubernetes                                       |
-| 10  | Availability        | Ensure service continuity                  | Health checks + auto-restart failed services                                           | Kubernetes                                       |
-| 11  | Reliability         | No data loss in orders                     | Use transactional DB operations                                                        | PostgreSQL                                       |
-| 12  | Reliability         | Prevent duplicate orders/payments          | Idempotency keys for critical APIs                                                     | Redis / DB                                       |
-| 13  | Reliability         | Handle partial failures                    | Retry mechanisms + circuit breakers                                                    | App logic / middleware                           |
-| 14 | Usability           | Smooth and fast UX                         | Lazy loading, optimized UI, minimal steps                                              | React / NextJs                                   |
-| 15  | Compatibility       | Support web and mobile platforms           | API-first architecture                                                                 | REST API                                         |
-| 16  | Maintainability     | Easy to extend and modify                  | Clean architecture (layered design [controller->service->repository])                  | Service-based structure / System design patterns |
-| 17  | Maintainability     | Code consistency                           | Linting and formatting tools                                                           | ESLint, Prettier                                 |                                                         | Prometheus, Grafana                              |
-| 18  | Observability       | Log all critical events                    | Structured logging system                                                              | Winston                                          |                                         |
-| 19  | Payment Reliability | Payment success rate ≥ 99%                 | Retry failed payments, use webhooks                                                    | Stripe, Queues                                   |
-| 20  | Network             | Handle poor network conditions             | Retry logic, timeout handling                                                          | Client + Server logic                            |
-| 21  | Network             | Improve perceived performance              | Offline UI fallback (cached data)                                                      | Browser cache                                    |
-| 22  | Testability         | Ensure code quality                        | Unit and integration testing                                                           | Jest, Supertest                                  |
 ---
 
 ## 📊ERD
+
 ![linke](https://github.com/Foodlify/Group-1-Team-1/blob/main/docmentation/foodlifyERD.png)
+
 <!-- Include the Entity Relationship Diagram (ERD) here. You can embed an image or link to it. -->
 
 ---
+
 ## User Stories
- ### Epic 3: Cart Management
+
+### Epic 3: Cart Management
+
 - **Feature name**: Cart Management
 - **Description**: Showing all User stories related to creating a cart then adding, modifying and deleting items within it.
 - **Acceptance Criteria**: Gherkin
@@ -280,7 +300,9 @@ Happy_cases:
 ---
 
 ## 🔄Flow Charts
+
 ### 3- Cart Management
+
 ```mermaid
 flowchart TD
 
@@ -331,13 +353,14 @@ F --> Y
 X --> Y
 ```
 
-
 <!-- Include flow charts that illustrate the main processes and workflows of the system. -->
 
 ---
 
 ## 🧩Sequence Diagrams
+
 ### 3- Cart Management
+
 ```mermaid
 sequenceDiagram
     actor User
@@ -394,6 +417,7 @@ sequenceDiagram
     API-->>UI: 200 OK
     UI-->>User: Cart is empty
 ```
+
 <!-- Include sequence diagrams that show how components interact over time for key use cases. -->
 
 ---
@@ -404,7 +428,7 @@ sequenceDiagram
 
 ---
 
-##  Tech Stack
+## Tech Stack
 
 - **Runtime & Environment:** Node.js
 - **Backend Framework:** Express.js
@@ -421,13 +445,15 @@ sequenceDiagram
 Follow these steps to set up the backend environment locally:
 
 ### Prerequisites
-- Node.js (v25.9.0) - *We provide an `.nvmrc` file for easy switching via `nvm use`*
+
+- Node.js (v25.9.0) - _We provide an `.nvmrc` file for easy switching via `nvm use`_
 - Docker & Docker Compose
 - Git
 
 ### Installation Steps (Local Environment)
 
 1. **Clone the repository:**
+
    ```bash
    git clone https://github.com/Foodlify/Group-1-Team-1.git
    cd Group-1-Team-1
@@ -438,36 +464,64 @@ Follow these steps to set up the backend environment locally:
    nvm use
    ```
 
+#### When run on local machine
+
 3. **Install Dependencies:**
+
    ```bash
    npm install
    ```
 
 4. **Environment Setup:**
    Copy the example environment file:
+
    ```bash
    cp .env.example .env
    ```
-   *Make sure your `.env` contains the correct `DATABASE_URL` (e.g., `postgresql://user:password@localhost:5432/foodlify?schema=public`).*
 
-5. **Start the Database (Docker):**
-   ```bash
-   docker-compose up -d db
-   ```
+   _Make sure your `.env` contains the correct `DATABASE_URL` (e.g., `postgresql://user:password@localhost:5432/foodlify?schema=public`)._
 
-6. **Database Migration:**
-   ```bash
-   npx prisma generate
-   npx prisma db push
-   ```
+5. **Start the Development Server:**
 
-3. **Start the Development Server:**
    ```bash
    npm run dev
    ```
+
+6. **Database Migration:**
+
+```bash
+   npm run migrate
+   npm run generate
+```
+
+7. **Database seed:**
+```bash
+  npx prisma db seed
+```
+
+#### When run on docker 
+1. **Start the api and database (Docker):**
+
+```bash
+docker-compose up -d
+```
+
+2. **Database Migration:**
+
+   ```bash
+    docker exec -it foodlify_api npx prisma db push
+    docker exec -it foodlify_api prisma generate
+   ```
+
+3. **Database seed:**
+```bash
+   docker exec -it foodlify_api npx prisma db seed
+```
 ---
 
+
 ## API Documentation
+
 Once the server is running, explore the Swagger documentation at:
 `http://localhost:3000/api-docs`
 
