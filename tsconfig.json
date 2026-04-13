@@ -9,7 +9,8 @@
     "skipLibCheck": true,
     "resolveJsonModule": true,
     "rootDir": ".",
-    "outDir": "./dist"
+    "outDir": "./dist",
+    "types": ["node"]
   },
-  "include": ["src/**/*", "tests/**/*", "prisma.config.ts", "jest.config.js", "lib", "prisma_db.ts"]
+  "include": ["src/**/*", "tests/**/*", "prisma/**/*", "prisma.config.ts", "jest.config.js", "lib", "prisma_db.ts"]
 }
