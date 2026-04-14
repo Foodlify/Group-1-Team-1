@@ -160,8 +160,6 @@ To deliver a reliable, intuitive, and scalable food delivery platform that simpl
 
 ## ⚙️Non Functional Requirements
 
-<!-- List all non-functional requirements: performance, scalability, security, availability, etc. -->
-
 | #   | NFR Category        | Detailed Requirement                       | Architecture Decisions                                                | Technologies / Tools                             |
 | --- | ------------------- | ------------------------------------------ | --------------------------------------------------------------------- | ------------------------------------------------ | --- | ------------------- |
 | 1   | Performance         | API response time ≤ 300 ms, page load ≤ 2s | Use in-memory caching, CDN for static assets, DB indexing, pagination | Redis, Cloudflare / AWS CloudFront               |
