@@ -631,25 +631,27 @@ Follow these steps to set up the backend environment locally:
    cp .env.example .env
    ```
 
-   _Make sure your `.env` contains the correct `DATABASE_URL` (e.g., `postgresql://user:password@localhost:5432/foodlify?schema=public`)._
+   _Make sure your `.env` contains the correct `DATABASE_URL` (e.g., `postgresql://user:password@localhost:5432/foodlify`)._
 
-5. **Start the Development Server:**
+
+5. **Database Migration:**
+
+```bash
+   npx prisma generate
+   npx prisma migrate dev --name init
+```
+
+6. **Database seed:**
+```bash
+  npx prisma db seed
+```
+
+7. **Start the Development Server:**
 
    ```bash
    npm run dev
    ```
 
-6. **Database Migration:**
-
-```bash
-   npm run migrate
-   npm run generate
-```
-
-7. **Database seed:**
-```bash
-  npx prisma db seed
-```
 
 #### When run on docker 
 1. **Start the api and database (Docker):**
@@ -661,8 +663,8 @@ docker-compose up -d
 2. **Database Migration:**
 
    ```bash
-    docker exec -it foodlify_api npx prisma db push
     docker exec -it foodlify_api prisma generate
+    docker exec -it foodlify_api npx prisma db push
    ```
 
 3. **Database seed:**
