@@ -4,8 +4,9 @@ import morgan from 'morgan';
 import helmet from 'helmet';
 import swaggerUi from 'swagger-ui-express';
 import swaggerDocument from './config/swagger.json';
-import prisma from '../lib/prisma'
+import prisma from '../lib/prisma';
 import router from './routes';
+import { errorHandler } from './middlewares/error_handling/error-handling';
 const app = express();
 app.use(cors());
 app.use(helmet());
@@ -35,9 +36,7 @@ app.get('/api/health', async (req: Request, res: Response) => {
 });
 
 // Global error handler
-app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
-  console.error(err);
-  res.status(500).json({ status: 'error', message: 'Internal server error' });
-});
+app.use(errorHandler);
+
 
 export default app;
