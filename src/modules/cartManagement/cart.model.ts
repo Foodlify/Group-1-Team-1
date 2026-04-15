@@ -19,10 +19,10 @@ export interface ModifyCartInput extends CartInput {
 }
 
 
-export interface deleteItem {
+export interface DeleteCartItem {
   userId: number;
-  cartId: number;
   itemId: number;
+  cartId?:number
 }
 // ─── Response Types ───────────────────────────────────────────────────────────
 
