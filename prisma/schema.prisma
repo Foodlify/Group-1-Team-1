@@ -15,11 +15,12 @@ datasource db {
 // ─────────────────────────────────────────
 
 model User {
-  id         Int        @id @default(autoincrement())
-  name       String
-  email      String     @unique
-  customer   Customer?
-  cart       Cart?
+  id       Int       @id @default(autoincrement())
+  name     String
+  email    String    @unique
+  customer Customer?
+  cart     Cart?     @relation(fields: [cartId], references: [id])
+  cartId   Int?
 }
 
 // ─────────────────────────────────────────
@@ -27,9 +28,10 @@ model User {
 // ─────────────────────────────────────────
 
 model Customer {
-  id      Int    @id @default(autoincrement())
-  userId  Int    @unique @map("user_id")
-  user    User   @relation(fields: [userId], references: [id])
+  id     Int   @id @default(autoincrement())
+  userId Int   @unique @map("user_id")
+  user   User  @relation(fields: [userId], references: [id])
+  cart   Cart?
 }
 
 // ─────────────────────────────────────────
@@ -49,6 +51,7 @@ model Restaurant {
 model Menu {
   id           Int        @id @default(autoincrement())
   restaurantId Int        @map("restaurant_id")
+  // FK
   restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
   menuItems    MenuItem[]
 }
@@ -72,11 +75,12 @@ model MenuItem {
 // ─────────────────────────────────────────
 
 model Cart {
-  id        Int        @id @default(autoincrement())
-  userId    Int        @unique @map("user_id")
-  name      String?
-  user      User       @relation(fields: [userId], references: [id])
-  cartItems CartItem[]
+  id         Int        @id @default(autoincrement())
+  customerId Int        @unique @map("customer_id")
+  name       String?
+  customer   Customer   @relation(fields: [customerId], references: [id])
+  cartItems  CartItem[]
+  users      User[]
 }
 
 // ─────────────────────────────────────────
@@ -84,10 +88,11 @@ model Cart {
 // ─────────────────────────────────────────
 
 model CartItem {
-  id         Int      @id @default(autoincrement())
-  cartId     Int      @map("cart_id")
-  menuItemId Int      @map("menu_item_id")
+  id         Int @id @default(autoincrement())
+  cartId     Int @map("cart_id")
+  menuItemId Int @map("menu_item_id")
   quantity   Int
-  cart       Cart     @relation(fields: [cartId], references: [id])
-  menuItem   MenuItem @relation(fields: [menuItemId], references: [id])
+
+  cart     Cart     @relation(fields: [cartId], references: [id])
+  menuItem MenuItem @relation(fields: [menuItemId], references: [id])
 }

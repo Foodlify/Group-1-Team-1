@@ -1,18 +1,26 @@
 import { CartRepository } from './cart.repository';
-import { AddToCartInput, CartResult } from './cart.model';
-
-export class ServiceError extends Error {
-  constructor(
-    public message: string,
-    public statusCode: number = 400,
-    public errors?: unknown,
-  ) {
-    super(message);
-    this.name = 'ServiceError';
-  }
-}
+import { AddToCartInput, CartResult, ModifyCartInput } from './cart.model';
+import { ErrorStatus } from '../../middlewares/error_handling/error_codes';
+import { ServiceError } from '../../middlewares/error_handling/error-handling';
 
 export class CartService {
+  async getCartAndItem(cartId: number, menuItemId: number) {
+    const cart = await CartRepository.getCartWithItems(cartId);
+    if (!cart) {
+      throw new ServiceError(
+        `Cart with id ${cartId} does not exist`,
+        ErrorStatus.NOT_FOUND,
+      );
+    }
+    const item = cart.cartItems.find((ci) => ci.menuItemId === menuItemId);
+    if (!item) {
+      throw new ServiceError(
+        `Item with menuItemId ${menuItemId} not found in cart`,
+        ErrorStatus.NOT_FOUND,
+      );
+    }
+    return { cart, item };
+  }
   // ─── Add To Cart ───────────────────────────────────────────────────────────
 
   async addToCart(input: AddToCartInput): Promise<CartResult> {
@@ -26,7 +34,10 @@ export class CartService {
 
     const restaurant = await CartRepository.findRestaurantById(restaurantId);
     if (!restaurant) {
-      throw new ServiceError(`Restaurant with id ${restaurantId} does not exist`, 404);
+      throw new ServiceError(
+        `Restaurant with id ${restaurantId} does not exist`,
+        404,
+      );
     }
 
     // 2. Check if cart already exists for this user
@@ -39,8 +50,8 @@ export class CartService {
       if (existingRestaurantId !== restaurantId) {
         throw new ServiceError(
           'Your cart already contains items from another restaurant. ' +
-          'Only one restaurant is allowed per cart. ' +
-          'Please clear your cart first if you want to order from a different restaurant.',
+            'Only one restaurant is allowed per cart. ' +
+            'Please clear your cart first if you want to order from a different restaurant.',
           400,
         );
       }
@@ -56,7 +67,8 @@ export class CartService {
 
     // 5. Validate each item and upsert into cart
     const itemErrors: string[] = [];
-
+    // No need to send quantity with request body, as it is by default 1 at first time add,
+    // so we just need to check if menuItem quantity is > 0
     for (const { itemId, quantity } of items) {
       const menuItem = await CartRepository.findMenuItemById(itemId);
 
@@ -83,8 +95,13 @@ export class CartService {
     }
 
     if (itemErrors.length > 0) {
-      throw new ServiceError('Some items could not be added to the cart', 402, itemErrors);
+      throw new ServiceError(
+        'Some items could not be added to the cart',
+        402,
+        itemErrors,
+      );
     }
+
 
     // 6. Return the updated cart
     const updatedCart = await CartRepository.getCartWithItems(cartId);
@@ -93,7 +110,7 @@ export class CartService {
       cartId: updatedCart!.id,
       userId: updatedCart!.userId,
       items: updatedCart!.cartItems.map((ci) => ({
-        id: ci.id,
+        cartItemId: ci.id,
         cartId: ci.cartId,
         menuItemId: ci.menuItemId,
         quantity: ci.quantity,
@@ -113,7 +130,7 @@ export class CartService {
       cartId: cart.id,
       userId: cart.userId,
       items: cart.cartItems.map((ci) => ({
-        id: ci.id,
+        cartItemId: ci.id,
         cartId: ci.cartId,
         menuItemId: ci.menuItemId,
         quantity: ci.quantity,
@@ -125,27 +142,29 @@ export class CartService {
 
   // ─── Update Item Quantity ──────────────────────────────────────────────────
 
-  async updateQuantity(cartId: number, menuItemId: number, quantity: number): Promise<void> {
-    const cart = await CartRepository.getCartWithItems(cartId);
-    if (!cart) {
-      throw new ServiceError(`Cart with id ${cartId} does not exist`, 404);
-    }
-
-    const item = cart.cartItems.find((ci) => ci.menuItemId === menuItemId);
-    if (!item) {
-      throw new ServiceError(`Item with menuItemId ${menuItemId} not found in cart`, 404);
-    }
-
-    const menuItem = await CartRepository.findMenuItemById(menuItemId);
+  async updateQuantity(input: ModifyCartInput): Promise<void> {
+    const { items, cartId } = input;
+    const { itemId, quantity } = items[0];
+    let cart_id = cartId as number;
+    const { cart, item } = await this.getCartAndItem(cart_id, itemId);
+    const menuItem = await CartRepository.findMenuItemById(itemId);
     if (!menuItem) {
-      throw new ServiceError(`Menu item with id ${menuItemId} does not exist`, 404);
+      throw new ServiceError(`Menu item with id ${itemId} does not exist`, 404);
     }
-
     if (quantity > menuItem.quantity) {
-      throw new ServiceError(`Requested quantity (${quantity}) exceeds available stock (${menuItem.quantity})`, 400);
+      throw new ServiceError(
+        `Requested quantity (${quantity}) exceeds available stock (${menuItem.quantity})`,
+        400,
+      );
     }
 
-    await CartRepository.upsertCartItem(cartId, menuItemId, quantity);
+    await CartRepository.upsertCartItem(cart_id, itemId, quantity);
+  }
+
+  // ─── Delete Cart Item ────────────────────────────────────────────────────────────
+  async deleteCartItem(cartId: number, menuItemId: number): Promise<void> {
+    const { cart, item } = await this.getCartAndItem(cartId, menuItemId);
+    await CartRepository.deleteCartItem(cartId, menuItemId);
   }
 
   // ─── Clear Cart ────────────────────────────────────────────────────────────
