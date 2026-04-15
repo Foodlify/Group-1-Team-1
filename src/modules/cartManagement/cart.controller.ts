@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { CartService } from './cart.service';
 import {
   validateAddToCartInput,
+  validateDeleteCartItem,
   validateUpdateQuantity,
 } from './cart.validation';
 import { sendSuccess, sendError } from '../../utils/reponse';
@@ -87,22 +88,18 @@ export class CartController {
 
   deleteCartItem = asyncHandler(async (req: Request, res: Response) => {
     const cartId = parseInt(req.params.cartId as string, 10);
-    const { menuItemId } = req.body as {
-      menuItemId: number;
-      quantity: number;
-    };
-
-    if (isNaN(cartId) || !menuItemId) {
-      sendError(
-        res,
-        'cartId, menuItemId are required',
-        ErrorStatus.BAD_REQUEST,
-      );
+    if (isNaN(cartId)) {
+      sendError(res, 'cartId must be a valid integer', ErrorStatus.VALIDATION_ERROR);
       return;
     }
+    const { data, errors } = validateDeleteCartItem(req.body);
 
+    if (!data) {
+      sendError(res, 'Validation failed', ErrorStatus.VALIDATION_ERROR, errors);
+      return;
+    }
     try {
-      await cartService.deleteCartItem(cartId, menuItemId);
+      await cartService.deleteCartItem({...data,cartId});
       sendSuccess(res, 'Item deleted successfully');
     } catch (err) {
       if (err instanceof ServiceError) {
