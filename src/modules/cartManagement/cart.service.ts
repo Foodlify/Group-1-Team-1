@@ -1,5 +1,10 @@
 import { CartRepository } from './cart.repository';
-import { AddToCartInput, CartResult, ModifyCartInput } from './cart.model';
+import {
+  AddToCartInput,
+  CartResult,
+  DeleteCartItem,
+  ModifyCartInput,
+} from './cart.model';
 import { ErrorStatus } from '../../middlewares/error_handling/error_codes';
 import { ServiceError } from '../../middlewares/error_handling/error-handling';
 
@@ -102,7 +107,6 @@ export class CartService {
       );
     }
 
-
     // 6. Return the updated cart
     const updatedCart = await CartRepository.getCartWithItems(cartId);
 
@@ -143,7 +147,7 @@ export class CartService {
   // ─── Update Item Quantity ──────────────────────────────────────────────────
 
   async updateQuantity(input: ModifyCartInput): Promise<void> {
-    const { items, cartId } = input;
+    const { userId, items, cartId } = input;
     const { itemId, quantity } = items[0];
     let cart_id = cartId as number;
     const { cart, item } = await this.getCartAndItem(cart_id, itemId);
@@ -162,9 +166,11 @@ export class CartService {
   }
 
   // ─── Delete Cart Item ────────────────────────────────────────────────────────────
-  async deleteCartItem(cartId: number, menuItemId: number): Promise<void> {
-    const { cart, item } = await this.getCartAndItem(cartId, menuItemId);
-    await CartRepository.deleteCartItem(cartId, menuItemId);
+  async deleteCartItem(input: DeleteCartItem): Promise<void> {
+    const { userId, cartId, itemId } = input;
+    let cart_id = cartId as number;
+    const { cart, item } = await this.getCartAndItem(cart_id, itemId);
+    await CartRepository.deleteCartItem(cart_id, itemId);
   }
 
   // ─── Clear Cart ────────────────────────────────────────────────────────────

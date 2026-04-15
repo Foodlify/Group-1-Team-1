@@ -1,4 +1,4 @@
-import { AddToCartInput, deleteItem, ModifyCartInput } from './cart.model';
+import { AddToCartInput, DeleteCartItem, ModifyCartInput } from './cart.model';
 
 export interface ValidationError {
   field: string;
@@ -248,34 +248,36 @@ export const validateUpdateQuantity = (
   }
 };
 
-// export const validateDeleteCartItem = (
-//   body: unknown,
-// ): { data: deleteItem | null; errors: ValidationError[] } => {
-// const errors: ValidationError[] = [];
-// const bodyErrors = CartValidator.bodyValidator(body);
-// if (bodyErrors && bodyErrors.errors && bodyErrors.errors.length > 0) {
-//   return bodyErrors;
-// }
-// const { userId, cartId, itemId } = body as Record<string, unknown>;
-// const userIdErrors = CartValidator.userIdValidator(userId);
-// errors.push(...userIdErrors);
+export const validateDeleteCartItem = (
+  body: unknown,
+): { data: DeleteCartItem | null; errors: ValidationError[] } => {
+  const errors: ValidationError[] = [];
+  const bodyErrors = CartValidator.bodyValidator(body);
+  if (bodyErrors) {
+    return {
+      data: null,
+      errors: [bodyErrors],
+    };
+  }
+const { userId,itemId } = body as Record<string, unknown>;
+  const userIdErrors = CartValidator.userIdValidator(userId);
+  if (userIdErrors) {
+    errors.push(userIdErrors);
+  }
+  const ItemIdErrors = CartValidator.ItemIdValidator(itemId);
+  if (ItemIdErrors) {
+    errors.push(ItemIdErrors);
+  }
 
-// const cartIdErrors = CartValidator.cartIdValidator(cartId);
-// errors.push(...cartIdErrors);
-
-// const ItemIdErrors = CartValidator.itemsValidator(itemId);
-// errors.push(...ItemIdErrors);
-
-// if (errors.length > 0) {
-//   return { data: null, errors };
-// } else {
-//   return {
-//     data: {
-//       userId: userId as number,
-//       cartId: cartId as number,
-//       itemId: itemId as number,
-//     },
-//     errors: [],
-//   };
-// }
-// };
+if (errors.length > 0) {
+  return { data: null, errors };
+} else {
+  return {
+    data: {
+      userId: userId as number,
+      itemId: itemId as number,
+    },
+    errors: [],
+  };
+}
+};
