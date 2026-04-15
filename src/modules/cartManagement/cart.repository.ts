@@ -51,7 +51,11 @@ export class CartRepository {
   // ─── Cart Items ────────────────────────────────────────────────────────────
 
   /** Upsert a cart item — update quantity if it already exists */
-  static async upsertCartItem(cartId: number, menuItemId: number, quantity: number) {
+  static async upsertCartItem(
+    cartId: number,
+    menuItemId: number,
+    quantity: number,
+  ) {
     const existing = await prisma.cartItem.findFirst({
       where: { cartId, menuItemId },
     });
@@ -66,6 +70,11 @@ export class CartRepository {
     return prisma.cartItem.create({ data: { cartId, menuItemId, quantity } });
   }
 
+  /** Delete cart item from  cart */
+  static async deleteCartItem(cartId: number, cartItemId: number) {
+    await prisma.cartItem.delete({ where: { cartId: cartId, id: cartItemId } });
+  }
+  
   /** Return full cart with items for the response */
   static async getCartWithItems(cartId: number) {
     return prisma.cart.findUnique({
