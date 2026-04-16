@@ -3,8 +3,11 @@ import prisma from '../../../lib/prisma';
 export class CartRepository {
   // ─── User ──────────────────────────────────────────────────────────────────
 
-  static async findUserById(userId: number) {
-    return prisma.user.findUnique({ where: { id: userId } });
+  // static async findUserById(userId: number) {
+  //   return prisma.user.findUnique({ where: { id: userId } });
+  // }
+  static async findUserById(customerId: number) {
+    return prisma.customer.findUnique({ where: { id: customerId } });
   }
 
   // ─── Restaurant ────────────────────────────────────────────────────────────
@@ -16,9 +19,9 @@ export class CartRepository {
   // ─── Cart ──────────────────────────────────────────────────────────────────
 
   /** Find a cart with its items and the related menu items (for restaurant check) */
-  static async findCartByUserId(userId: number) {
+  static async findCartByUserId(customerId: number) {
     return prisma.cart.findUnique({
-      where: { userId },
+      where: { customerId },
       include: {
         cartItems: {
           include: { menuItem: { include: { menu: true } } },
@@ -28,8 +31,8 @@ export class CartRepository {
   }
 
   /** Create an empty cart for a user */
-  static async createCart(userId: number) {
-    return prisma.cart.create({ data: { userId } });
+  static async createCart(customerId: number) {
+    return prisma.cart.create({ data: { customerId } });
   }
 
   /** Delete all cart items first, then delete the cart */
@@ -67,12 +70,13 @@ export class CartRepository {
       });
     }
 
-    return prisma.cartItem.create({ data: { cartId, menuItemId, quantity } });
+    return prisma.cartItem.create({ data: {cartId, menuItemId, quantity } });
   }
 
   /** Delete cart item from  cart */
   static async deleteCartItem(cartId: number, cartItemId: number) {
-    await prisma.cartItem.delete({ where: { cartId: cartId, id: cartItemId } });
+    const deletedItem = await prisma.cartItem.delete({ where: { cartId: cartId, id: cartItemId } });
+    return deletedItem
   }
   
   /** Return full cart with items for the response */
