@@ -7,7 +7,10 @@ import {
 } from './cart.validation';
 import { sendSuccess, sendError } from '../../utils/reponse';
 import asyncHandler from '../../utils/asyncHandler';
-import { ErrorStatus } from '../../middlewares/error_handling/error_codes';
+import {
+  ErrorStatus,
+  SuccessStatus,
+} from '../../middlewares/error_handling/error_codes';
 import { ServiceError } from '../../middlewares/error_handling/error-handling';
 
 const cartService = new CartService();
@@ -64,7 +67,11 @@ export class CartController {
   updateQuantity = asyncHandler(async (req: Request, res: Response) => {
     const cartId = parseInt(req.params.cartId as string, 10);
     if (isNaN(cartId)) {
-      sendError(res, 'cartId must be a valid integer', ErrorStatus.VALIDATION_ERROR);
+      sendError(
+        res,
+        'cartId must be a valid integer',
+        ErrorStatus.VALIDATION_ERROR,
+      );
       return;
     }
     const { data, errors } = validateUpdateQuantity(req.body);
@@ -75,8 +82,13 @@ export class CartController {
     }
 
     try {
-      await cartService.updateQuantity({ ...data, cartId });
-      sendSuccess(res, 'Item quantity updated successfully');
+      const updatedItem = await cartService.updateQuantity({ ...data, cartId });
+      sendSuccess(
+        res,
+        'Item quantity updated successfully',
+        SuccessStatus.UPDATED,
+        updatedItem,
+      );
     } catch (err) {
       if (err instanceof ServiceError) {
         sendError(res, err.message, err.statusCode, err.errors);
@@ -89,7 +101,11 @@ export class CartController {
   deleteCartItem = asyncHandler(async (req: Request, res: Response) => {
     const cartId = parseInt(req.params.cartId as string, 10);
     if (isNaN(cartId)) {
-      sendError(res, 'cartId must be a valid integer', ErrorStatus.VALIDATION_ERROR);
+      sendError(
+        res,
+        'cartId must be a valid integer',
+        ErrorStatus.VALIDATION_ERROR,
+      );
       return;
     }
     const { data, errors } = validateDeleteCartItem(req.body);
@@ -99,8 +115,13 @@ export class CartController {
       return;
     }
     try {
-      await cartService.deleteCartItem({...data,cartId});
-      sendSuccess(res, 'Item deleted successfully');
+      const deletedItem = await cartService.deleteCartItem({ ...data, cartId });
+      sendSuccess(
+        res,
+        'Item deleted successfully',
+        SuccessStatus.DELETED,
+        deletedItem,
+      );
     } catch (err) {
       if (err instanceof ServiceError) {
         sendError(res, err.message, err.statusCode, err.errors);

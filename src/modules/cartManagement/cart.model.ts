@@ -5,24 +5,23 @@ export interface AddToCartItemInput {
   quantity: number;
 }
 
-export interface CartInput {
-  userId: number;
+export interface AddToCartInput {
+  customerId: number;
+  restaurantId: number;
   items: AddToCartItemInput[];
 }
 
-export interface AddToCartInput extends CartInput {
-  restaurantId: number;
+export interface ModifyCartInput {
+  customerId: number;
+  cartId?: number;
+  itemId: number;
+  quantity: number
 }
-
-export interface ModifyCartInput extends CartInput {
-  cartId?:number
-}
-
 
 export interface DeleteCartItem {
-  userId: number;
+  customerId: number;
   itemId: number;
-  cartId?:number
+  cartId?: number;
 }
 // ─── Response Types ───────────────────────────────────────────────────────────
 

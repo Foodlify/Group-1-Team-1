@@ -1,14 +1,17 @@
 import { AddToCartInput, DeleteCartItem, ModifyCartInput } from './cart.model';
 
+//******************************************************* */
+// this validation error is generic so must move to error handling
 export interface ValidationError {
   field: string;
   message: string;
 }
+
 // userId
 // restaurantId
 // items --- itemId, quantity
 class CartValidator {
-  static errors: ValidationError[] = [];
+  // ─── Request Body Validation ───────────────────────────────────────────────────────────
   static bodyValidator(body: unknown) {
     if (!body || typeof body !== 'object') {
       return {
@@ -17,23 +20,45 @@ class CartValidator {
       };
     }
   }
-  static userIdValidator(userId: unknown) {
-    if (userId === undefined || userId === null) {
+
+  // ─── Generic Id / number Validation  ───────────────────────────────────────────────────────────
+  static genericNumberValidator(param: unknown, type: string) {
+    if (param === undefined || param === null) {
       return {
-        field: 'userId',
-        message: 'userId is required',
+        field: type,
+        message: `${type} is required`,
       };
     } else if (
-      typeof userId !== 'number' ||
-      !Number.isInteger(userId) ||
-      userId <= 0
+      typeof param !== 'number' ||
+      !Number.isInteger(param) ||
+      param <= 0
     ) {
       return {
-        field: 'userId',
-        message: 'userId must be a positive integer',
+        field: type,
+        message: `${type} is required`,
       };
     }
   }
+
+  // ─── User Id Validation ───────────────────────────────────────────────────────────
+  static customerIdValidator(customerId: unknown) {
+    if (customerId === undefined || customerId === null) {
+      return {
+        field: 'customerId',
+        message: 'customerId is required',
+      };
+    } else if (
+      typeof customerId !== 'number' ||
+      !Number.isInteger(customerId) ||
+      customerId <= 0
+    ) {
+      return {
+        field: 'customerId',
+        message: 'customerId must be a positive integer',
+      };
+    }
+  }
+  // ─── Restaurant Id Validation ───────────────────────────────────────────────────────────
   static restaurantIdIdValidator(restaurantId: unknown) {
     if (restaurantId === undefined || restaurantId === null) {
       return {
@@ -51,6 +76,7 @@ class CartValidator {
       };
     }
   }
+  // ─── Item Id Validation ───────────────────────────────────────────────────────────
   static ItemIdValidator(itemId: unknown) {
     if (itemId === undefined || itemId === null) {
       return {
@@ -68,7 +94,25 @@ class CartValidator {
       };
     }
   }
-
+  // ─── Quantity Validation ───────────────────────────────────────────────────────────
+  static quantityValidator(quantity: unknown) {
+    if (quantity === undefined || quantity === null) {
+      return {
+        field: 'quantity',
+        message: 'quantity is required',
+      };
+    } else if (
+      typeof quantity !== 'number' ||
+      !Number.isInteger(quantity) ||
+      quantity <= 0
+    ) {
+      return {
+        field: 'quantity',
+        message: 'quantity must be a positive integer',
+      };
+    }
+  }
+  // ─── Items Validation ───────────────────────────────────────────────────────────
   static itemsValidator(items: unknown) {
     const errors: ValidationError[] = [];
     if (!Array.isArray(items) || items.length === 0) {
@@ -86,16 +130,9 @@ class CartValidator {
         if (itemIdErrors) {
           errors.push(itemIdErrors);
         }
-        if (
-          quantity === undefined ||
-          typeof quantity !== 'number' ||
-          !Number.isInteger(quantity) ||
-          quantity <= 0
-        ) {
-          errors.push({
-            field: `items[${index}].quantity`,
-            message: 'quantity must be a positive integer',
-          });
+        let quantityErrors = CartValidator.quantityValidator(quantity);
+        if (quantityErrors) {
+          errors.push(quantityErrors);
         }
       });
       return errors;
@@ -192,7 +229,7 @@ export const validateAddToCartInput = (
 
   return {
     data: {
-      userId: userId as number,
+      customerId: userId as number,
       restaurantId: restaurantId as number,
       items: (items as Array<{ itemId: number; quantity: number }>).map(
         (i) => ({
@@ -221,27 +258,35 @@ export const validateUpdateQuantity = (
       errors: [bodyErrors],
     };
   }
-  const { userId, items } = body as Record<string, unknown>;
-  const userIdErrors = CartValidator.userIdValidator(userId);
-  if (userIdErrors) {
-    errors.push(userIdErrors);
+  const { customerId, itemId, quantity } = body as Record<string, unknown>;
+
+  const customerIdErrors = CartValidator.genericNumberValidator(
+    customerId,
+    'customerId',
+  );
+  if (customerIdErrors) {
+    errors.push(customerIdErrors);
   }
-  const ItemsErrors = CartValidator.itemsValidator(items);
-  if (ItemsErrors) {
-    errors.push(...ItemsErrors);
+  const itemIdErrors = CartValidator.genericNumberValidator(itemId, 'itemId');
+  if (itemIdErrors) {
+    errors.push(itemIdErrors);
   }
+  const quantityErrors = CartValidator.genericNumberValidator(
+    quantity,
+    'quantity',
+  );
+  if (quantityErrors) {
+    errors.push(quantityErrors);
+  }
+
   if (errors.length > 0) {
     return { data: null, errors };
   } else {
     return {
       data: {
-        userId: userId as number,
-        items: (items as Array<{ itemId: number; quantity: number }>).map(
-          (i) => ({
-            itemId: i.itemId,
-            quantity: i.quantity,
-          }),
-        ),
+        customerId: customerId as number,
+        itemId: itemId as number,
+        quantity: quantity as number,
       },
       errors: [],
     };
@@ -259,25 +304,32 @@ export const validateDeleteCartItem = (
       errors: [bodyErrors],
     };
   }
-const { userId,itemId } = body as Record<string, unknown>;
-  const userIdErrors = CartValidator.userIdValidator(userId);
-  if (userIdErrors) {
-    errors.push(userIdErrors);
+  const { customerId, itemId } = body as Record<string, unknown>;
+  const customerIdErrors = CartValidator.genericNumberValidator(
+    customerId,
+    'customerId',
+  );
+  if (customerIdErrors) {
+    errors.push(customerIdErrors);
   }
-  const ItemIdErrors = CartValidator.ItemIdValidator(itemId);
-  if (ItemIdErrors) {
-    errors.push(ItemIdErrors);
+  const itemIdErrors = CartValidator.genericNumberValidator(
+    itemId,
+    'itemId',
+  );
+  if (itemIdErrors) {
+    errors.push(itemIdErrors);
   }
 
-if (errors.length > 0) {
-  return { data: null, errors };
-} else {
-  return {
-    data: {
-      userId: userId as number,
-      itemId: itemId as number,
-    },
-    errors: [],
-  };
-}
+
+  if (errors.length > 0) {
+    return { data: null, errors };
+  } else {
+    return {
+      data: {
+        customerId: customerId as number,
+        itemId: itemId as number,
+      },
+      errors: [],
+    };
+  }
 };
