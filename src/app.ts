@@ -13,7 +13,7 @@ app.use(helmet());
 app.use(morgan('dev'));
 app.use(express.json());
 
-app.use('/api/v1', router);
+// app.use('/api/v1', router);
 
 // Swagger Docs Setup
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));

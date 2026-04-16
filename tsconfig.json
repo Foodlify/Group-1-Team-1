@@ -10,7 +10,7 @@
     "resolveJsonModule": true,
     "rootDir": ".",
     "outDir": "./dist",
-    "types": ["node"]
+    "types": ["node","jest"]
   },
   "include": ["src/**/*", "tests/**/*", "prisma/**/*", "prisma.config.ts", "jest.config.js", "lib", "prisma_db.ts"]
 }

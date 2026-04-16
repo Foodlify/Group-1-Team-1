@@ -14,7 +14,7 @@ router.get('/:cartId', cartController.viewCart);
 router.put('/modify/:cartId', cartController.updateQuantity)
 
 // DELETE   /api/v1/cart/modify/:cartId  — delete cart item
-router.put('/modify/:cartId', cartController.deleteCartItem)
+router.delete('/modify/:cartId', cartController.deleteCartItem)
 
 // DELETE /api/v1/cart/:cartId  — clear entire cart
 router.delete('/:cartId', cartController.clearCart);
