@@ -159,35 +159,33 @@ To deliver a reliable, intuitive, and scalable food delivery platform that simpl
 ---
 
 ## ⚙️Non Functional Requirements
+| #  | NFR Category        | Detailed Requirement                       | Architecture Decisions                                                | Technologies / Tools               |
+| -- | ------------------- | ------------------------------------------ | --------------------------------------------------------------------- | ---------------------------------- |
+| 1  | Performance         | API response time ≤ 300 ms, page load ≤ 2s | Use in-memory caching, CDN for static assets, DB indexing, pagination | Redis, Cloudflare / AWS CloudFront |
+| 2  | Performance         | Handle high read traffic efficiently       | Cache frequently accessed data (restaurants, menus)                   | Redis                              |
+| 3  | Scalability         | Support 10k+ concurrent users              | Horizontal scaling with stateless services                            | Docker, Kubernetes                 |
+| 4  | Security            | Encrypt all data in transit                | Enforce HTTPS (TLS) across all services                               | TLS                                |
+| 5  | Security            | Secure password storage                    | Hash passwords with strong algorithms                                 | bcrypt                             |
+| 6  | Security            | Secure authentication                      | Token-based authentication                                            | JWT                                |
+| 7  | Security            | Prevent common attacks (SQLi, XSS, CSRF)   | Rate limiting, input validation, WAF, API protection                  | NGINX, API Gateway                 |
+| 8  | Security            | Secure payment processing                  | Use PCI-compliant payment gateway                                     | Stripe                             |
+| 9  | Availability        | System uptime ≥ 99.9%                      | Multi-instance deployment, no single point of failure                 | Kubernetes                         |
+| 10 | Availability        | Ensure service continuity                  | Health checks + auto-restart failed services                          | Kubernetes                         |
+| 11 | Reliability         | No data loss in orders                     | Use transactional DB operations                                       | PostgreSQL                         |
+| 12 | Reliability         | Prevent duplicate orders/payments          | Idempotency keys for critical APIs                                    | Redis / DB                         |
+| 13 | Reliability         | Handle partial failures                    | Retry mechanisms + circuit breakers                                   | App logic / middleware             |
+| 14 | Usability           | Smooth and fast UX                         | Lazy loading, optimized UI, minimal steps                             | React / Next.js                    |
+| 15 | Compatibility       | Support web and mobile platforms           | API-first architecture                                                | REST API                           |
+| 16 | Maintainability     | Easy to extend and modify                  | Clean architecture (controller → service → repository)                | Service-based design patterns      |
+| 17 | Maintainability     | Code consistency                           | Linting and formatting tools                                          | ESLint, Prettier                   |
+| 18 | Observability       | Monitor system performance                 | Metrics collection and visualization                                  | Prometheus, Grafana                |
+| 19 | Observability       | Log all critical events                    | Structured logging system                                             | Winston                            |
+| 20 | Payment Reliability | Payment success rate ≥ 99%                 | Retry failed payments, use webhooks                                   | Stripe, Queues                     |
+| 21 | Network             | Handle poor network conditions             | Retry logic, timeout handling                                         | Client + Server logic              |
+| 22 | Network             | Improve perceived performance              | Offline UI fallback (cached data)                                     | Browser cache                      |
+| 23 | Testability         | Ensure code quality                        | Unit and integration testing                                          | Jest, Supertest                    |
 
-<!-- List all non-functional requirements: performance, scalability, security, availability, etc. -->
 
-| #   | NFR Category        | Detailed Requirement                       | Architecture Decisions                                                | Technologies / Tools                             |
-| --- | ------------------- | ------------------------------------------ | --------------------------------------------------------------------- | ------------------------------------------------ | --- | ------------------- |
-| 1   | Performance         | API response time ≤ 300 ms, page load ≤ 2s | Use in-memory caching, CDN for static assets, DB indexing, pagination | Redis, Cloudflare / AWS CloudFront               |
-| 2   | Performance         | Handle high read traffic efficiently       | Cache frequently accessed data (restaurants, menus)                   | Redis                                            |
-| 3   | Scalability         | Support 10k+ concurrent users              | Horizontal scaling with stateless services                            | Docker, Kubernetes                               |
-| 4   | Security            | Encrypt all data in transit                | Enforce HTTPS (TLS) across all services                               | TLS                                              |
-| 5   | Security            | Secure password storage                    | Hash passwords with strong algorithms                                 | bcrypt                                           |
-| 6   | Security            | Secure authentication                      | Token-based authentication                                            | JWT                                              |
-| 7   | Security            | Prevent common attacks (SQLi, XSS, CSRF)   | Rate limiting, Input validation, WAF, API protection                  | NGINX, API Gateway                               |
-| 8   | Security            | Secure payment processing                  | Use PCI-compliant payment gateway                                     | Stripe                                           |
-| 9   | Availability        | System uptime ≥ 99.9%                      | Multi-instance deployment, no single point of failure                 | Kubernetes                                       |
-| 10  | Availability        | Ensure service continuity                  | Health checks + auto-restart failed services                          | Kubernetes                                       |
-| 11  | Reliability         | No data loss in orders                     | Use transactional DB operations                                       | PostgreSQL                                       |
-| 12  | Reliability         | Prevent duplicate orders/payments          | Idempotency keys for critical APIs                                    | Redis / DB                                       |
-| 13  | Reliability         | Handle partial failures                    | Retry mechanisms + circuit breakers                                   | App logic / middleware                           |
-| 14  | Usability           | Smooth and fast UX                         | Lazy loading, optimized UI, minimal steps                             | React / NextJs                                   |
-| 15  | Compatibility       | Support web and mobile platforms           | API-first architecture                                                | REST API                                         |
-| 16  | Maintainability     | Easy to extend and modify                  | Clean architecture (layered design [controller->service->repository]) | Service-based structure / System design patterns |
-| 17  | Maintainability     | Code consistency                           | Linting and formatting tools                                          | ESLint, Prettier                                 |     | Prometheus, Grafana |
-| 18  | Observability       | Log all critical events                    | Structured logging system                                             | Winston                                          |     |
-| 19  | Payment Reliability | Payment success rate ≥ 99%                 | Retry failed payments, use webhooks                                   | Stripe, Queues                                   |
-| 20  | Network             | Handle poor network conditions             | Retry logic, timeout handling                                         | Client + Server logic                            |
-| 21  | Network             | Improve perceived performance              | Offline UI fallback (cached data)                                     | Browser cache                                    |
-| 22  | Testability         | Ensure code quality                        | Unit and integration testing                                          | Jest, Supertest                                  |
-
----
 
 ## 📊ERD
 
@@ -631,25 +629,27 @@ Follow these steps to set up the backend environment locally:
    cp .env.example .env
    ```
 
-   _Make sure your `.env` contains the correct `DATABASE_URL` (e.g., `postgresql://user:password@localhost:5432/foodlify?schema=public`)._
+   _Make sure your `.env` contains the correct `DATABASE_URL` (e.g., `postgresql://user:password@localhost:5432/foodlify`)._
 
-5. **Start the Development Server:**
+
+5. **Database Migration:**
+
+```bash
+   npx prisma generate
+   npx prisma migrate dev --name init
+```
+
+6. **Database seed:**
+```bash
+  npx prisma db seed
+```
+
+7. **Start the Development Server:**
 
    ```bash
    npm run dev
    ```
 
-6. **Database Migration:**
-
-```bash
-   npm run migrate
-   npm run generate
-```
-
-7. **Database seed:**
-```bash
-  npx prisma db seed
-```
 
 #### When run on docker 
 1. **Start the api and database (Docker):**
@@ -661,8 +661,8 @@ docker-compose up -d
 2. **Database Migration:**
 
    ```bash
-    docker exec -it foodlify_api npx prisma db push
     docker exec -it foodlify_api prisma generate
+    docker exec -it foodlify_api npx prisma db push
    ```
 
 3. **Database seed:**
