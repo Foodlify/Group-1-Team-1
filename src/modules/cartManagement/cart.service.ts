@@ -171,13 +171,19 @@ export class CartService {
       itemId,
       itemQuantity,
     );
-    const totalPrice = await CartHelper.getTotalPrice(cart_id);
-    const totalQuantity = await CartHelper.getTotalQuantity(cart_id);
+    if (!updateItem) {
+      throw new ServiceError(
+        'failed in update quantity of item',
+        ErrorStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+    const totalPrice = await CartHelper.getTotalPrice(cart);
+    const totalQuantity = await CartHelper.getTotalQuantity(cart);
     return {
       customerId,
-      cartId: updateItem!.cartId,
-      itemId: updateItem!.id,
-      itemQuantity: updateItem!.quantity,
+      cartId: updateItem.cartId,
+      itemId: updateItem.id,
+      itemQuantity: updateItem.quantity,
       totalPrice,
       totalQuantity,
     };
@@ -189,6 +195,12 @@ export class CartService {
     let cart_id = cartId as number;
     const { cart, item } = await this.getCartAndItem(cart_id, itemId);
     const deletedItem = await CartRepository.deleteCartItem(cart_id, itemId);
+    if (!deletedItem) {
+      throw new ServiceError(
+        'failed in deleting  the item',
+        ErrorStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
     return {
       customerId,
       itemId: deletedItem.id,
