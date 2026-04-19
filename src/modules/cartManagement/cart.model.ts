@@ -15,7 +15,9 @@ export interface ModifyCartInput {
   customerId: number;
   cartId?: number;
   itemId: number;
-  quantity: number
+  itemQuantity: number,
+  totalPrice?:number
+  totalQuantity?:number
 }
 
 export interface DeleteCartItem {

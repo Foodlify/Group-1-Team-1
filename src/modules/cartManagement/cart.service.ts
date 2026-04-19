@@ -7,6 +7,7 @@ import {
 } from './cart.model';
 import { ErrorStatus } from '../../middlewares/error_handling/error_codes';
 import { ServiceError } from '../../middlewares/error_handling/error-handling';
+import { CartHelper } from './cart.helper';
 
 export class CartService {
   async getCartAndItem(cartId: number, itemId: number) {
@@ -18,7 +19,7 @@ export class CartService {
       );
     }
     // Find if item in cart
-    const item = cart.cartItems.find((ci) => ci.id === itemId);
+    const item = cart.cartItems.find((ci: { id: number }) => ci.id === itemId);
     if (!item) {
       throw new ServiceError(
         `Item with menuItemId ${itemId} not found in cart`,
@@ -114,7 +115,7 @@ export class CartService {
     return {
       cartId: updatedCart!.id,
       userId: updatedCart!.customerId,
-      items: updatedCart!.cartItems.map((ci) => ({
+      items: updatedCart!.cartItems.map((ci: any) => ({
         cartItemId: ci.id,
         cartId: ci.cartId,
         menuItemId: ci.menuItemId,
@@ -134,7 +135,7 @@ export class CartService {
     return {
       cartId: cart.id,
       userId: cart.customerId,
-      items: cart.cartItems.map((ci) => ({
+      items: cart.cartItems.map((ci: any) => ({
         cartItemId: ci.id,
         cartId: ci.cartId,
         menuItemId: ci.menuItemId,
@@ -148,7 +149,7 @@ export class CartService {
   // ─── Update Item Quantity ──────────────────────────────────────────────────
 
   async updateQuantity(input: ModifyCartInput): Promise<ModifyCartInput> {
-    const { customerId, itemId, quantity, cartId } = input;
+    const { customerId, itemId, itemQuantity, cartId } = input;
     let cart_id = cartId as number;
     const { cart, item } = await this.getCartAndItem(cart_id, itemId);
     const menuItem = await CartRepository.findMenuItemById(itemId);
@@ -158,9 +159,9 @@ export class CartService {
         ErrorStatus.NOT_FOUND,
       );
     }
-    if (quantity > menuItem.quantity) {
+    if (itemQuantity > menuItem.quantity) {
       throw new ServiceError(
-        `Requested quantity (${quantity}) exceeds available stock (${menuItem.quantity})`,
+        `Requested quantity (${itemQuantity}) exceeds available stock (${menuItem.quantity})`,
         ErrorStatus.BAD_REQUEST,
       );
     }
@@ -168,13 +169,17 @@ export class CartService {
     const updateItem = await CartRepository.upsertCartItem(
       cart_id,
       itemId,
-      quantity,
+      itemQuantity,
     );
+    const totalPrice = await CartHelper.getTotalPrice(cart_id);
+    const totalQuantity = await CartHelper.getTotalQuantity(cart_id);
     return {
       customerId,
       cartId: updateItem!.cartId,
       itemId: updateItem!.id,
-      quantity: updateItem!.quantity,
+      itemQuantity: updateItem!.quantity,
+      totalPrice,
+      totalQuantity,
     };
   }
 
@@ -187,7 +192,7 @@ export class CartService {
     return {
       customerId,
       itemId: deletedItem.id,
-      cartId:deletedItem.cartId
+      cartId: deletedItem.cartId,
     };
   }
 
