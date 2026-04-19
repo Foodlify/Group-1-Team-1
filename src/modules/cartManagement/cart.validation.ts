@@ -41,80 +41,83 @@ class CartValidator {
   }
 
   // ─── Customer Id Validation ──────────────────────────────────────────────────
-  static customerIdValidator(customerId: unknown) {
-    if (customerId === undefined || customerId === null) {
-      return {
-        field: 'customerId',
-        message: 'customerId is required',
-      };
-    } else if (
-      typeof customerId !== 'number' ||
-      !Number.isInteger(customerId) ||
-      customerId <= 0
-    ) {
-      return {
-        field: 'customerId',
-        message: 'customerId must be a positive integer',
-      };
-    }
-  }
+  // the code is same as genericNumberValidator
+  // static customerIdValidator(customerId: unknown) {
+  //   if (customerId === undefined || customerId === null) {
+  //     return {
+  //       field: 'customerId',
+  //       message: 'customerId is required',
+  //     };
+  //   } else if (
+  //     typeof customerId !== 'number' ||
+  //     !Number.isInteger(customerId) ||
+  //     customerId <= 0
+  //   ) {
+  //     return {
+  //       field: 'customerId',
+  //       message: 'customerId must be a positive integer',
+  //     };
+  //   }
+  // }
 
   // ─── Restaurant Id Validation ────────────────────────────────────────────────
-  static restaurantIdIdValidator(restaurantId: unknown) {
-    if (restaurantId === undefined || restaurantId === null) {
-      return {
-        field: 'restaurantId',
-        message: 'restaurantId is required',
-      };
-    } else if (
-      typeof restaurantId !== 'number' ||
-      !Number.isInteger(restaurantId) ||
-      restaurantId <= 0
-    ) {
-      return {
-        field: 'restaurantId',
-        message: 'restaurantId must be a positive integer',
-      };
-    }
-  }
+  
+  
+  // static restaurantIdIdValidator(restaurantId: unknown) {
+  //   if (restaurantId === undefined || restaurantId === null) {
+  //     return {
+  //       field: 'restaurantId',
+  //       message: 'restaurantId is required',
+  //     };
+  //   } else if (
+  //     typeof restaurantId !== 'number' ||
+  //     !Number.isInteger(restaurantId) ||
+  //     restaurantId <= 0
+  //   ) {
+  //     return {
+  //       field: 'restaurantId',
+  //       message: 'restaurantId must be a positive integer',
+  //     };
+  //   }
+  // }
 
   // ─── Item Id Validation ──────────────────────────────────────────────────────
-  static ItemIdValidator(itemId: unknown) {
-    if (itemId === undefined || itemId === null) {
-      return {
-        field: 'itemId',
-        message: 'itemId is required',
-      };
-    } else if (
-      typeof itemId !== 'number' ||
-      !Number.isInteger(itemId) ||
-      itemId <= 0
-    ) {
-      return {
-        field: 'itemId',
-        message: 'itemId must be a positive integer',
-      };
-    }
-  }
+  // static ItemIdValidator(itemId: unknown) {
+  //   if (itemId === undefined || itemId === null) {
+  //     return {
+  //       field: 'itemId',
+  //       message: 'itemId is required',
+  //     };
+  //   } else if (
+  //     typeof itemId !== 'number' ||
+  //     !Number.isInteger(itemId) ||
+  //     itemId <= 0
+  //   ) {
+  //     return {
+  //       field: 'itemId',
+  //       message: 'itemId must be a positive integer',
+  //     };
+  //   }
+  // }
 
   // ─── Quantity Validation ─────────────────────────────────────────────────────
-  static quantityValidator(quantity: unknown) {
-    if (quantity === undefined || quantity === null) {
-      return {
-        field: 'quantity',
-        message: 'quantity is required',
-      };
-    } else if (
-      typeof quantity !== 'number' ||
-      !Number.isInteger(quantity) ||
-      quantity <= 0
-    ) {
-      return {
-        field: 'quantity',
-        message: 'quantity must be a positive integer',
-      };
-    }
-  }
+  // static quantityValidator(quantity: unknown) {
+  //   if (quantity === undefined || quantity === null) {
+  //     return {
+  //       field: 'quantity',
+  //       message: 'quantity is required',
+  //     };
+  //   } else if (
+  //     typeof quantity !== 'number' ||
+  //     !Number.isInteger(quantity) ||
+  //     quantity <= 0
+  //   ) {
+  //     return {
+  //       field: 'quantity',
+  //       message: 'quantity must be a positive integer',
+  //     };
+  //   }
+  // }
 
   // ─── Items Array Validation ──────────────────────────────────────────────────
   static itemsValidator(items: unknown) {
@@ -132,12 +135,12 @@ class CartValidator {
       }
       const { itemId, quantity } = item as Record<string, unknown>;
 
-      const itemIdError = CartValidator.ItemIdValidator(itemId);
+      const itemIdError = CartValidator.genericNumberValidator(itemId,"itemId");
       if (itemIdError) {
         errors.push({ ...itemIdError, field: `items[${index}].itemId` });
       }
 
-      const quantityError = CartValidator.quantityValidator(quantity);
+      const quantityError = CartValidator.genericNumberValidator(quantity,"quantity");
       if (quantityError) {
         errors.push({ ...quantityError, field: `items[${index}].quantity` });
       }
@@ -153,20 +156,20 @@ class CartValidator {
 export const validateBody = (body: unknown) =>
   CartValidator.bodyValidator(body);
 
-export const validateGenericNumber = (param: unknown, type: string) =>
-  CartValidator.genericNumberValidator(param, type);
+// export const validateGenericNumber = (param: unknown, type: string) =>
+//   CartValidator.genericNumberValidator(param, type);
 
 export const validateCustomerId = (customerId: unknown) =>
-  CartValidator.customerIdValidator(customerId);
+  CartValidator.genericNumberValidator(customerId,"customerId");
 
 export const validateRestaurantId = (restaurantId: unknown) =>
-  CartValidator.restaurantIdIdValidator(restaurantId);
+  CartValidator.genericNumberValidator(restaurantId,"restaurantId");
 
 export const validateItemId = (itemId: unknown) =>
-  CartValidator.ItemIdValidator(itemId);
+  CartValidator.genericNumberValidator(itemId,"itemId");
 
 export const validateQuantity = (quantity: unknown) =>
-  CartValidator.quantityValidator(quantity);
+  CartValidator.genericNumberValidator(quantity,"quantity");
 
 export const validateItems = (items: unknown) =>
   CartValidator.itemsValidator(items);
@@ -191,7 +194,7 @@ export const validateAddToCartInput = (
   const { userId, restaurantId, items } = body as Record<string, unknown>;
 
   // ─── userId ────────────────────────────────────────────────────────────────
-  const userIdError = validateGenericNumber(userId, 'userId');
+  const userIdError = validateCustomerId(userId);
   if (userIdError) errors.push(userIdError);
 
   // ─── restaurantId ──────────────────────────────────────────────────────────
@@ -235,13 +238,13 @@ export const validateUpdateQuantity = (
 
   const { customerId, itemId, quantity } = body as Record<string, unknown>;
 
-  const customerIdError = validateGenericNumber(customerId, 'customerId');
+  const customerIdError = validateCustomerId(customerId);
   if (customerIdError) errors.push(customerIdError);
 
-  const itemIdError = validateGenericNumber(itemId, 'itemId');
+  const itemIdError = validateItemId(itemId);
   if (itemIdError) errors.push(itemIdError);
 
-  const quantityError = validateGenericNumber(quantity, 'quantity');
+  const quantityError = validateQuantity(quantity);
   if (quantityError) errors.push(quantityError);
 
   if (errors.length > 0) {
@@ -252,7 +255,7 @@ export const validateUpdateQuantity = (
     data: {
       customerId: customerId as number,
       itemId: itemId as number,
-      quantity: quantity as number,
+      itemQuantity: quantity as number,
     },
     errors: [],
   };
@@ -270,10 +273,10 @@ export const validateDeleteCartItem = (
 
   const { customerId, itemId } = body as Record<string, unknown>;
 
-  const customerIdError = validateGenericNumber(customerId, 'customerId');
+  const customerIdError = validateCustomerId(customerId);
   if (customerIdError) errors.push(customerIdError);
 
-  const itemIdError = validateGenericNumber(itemId, 'itemId');
+  const itemIdError = validateItemId(itemId);
   if (itemIdError) errors.push(itemIdError);
 
   if (errors.length > 0) {
