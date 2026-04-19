@@ -10,7 +10,7 @@ export interface ValidationError {
 // userId
 // restaurantId
 // items --- itemId, quantity
-class CartValidator {
+export class CartValidator {
   // ─── Request Body Validation ────────────────────────────────────────────────
   static bodyValidator(body: unknown) {
     if (!body || typeof body !== 'object') {
@@ -236,7 +236,7 @@ export const validateUpdateQuantity = (
     return { data: null, errors: [bodyError] };
   }
 
-  const { customerId, itemId, quantity } = body as Record<string, unknown>;
+  const { customerId, itemId, itemQuantity } = body as Record<string, unknown>;
 
   const customerIdError = validateCustomerId(customerId);
   if (customerIdError) errors.push(customerIdError);
@@ -244,7 +244,7 @@ export const validateUpdateQuantity = (
   const itemIdError = validateItemId(itemId);
   if (itemIdError) errors.push(itemIdError);
 
-  const quantityError = validateQuantity(quantity);
+  const quantityError = validateQuantity(itemQuantity);
   if (quantityError) errors.push(quantityError);
 
   if (errors.length > 0) {
@@ -255,7 +255,7 @@ export const validateUpdateQuantity = (
     data: {
       customerId: customerId as number,
       itemId: itemId as number,
-      itemQuantity: quantity as number,
+      itemQuantity: itemQuantity as number,
     },
     errors: [],
   };
