@@ -421,4 +421,85 @@ describe('CartService', () => {
       await expect(service.deleteCartItem(input)).rejects.toThrow(ServiceError);
     });
   });
+
+  describe('viewCart', () => {
+    it('should view cart successfully by customer ID', async () => {
+      const customerId = 1;
+
+      (CartRepository.findCartByUserId as jest.Mock).mockResolvedValue({
+        id: 10,
+        customerId,
+        cartItems: [
+          {
+            id: 100,
+            cartId: 10,
+            menuItemId: 1,
+            quantity: 2,
+            menuItem: { itemName: 'Burger', price: 15.0 },
+          },
+        ],
+      });
+
+      const result = await service.viewCart(customerId);
+
+      expect(CartRepository.findCartByUserId).toHaveBeenCalledWith(customerId);
+      expect(result).toEqual({
+        cartId: 10,
+        userId: 1,
+        items: [
+          {
+            cartItemId: 100,
+            cartId: 10,
+            menuItemId: 1,
+            quantity: 2,
+            itemName: 'Burger',
+            price: 15.0,
+          },
+        ],
+      });
+    });
+
+    it('should return null if cart does not exist for customer', async () => {
+      const customerId = 1;
+
+      (CartRepository.findCartByUserId as jest.Mock).mockResolvedValue(null);
+
+      const result = await service.viewCart(customerId);
+
+      expect(CartRepository.findCartByUserId).toHaveBeenCalledWith(customerId);
+      expect(result).toBeNull();
+    });
+  });
+
+  describe('clearCart', () => {
+    it('should clear cart successfully by customer ID', async () => {
+      const customerId = 1;
+      const cartId = 10;
+
+      (CartRepository.findCartByUserId as jest.Mock).mockResolvedValue({
+        id: cartId,
+        customerId,
+      });
+
+      (CartRepository.clearCart as jest.Mock).mockResolvedValue({});
+
+      await service.clearCart(customerId);
+
+      expect(CartRepository.findCartByUserId).toHaveBeenCalledWith(customerId);
+      expect(CartRepository.clearCart).toHaveBeenCalledWith(cartId);
+    });
+
+    it('should throw error if cart does not exist for customer', async () => {
+      const customerId = 1;
+
+      (CartRepository.findCartByUserId as jest.Mock).mockResolvedValue(null);
+
+      await expect(service.clearCart(customerId)).rejects.toThrow(ServiceError);
+      await expect(service.clearCart(customerId)).rejects.toThrow(
+        `Cart for user with id ${customerId} does not exist`
+      );
+
+      expect(CartRepository.clearCart).not.toHaveBeenCalled();
+    });
+  });
 });
