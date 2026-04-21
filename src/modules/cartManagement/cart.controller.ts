@@ -40,16 +40,16 @@ export class CartController {
   // ─── View Cart ──────────────────────────────────────────────────────────────
 
   viewCart = asyncHandler(async (req: Request, res: Response) => {
-    const cartId = parseInt(req.params.cartId as string, 10);
-    if (isNaN(cartId)) {
-      sendError(res, 'cartId must be a valid integer', 402);
+    const customerId = parseInt(req.params.customerId as string, 10);
+    if (isNaN(customerId)) {
+      sendError(res, 'customerId must be a valid integer', 402);
       return;
     }
 
     try {
-      const cart = await cartService.viewCart(cartId);
+      const cart = await cartService.viewCart(customerId);
       if (!cart) {
-        sendError(res, `Cart with id ${cartId} does not exist`, 404);
+        sendError(res, `Cart for user with id ${customerId} does not exist`, 404);
         return;
       }
       sendSuccess(res, 'Cart retrieved successfully', 200, cart);
@@ -134,15 +134,15 @@ export class CartController {
   // ─── Clear Cart ──────────────────────────────────────────────────────────────
 
   clearCart = asyncHandler(async (req: Request, res: Response) => {
-    const cartId = parseInt(req.params.cartId as string, 10);
+    const customerId = parseInt(req.params.customerId as string, 10);
 
-    if (isNaN(cartId)) {
-      sendError(res, 'cartId must be a valid integer', 402);
+    if (isNaN(customerId)) {
+      sendError(res, 'customerId must be a valid integer', 402);
       return;
     }
 
     try {
-      await cartService.clearCart(cartId);
+      await cartService.clearCart(customerId);
       sendSuccess(res, 'Cart cleared successfully');
     } catch (err) {
       if (err instanceof ServiceError) {
