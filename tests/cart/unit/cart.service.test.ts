@@ -3,6 +3,7 @@ import { CartRepository } from '../../../src/modules/cartManagement/cart.reposit
 import { ServiceError } from '../../../src/middlewares/error_handling/error-handling';
 import { AddToCartInput } from '../../../src/modules/cartManagement/cart.model';
 import { ErrorStatus } from '../../../src/middlewares/error_handling/error_codes';
+import { CartHelper } from '../../../src/modules/cartManagement/cart.helper';
 
 jest.mock('../../../src/modules/cartManagement/cart.repository');
 
@@ -214,78 +215,58 @@ describe('CartService', () => {
   });
 
   describe('updateQuantity', () => {
-    it('should update quantity successfully', async () => {
-      const input = {
-        customerId: 1,
-        cartId: 1,
-        itemId: 1,
-        itemQuantity: 2,
-      };
+    it('should successfully update item quantity in cart', async () => {
+  // Arrange
+  const input = {
+    customerId: 1,
+    itemId: 10,
+    itemQuantity: 3,
+  };
 
-      (service.getCartAndItem as jest.Mock).mockResolvedValue({
-        cart: {
-          id: 1,
-          customerId: 1,
-          cartItems: [
-            {
-              id: 100,
-              cartId: 1,
-              menuItemId: 1,
-              quantity: 2,
-              menuItem: { itemName: 'Burger', price: 20 },
-            },
-          ],
-        },
-        item: {
-          id: 100,
-          cartId: 1,
-          menuItemId: 1,
-          quantity: 2,
-          menuItem: { itemName: 'Burger', price: 20 },
-        },
-      });
+  const mockCart = { id: 100 };
 
-      (CartRepository.findMenuItemById as jest.Mock).mockResolvedValue({
-        id: 1,
-        quantity: 10,
-      });
+  const mockItem = { id: 10, quantity: 5 };
 
-      (CartRepository.upsertCartItem as jest.Mock).mockResolvedValue({
-        id: 1,
-        cartId: 1,
-        quantity: 2,
-      });
+  const updatedItem = {
+    id: 10,
+    cartId: 100,
+    quantity: 3,
+  };
 
-      (CartRepository.getCartWithItems as jest.Mock).mockResolvedValue({
-        id: 1,
-        customerId: 1,
-        cartItems: [
-          {
-            id: 100,
-            cartId: 1,
-            menuItemId: 1,
-            quantity: 2,
-            menuItem: { itemName: 'Burger', price: 20 },
-          },
-        ],
-      });
-      const result = await service.updateQuantity(input);
+  CartRepository.findCartByUserId = jest.fn().mockResolvedValue(mockCart);
 
-      expect(result).toEqual({
-        customerId: 1,
-        cartId: 1,
-        itemId: 1,
-        itemQuantity: 2,
-        totalPrice: 40,
-        totalQuantity: 2,
-      });
-      expect(result.totalPrice).toBe(40);
-      expect(result.totalQuantity).toBe(2);
-    });
+  service.getCartAndItem = jest.fn().mockResolvedValue({
+    item: mockItem,
+  });
 
+  CartRepository.findMenuItemById = jest.fn().mockResolvedValue({
+    id: 10,
+    quantity: 10,
+  });
+
+  CartRepository.upsertCartItem = jest.fn().mockResolvedValue(updatedItem);
+
+  CartHelper.getTotalPrice = jest.fn().mockResolvedValue(500);
+  CartHelper.getTotalQuantity = jest.fn().mockResolvedValue(3);
+
+  // Act
+  const result = await service.updateQuantity(input);
+
+  // Assert
+  expect(result).toEqual({
+    customerId: 1,
+    cartId: 100,
+    itemId: 10,
+    itemQuantity: 3,
+    totalPrice: 500,
+    totalQuantity: 3,
+  });
+});
     it('should throw error if menu item not found', async () => {
-      const input = { customerId: 1, cartId: 1, itemId: 1, itemQuantity: 2 };
-
+      const input = { customerId: 1, itemId: 1, itemQuantity: 2 };
+      (CartRepository.findCartByUserId as jest.Mock).mockResolvedValue({
+        cart: { id: 1 },
+      });
       (service.getCartAndItem as jest.Mock).mockResolvedValue({
         cart: {},
         item: {},
@@ -297,8 +278,10 @@ describe('CartService', () => {
     });
 
     it('should throw error if quantity exceeds stock', async () => {
-      const input = { customerId: 1, cartId: 1, itemId: 1, itemQuantity: 20 };
-
+      const input = { customerId: 1, itemId: 1, itemQuantity: 20 };
+      (CartRepository.findCartByUserId as jest.Mock).mockResolvedValue({
+        cart: { id: 1 },
+      });
       (service.getCartAndItem as jest.Mock).mockResolvedValue({
         cart: {},
         item: {},
@@ -314,8 +297,10 @@ describe('CartService', () => {
       expect(CartRepository.upsertCartItem).not.toHaveBeenCalled();
     });
     it('should throw error if total price or total quantity can not be calculated', async () => {
-      const input = { customerId: 1, cartId: 1, itemId: 1, itemQuantity: 20 };
-
+      const input = { customerId: 1, itemId: 1, itemQuantity: 20 };
+      (CartRepository.findCartByUserId as jest.Mock).mockResolvedValue({
+        cart: { id: 1 },
+      });
       (service.getCartAndItem as jest.Mock).mockResolvedValue({
         cart: {},
         item: {},
@@ -340,10 +325,11 @@ describe('CartService', () => {
     it('should throw error if update quantity in repository', async () => {
       const input = {
         customerId: 1,
-        cartId: 10,
         itemId: 5,
       };
-
+      (CartRepository.findCartByUserId as jest.Mock).mockResolvedValue({
+        cart: { id: 1 },
+      });
       (service.getCartAndItem as jest.Mock).mockResolvedValue({
         cart: {},
         item: { id: 5 },
@@ -363,13 +349,14 @@ describe('CartService', () => {
     it('should delete Item successfully', async () => {
       const input = {
         customerId: 1,
-        cartId: 1,
         itemId: 1,
       };
 
       (service.getCartAndItem as jest.Mock).mockResolvedValue({
-        cart: {},
-        item: {},
+        item: { id: 1 },
+      });
+      (CartRepository.findCartByUserId as jest.Mock).mockResolvedValue({
+        cart: { id: 1 },
       });
 
       (CartRepository.deleteCartItem as jest.Mock).mockResolvedValue({
@@ -387,9 +374,12 @@ describe('CartService', () => {
     it('should throw error if cart id or item id not found', async () => {
       const input = {
         customerId: 1,
-        cartId: 1,
         itemId: 1,
       };
+
+      (CartRepository.findCartByUserId as jest.Mock).mockResolvedValue({
+        cart: null,
+      });
 
       (service.getCartAndItem as jest.Mock).mockRejectedValue(
         new ServiceError('Cart / Item not found', ErrorStatus.NOT_FOUND),
@@ -402,10 +392,12 @@ describe('CartService', () => {
     it('should throw error if delete fails in repository', async () => {
       const input = {
         customerId: 1,
-        cartId: 10,
         itemId: 5,
       };
 
+      (CartRepository.findCartByUserId as jest.Mock).mockResolvedValue({
+        cart: { id: 1 },
+      });
       (service.getCartAndItem as jest.Mock).mockResolvedValue({
         cart: {},
         item: { id: 5 },
@@ -496,7 +488,7 @@ describe('CartService', () => {
 
       await expect(service.clearCart(customerId)).rejects.toThrow(ServiceError);
       await expect(service.clearCart(customerId)).rejects.toThrow(
-        `Cart for user with id ${customerId} does not exist`
+        `Cart for user with id ${customerId} does not exist`,
       );
 
       expect(CartRepository.clearCart).not.toHaveBeenCalled();
