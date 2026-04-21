@@ -65,8 +65,8 @@ export class CartController {
   // ─── Update Item Quantity ────────────────────────────────────────────────────
 
   updateQuantity = asyncHandler(async (req: Request, res: Response) => {
-    const cartId = parseInt(req.params.cartId as string, 10);
-    if (isNaN(cartId)) {
+    const customerId= parseInt(req.params.customerId as string, 10);
+    if (isNaN(customerId)) {
       sendError(
         res,
         'cartId must be a valid integer',
@@ -82,7 +82,7 @@ export class CartController {
     }
 
     try {
-      const updatedItem = await cartService.updateQuantity({ ...data, cartId });
+      const updatedItem = await cartService.updateQuantity({ ...data, customerId});
       sendSuccess(
         res,
         'Item quantity updated successfully',
@@ -99,8 +99,8 @@ export class CartController {
   });
 
   deleteCartItem = asyncHandler(async (req: Request, res: Response) => {
-    const cartId = parseInt(req.params.cartId as string, 10);
-    if (isNaN(cartId)) {
+    const customerId = parseInt(req.params.customerId as string, 10);
+    if (isNaN(customerId)) {
       sendError(
         res,
         'cartId must be a valid integer',
@@ -115,7 +115,7 @@ export class CartController {
       return;
     }
     try {
-      const deletedItem = await cartService.deleteCartItem({ ...data, cartId });
+      const deletedItem = await cartService.deleteCartItem({ ...data, customerId});
       sendSuccess(
         res,
         'Item deleted successfully',

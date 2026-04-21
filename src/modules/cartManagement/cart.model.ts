@@ -13,17 +13,26 @@ export interface AddToCartInput {
 
 export interface ModifyCartInput {
   customerId: number;
-  cartId?: number;
   itemId: number;
-  itemQuantity: number,
-  totalPrice?:number
-  totalQuantity?:number
+  itemQuantity: number;
+}
+export interface ModifyCartResult {
+  customerId: number;
+  cartId: number;
+  itemId: number;
+  itemQuantity: number;
+  totalPrice?: number;
+  totalQuantity?: number;
 }
 
-export interface DeleteCartItem {
+export interface DeleteCartItemInput {
   customerId: number;
   itemId: number;
-  cartId?: number;
+}
+export interface DeleteCartItemResult {
+  customerId: number;
+  cartId:number,
+  itemId: number;
 }
 // ─── Response Types ───────────────────────────────────────────────────────────
 

@@ -11,10 +11,10 @@ router.post('/add', cartController.addToCart);
 router.get('/customer/:customerId', cartController.viewCart);
 
 // PUT    /api/v1/cart/modify/:cartId  — update item quantity
-router.put('/modify/:cartId', cartController.updateQuantity)
+router.put('/modify/:customerId', cartController.updateQuantity)
 
 // DELETE   /api/v1/cart/modify/:cartId  — delete cart item
-router.delete('/modify/:cartId', cartController.deleteCartItem)
+router.delete('/modify/:customerId', cartController.deleteCartItem)
 
 // DELETE /api/v1/cart/clear/:customerId  — clear entire cart
 router.delete('/clear/:customerId', cartController.clearCart);

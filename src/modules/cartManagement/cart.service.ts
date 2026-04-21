@@ -2,8 +2,10 @@ import { CartRepository } from './cart.repository';
 import {
   AddToCartInput,
   CartResult,
-  DeleteCartItem,
+  DeleteCartItemInput,
+  DeleteCartItemResult,
   ModifyCartInput,
+  ModifyCartResult,
 } from './cart.model';
 import { ErrorStatus } from '../../middlewares/error_handling/error_codes';
 import { ServiceError } from '../../middlewares/error_handling/error-handling';
@@ -74,8 +76,6 @@ export class CartService {
 
     // 5. Validate each item and upsert into cart
     const itemErrors: string[] = [];
-    // No need to send quantity with request body, as it is by default 1 at first time add,
-    // so we just need to check if menuItem quantity is > 0
     for (const { itemId, quantity } of items) {
       const menuItem = await CartRepository.findMenuItemById(itemId);
 
@@ -148,11 +148,15 @@ export class CartService {
 
   // ─── Update Item Quantity ──────────────────────────────────────────────────
 
-  async updateQuantity(input: ModifyCartInput): Promise<ModifyCartInput> {
-    const { customerId, itemId, itemQuantity, cartId } = input;
-    let cart_id = cartId as number;
-    const { cart, item } = await this.getCartAndItem(cart_id, itemId);
-    const menuItem = await CartRepository.findMenuItemById(itemId);
+  async updateQuantity(
+    input: ModifyCartInput,
+  ): Promise<ModifyCartResult | null> {
+    const { customerId, itemId, itemQuantity } = input;
+    const cart = await CartRepository.findCartByUserId(customerId);
+    if (!cart) return null;
+
+    const { item } = await this.getCartAndItem(cart.id, itemId);
+    const menuItem = await CartRepository.findMenuItemById(item.id);
     if (!menuItem) {
       throw new ServiceError(
         `Menu item with id ${itemId} does not exist`,
@@ -167,8 +171,8 @@ export class CartService {
     }
 
     const updateItem = await CartRepository.upsertCartItem(
-      cart_id,
-      itemId,
+      cart.id,
+      item.id,
       itemQuantity,
     );
     if (!updateItem) {
@@ -190,11 +194,14 @@ export class CartService {
   }
 
   // ─── Delete Cart Item ────────────────────────────────────────────────────────────
-  async deleteCartItem(input: DeleteCartItem): Promise<DeleteCartItem> {
-    const { customerId, cartId, itemId } = input;
-    let cart_id = cartId as number;
-    const { cart, item } = await this.getCartAndItem(cart_id, itemId);
-    const deletedItem = await CartRepository.deleteCartItem(cart_id, itemId);
+  async deleteCartItem(
+    input: DeleteCartItemInput,
+  ): Promise<DeleteCartItemResult | null> {
+    const { customerId, itemId } = input;
+    const cart = await CartRepository.findCartByUserId(customerId);
+    if (!cart) return null;
+    const { item } = await this.getCartAndItem(cart.id, itemId);
+    const deletedItem = await CartRepository.deleteCartItem(cart.id, item.id);
     if (!deletedItem) {
       throw new ServiceError(
         'failed in deleting  the item',
@@ -213,7 +220,10 @@ export class CartService {
   async clearCart(customerId: number): Promise<void> {
     const cart = await CartRepository.findCartByUserId(customerId);
     if (!cart) {
-      throw new ServiceError(`Cart for user with id ${customerId} does not exist`, 404);
+      throw new ServiceError(
+        `Cart for user with id ${customerId} does not exist`,
+        404,
+      );
     }
 
     await CartRepository.clearCart(cart.id);
