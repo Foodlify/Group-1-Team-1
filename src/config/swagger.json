@@ -80,16 +80,16 @@
         }
       }
     },
-    "/api/v1/cart/{cartId}": {
+    "/api/v1/cart/customer/{customerId}": {
       "get": {
         "tags": ["Cart"],
-        "summary": "View entire cart",
+        "summary": "View entire cart by customer",
         "parameters": [
           {
-            "name": "cartId",
+            "name": "customerId",
             "in": "path",
             "required": true,
-            "description": "Cart ID",
+            "description": "Customer ID",
             "schema": {
               "type": "integer",
               "example": 1
@@ -111,7 +111,7 @@
             "description": "Client Error"
           },
           "402": {
-            "description": "Validation Error (invalid cartId format)"
+            "description": "Validation Error (invalid customerId format)"
           },
           "404": {
             "description": "Cart not found"
@@ -120,17 +120,19 @@
             "description": "Internal Server Error"
           }
         }
-      },
+      }
+    },
+    "/api/v1/cart/clear/{customerId}": {
       "delete": {
         "tags": ["Cart"],
         "summary": "Clear entire cart",
-        "description": "Removes all items from the cart and deletes the cart itself.",
+        "description": "Removes all items from the cart and deletes the cart itself by customer ID.",
         "parameters": [
           {
-            "name": "cartId",
+            "name": "customerId",
             "in": "path",
             "required": true,
-            "description": "Cart ID",
+            "description": "Customer ID",
             "schema": {
               "type": "integer",
               "example": 1
@@ -145,7 +147,7 @@
             "description": "Client Error"
           },
           "402": {
-            "description": "Validation Error (invalid cartId format)"
+            "description": "Validation Error (invalid customerId format)"
           },
           "404": {
             "description": "Cart not found"

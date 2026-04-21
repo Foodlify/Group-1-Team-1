@@ -128,8 +128,8 @@ export class CartService {
 
   // ─── View Cart ─────────────────────────────────────────────────────────────
 
-  async viewCart(cartId: number): Promise<CartResult | null> {
-    const cart = await CartRepository.getCartWithItems(cartId);
+  async viewCart(customerId: number): Promise<CartResult | null> {
+    const cart = await CartRepository.findCartByUserId(customerId);
     if (!cart) return null;
 
     return {
@@ -210,12 +210,12 @@ export class CartService {
 
   // ─── Clear Cart ────────────────────────────────────────────────────────────
 
-  async clearCart(cartId: number): Promise<void> {
-    const cart = await CartRepository.getCartWithItems(cartId);
+  async clearCart(customerId: number): Promise<void> {
+    const cart = await CartRepository.findCartByUserId(customerId);
     if (!cart) {
-      throw new ServiceError(`Cart with id ${cartId} does not exist`, 404);
+      throw new ServiceError(`Cart for user with id ${customerId} does not exist`, 404);
     }
 
-    await CartRepository.clearCart(cartId);
+    await CartRepository.clearCart(cart.id);
   }
 }
