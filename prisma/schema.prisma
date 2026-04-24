@@ -19,7 +19,6 @@ model User {
   name     String
   email    String    @unique
   customer Customer?
-  cart     Cart?     @relation(fields: [cartId], references: [id])
   cartId   Int?
 }
 
@@ -39,9 +38,11 @@ model Customer {
 // ─────────────────────────────────────────
 
 model Restaurant {
-  id    Int    @id @default(autoincrement())
-  name  String
-  menus Menu[]
+  id        Int        @id @default(autoincrement())
+  name      String
+  menus     Menu[]
+  carts     Cart[]
+  menuItems MenuItem[]
 }
 
 // ─────────────────────────────────────────
@@ -61,13 +62,15 @@ model Menu {
 // ─────────────────────────────────────────
 
 model MenuItem {
-  id        Int        @id @default(autoincrement())
-  menuId    Int        @map("menu_id")
-  itemName  String     @map("item_name")
-  price     Int
-  quantity  Int        @default(0)
-  menu      Menu       @relation(fields: [menuId], references: [id])
-  cartItems CartItem[]
+  id           Int        @id @default(autoincrement())
+  menuId       Int        @map("menu_id")
+  restaurantId Int        @map("restaurantId")
+  itemName     String     @map("item_name")
+  price        Int
+  stock     Int        @default(0)
+  menu         Menu       @relation(fields: [menuId], references: [id])
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
+  cartItems    CartItem[]
 }
 
 // ─────────────────────────────────────────
@@ -75,12 +78,12 @@ model MenuItem {
 // ─────────────────────────────────────────
 
 model Cart {
-  id         Int        @id @default(autoincrement())
-  customerId Int        @unique @map("customer_id")
-  name       String?
-  customer   Customer   @relation(fields: [customerId], references: [id])
-  cartItems  CartItem[]
-  users      User[]
+  id           Int        @id @default(autoincrement())
+  customerId   Int        @unique @map("customer_id")
+  restaurantId Int
+  customer     Customer   @relation(fields: [customerId], references: [id])
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
+  cartItems    CartItem[]
 }
 
 // ─────────────────────────────────────────
@@ -88,11 +91,12 @@ model Cart {
 // ─────────────────────────────────────────
 
 model CartItem {
-  id         Int @id @default(autoincrement())
-  cartId     Int @map("cart_id")
-  menuItemId Int @map("menu_item_id")
+  id         Int      @id @default(autoincrement())
+  cartId     Int      @map("cart_id")
+  menuItemId Int      @map("menu_item_id")
   quantity   Int
-
-  cart     Cart     @relation(fields: [cartId], references: [id])
-  menuItem MenuItem @relation(fields: [menuItemId], references: [id])
+  price      Int
+  name       String
+  cart       Cart     @relation(fields: [cartId], references: [id])
+  menuItem   MenuItem @relation(fields: [menuItemId], references: [id])
 }

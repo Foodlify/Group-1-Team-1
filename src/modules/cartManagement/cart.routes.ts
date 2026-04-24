@@ -1,22 +1,43 @@
 import express from 'express';
 import { CartController } from './cart.controller';
+import {
+  addCartValidator,
+  updateCartValidator,
+  deleteCartValidator,
+} from './cart.middleware';
+import { authValidator } from '../../middlewares/auth_handling/auth-handling';
 
 const router = express.Router();
 const cartController = new CartController();
 
-// POST   /api/v1/cart/add
-router.post('/add', cartController.addToCart);
+// POST   /api/v1/cart — add item to cart
+router.post('/', authValidator, addCartValidator, cartController.addToCart);
 
-// GET    /api/v1/cart/customer/:customerId
-router.get('/customer/:customerId', cartController.viewCart);
+// GET    /api/v1/cart — get entire cart
+router.get('/', authValidator, cartController.viewCart);
 
-// PUT    /api/v1/cart/modify/:cartId  — update item quantity
-router.put('/modify/:customerId', cartController.updateQuantity)
+// DELETE /api/v1/cart  — clear entire cart
+router.delete('/', authValidator, cartController.clearCart);
 
-// DELETE   /api/v1/cart/modify/:cartId  — delete cart item
-router.delete('/modify/:customerId', cartController.deleteCartItem)
+// PUT    /api/v1/cart/:itemId — update item quantity
+router.patch(
+  '/:itemId',
+  authValidator,
+  updateCartValidator,
+  cartController.updateQuantity,
+);
 
-// DELETE /api/v1/cart/clear/:customerId  — clear entire cart
-router.delete('/clear/:customerId', cartController.clearCart);
+// DELETE   /api/v1/cart/:itemId  — delete cart item
+router.delete(
+  '/:itemId',
+  authValidator,
+  deleteCartValidator,
+  cartController.deleteCartItem,
+);
+
+// GET    /api/v1/cart — get total price of items in cart
+router.get('/price', authValidator, cartController.viewCart);
+// GET    /api/v1/cart — get total amount  of items in cart
+router.get('/amount', authValidator, cartController.viewCart);
 
 export { router as cartRouter };

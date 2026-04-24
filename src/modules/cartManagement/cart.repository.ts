@@ -1,96 +1,103 @@
 import prisma from '../../../lib/prisma';
 
+type menuItemType = {
+  id: number;
+  price: number;
+  name: string;
+};
 export class CartRepository {
-  // ─── User ──────────────────────────────────────────────────────────────────
-
-  // static async findUserById(userId: number) {
-  //   return prisma.user.findUnique({ where: { id: userId } });
-  // }
-  static async findUserById(customerId: number) {
-    return prisma.customer.findUnique({ where: { id: customerId } });
-  }
-
-  // ─── Restaurant ────────────────────────────────────────────────────────────
-
-  static async findRestaurantById(restaurantId: number) {
-    return prisma.restaurant.findUnique({ where: { id: restaurantId } });
-  }
-
-  // ─── Cart ──────────────────────────────────────────────────────────────────
-
-  /** Find a cart with its items and the related menu items (for restaurant check) */
-  static async findCartByUserId(customerId: number) {
+  /**  Check a cart is existed or not */
+  static async findCartByCustomerId(customerId: number) {
     return prisma.cart.findUnique({
       where: { customerId },
-      include: {
-        cartItems: {
-          include: { menuItem: { include: { menu: true } } },
-        },
-      },
+    });
+  }
+  static async findCartItemById(itemId: number) {
+    return prisma.cartItem.findUnique({
+      where: { id: itemId },
     });
   }
 
-  /** Create an empty cart for a user */
-  static async createCart(customerId: number) {
-    return prisma.cart.create({ data: { customerId } });
+  /** Find a cart with its items to view cart  */
+  static async findCartAndCartItems(customerId: number) {
+    return prisma.cart.findUnique({
+      where: { customerId },
+      include: { cartItems: true },
+    });
+  }
+
+  /** Create new cart and add its item in one query */
+  static async createCartAndCartItems(
+    customerId: number,
+    quantity: number,
+    menuItem: menuItemType,
+  ) {
+    const cartWithItems = await prisma.cart.create({
+      data: {
+        customerId,
+        restaurantId: menuItem.restaurantId,
+        cartItems: {
+          create: [
+            {
+              menuItemId: menuItem.id,
+              quantity,
+              price: menuItem.price,
+              name: menuItem.name,
+            },
+          ],
+        },
+      },
+      include: {
+        cartItems: true,
+      },
+    });
+    return cartWithItems;
+  }
+
+  /** Add item to existing cart */
+  static async createCartItem(
+    cartId: number,
+    quantity: number,
+    menuItem: menuItemType,
+  ) {
+    const item = await prisma.cartItem.create({
+      data: {
+        cartId,
+        quantity,
+        menuItemId: menuItem.id,
+        price: menuItem.price,
+        name: menuItem.name,
+      },
+    });
+    return item;
   }
 
   /** Delete all cart items first, then delete the cart */
   static async clearCart(cartId: number) {
     await prisma.cartItem.deleteMany({ where: { cartId } });
-    await prisma.cart.delete({ where: { id: cartId } });
+    const deletedCart = await prisma.cart.delete({ where: { id: cartId } });
+    return deletedCart;
   }
 
-  // ─── Menu Items ────────────────────────────────────────────────────────────
-
-  /** Find a menu item by id, also returns the parent menu (for restaurant check) */
-  static async findMenuItemById(itemId: number) {
-    return prisma.menuItem.findUnique({
-      where: { id: itemId },
-      include: { menu: true },
+  /** Delete One cart Item */
+  static async deleteCartItem(cartId: number, cartItemId: number) {
+    const deletedItem = await prisma.cartItem.delete({
+      where: { cartId: cartId, id: cartItemId },
     });
+    return deletedItem;
   }
-
-  // ─── Cart Items ────────────────────────────────────────────────────────────
 
   /** Upsert a cart item — update quantity if it already exists */
-  static async upsertCartItem(
-    cartId: number,
-    menuItemId: number,
-    quantity: number,
-  ) {
-    const existing = await prisma.cartItem.findFirst({
-      where: { cartId, menuItemId },
+  static async upsertCartItem(itemId: number, quantity: number) {
+    const result = prisma.cartItem.update({
+      where: { id: itemId },
+      data: { quantity },
     });
 
-    if (existing) {
-      return prisma.cartItem.update({
-        where: { id: existing.id },
-        data: { quantity },
-      });
-    }
-
-    return prisma.cartItem.create({ data: {cartId, menuItemId, quantity } });
+    return result;
   }
 
-  /** Delete cart item from  cart */
-  static async deleteCartItem(cartId: number, cartItemId: number) {
-    const deletedItem = await prisma.cartItem.delete({ where: { cartId: cartId, id: cartItemId } });
-    return deletedItem
-  }
-  
-  /** Return full cart with items for the response */
-  static async getCartWithItems(cartId: number) {
-    return prisma.cart.findUnique({
-      where: { id: cartId },
-      include: {
-        cartItems: {
-          include: { menuItem: true },
-        },
-      },
-    });
-  }
-
+  /** Get All carts  */
   static async getCarts() {
     return prisma.cart.findMany();
   }
