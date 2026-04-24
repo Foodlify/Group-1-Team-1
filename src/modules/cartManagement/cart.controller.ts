@@ -1,17 +1,15 @@
 import { Request, Response } from 'express';
 import { CartService } from './cart.service';
-import {
-  validateAddToCartInput,
-  validateDeleteCartItem,
-  validateUpdateQuantity,
-} from './cart.validation';
 import { sendSuccess, sendError } from '../../utils/reponse';
 import asyncHandler from '../../utils/asyncHandler';
+import { StatusCodes } from 'http-status-codes';
 import {
-  ErrorStatus,
-  SuccessStatus,
-} from '../../middlewares/error_handling/error_codes';
-import { ServiceError } from '../../middlewares/error_handling/error-handling';
+  CartItemNotFound,
+  CartNotFound,
+  QuantityExceed,
+  RestaurantNotMatch,
+} from './cart.execption';
+import { successMessage } from '../../shared_infrastructure/error/errorMessages';
 
 const cartService = new CartService();
 
@@ -19,18 +17,28 @@ export class CartController {
   // ─── Add To Cart ────────────────────────────────────────────────────────────
 
   addToCart = asyncHandler(async (req: Request, res: Response) => {
-    const { data, errors } = validateAddToCartInput(req.body);
-
-    if (!data) {
-      sendError(res, 'Validation failed', 400, errors);
-      return;
-    }
+    const customerId = req.customerId!;
+    const { itemId, itemQuantity } = req.body;
     try {
-      const cart = await cartService.addToCart(data);
-      sendSuccess(res, 'Items added to cart successfully', 200, cart);
+      const cart = await cartService.addToCart({
+        customerId,
+        itemId,
+        itemQuantity,
+      });
+      sendSuccess(
+        res,
+        successMessage.CART_ITEM_ADDED.message,
+        StatusCodes.CREATED,
+        cart,
+      );
     } catch (err) {
-      if (err instanceof ServiceError) {
-        sendError(res, err.message, err.statusCode, err.errors);
+      if (
+        err instanceof CartNotFound ||
+        err instanceof CartItemNotFound ||
+        err instanceof RestaurantNotMatch ||
+        err instanceof QuantityExceed
+      ) {
+        sendError(res, err.statusCode, err.code, err.message);
       } else {
         throw err;
       }
@@ -40,22 +48,24 @@ export class CartController {
   // ─── View Cart ──────────────────────────────────────────────────────────────
 
   viewCart = asyncHandler(async (req: Request, res: Response) => {
-    const customerId = parseInt(req.params.customerId as string, 10);
-    if (isNaN(customerId)) {
-      sendError(res, 'customerId must be a valid integer', 402);
-      return;
-    }
+    const customerId = req.customerId!;
 
     try {
       const cart = await cartService.viewCart(customerId);
-      if (!cart) {
-        sendError(res, `Cart for user with id ${customerId} does not exist`, 404);
-        return;
-      }
-      sendSuccess(res, 'Cart retrieved successfully', 200, cart);
+      sendSuccess(
+        res,
+        successMessage.CART_VIEWED.message,
+        StatusCodes.OK,
+        cart,
+      );
     } catch (err) {
-      if (err instanceof ServiceError) {
-        sendError(res, err.message, err.statusCode, err.errors);
+      if (
+        err instanceof CartNotFound ||
+        err instanceof CartItemNotFound ||
+        err instanceof RestaurantNotMatch ||
+        err instanceof QuantityExceed
+      ) {
+        sendError(res, err.statusCode, err.code, err.message);
       } else {
         throw err;
       }
@@ -65,33 +75,28 @@ export class CartController {
   // ─── Update Item Quantity ────────────────────────────────────────────────────
 
   updateQuantity = asyncHandler(async (req: Request, res: Response) => {
-    const customerId= parseInt(req.params.customerId as string, 10);
-    if (isNaN(customerId)) {
-      sendError(
-        res,
-        'cartId must be a valid integer',
-        ErrorStatus.VALIDATION_ERROR,
-      );
-      return;
-    }
-    const { data, errors } = validateUpdateQuantity(req.body);
-
-    if (!data) {
-      sendError(res, 'Validation failed', ErrorStatus.VALIDATION_ERROR, errors);
-      return;
-    }
-
+    const customerId = req.customerId!;
+    const { itemId, itemQuantity } = req.body;
     try {
-      const updatedItem = await cartService.updateQuantity({ ...data, customerId});
+      const updatedItem = await cartService.updateQuantity({
+        customerId,
+        itemId,
+        itemQuantity,
+      });
       sendSuccess(
         res,
-        'Item quantity updated successfully',
-        SuccessStatus.UPDATED,
+        successMessage.CART_ITEM_QUANTITY_UPDATED.message,
+        StatusCodes.OK,
         updatedItem,
       );
     } catch (err) {
-      if (err instanceof ServiceError) {
-        sendError(res, err.message, err.statusCode, err.errors);
+      if (
+        err instanceof CartNotFound ||
+        err instanceof CartItemNotFound ||
+        err instanceof RestaurantNotMatch ||
+        err instanceof QuantityExceed
+      ) {
+        sendError(res, err.statusCode, err.code, err.message);
       } else {
         throw err;
       }
@@ -99,32 +104,27 @@ export class CartController {
   });
 
   deleteCartItem = asyncHandler(async (req: Request, res: Response) => {
-    const customerId = parseInt(req.params.customerId as string, 10);
-    if (isNaN(customerId)) {
-      sendError(
-        res,
-        'cartId must be a valid integer',
-        ErrorStatus.VALIDATION_ERROR,
-      );
-      return;
-    }
-    const { data, errors } = validateDeleteCartItem(req.body);
-
-    if (!data) {
-      sendError(res, 'Validation failed', ErrorStatus.VALIDATION_ERROR, errors);
-      return;
-    }
+    const customerId = req.customerId!;
+    const { itemId } = req.body;
     try {
-      const deletedItem = await cartService.deleteCartItem({ ...data, customerId});
+      const deletedItem = await cartService.deleteCartItem({
+        customerId,
+        itemId,
+      });
       sendSuccess(
         res,
-        'Item deleted successfully',
-        SuccessStatus.DELETED,
+        successMessage.CART_ITEM_DELETED.message,
+        StatusCodes.CREATED,
         deletedItem,
       );
     } catch (err) {
-      if (err instanceof ServiceError) {
-        sendError(res, err.message, err.statusCode, err.errors);
+      if (
+        err instanceof CartNotFound ||
+        err instanceof CartItemNotFound ||
+        err instanceof RestaurantNotMatch ||
+        err instanceof QuantityExceed
+      ) {
+        sendError(res, err.statusCode, err.code, err.message);
       } else {
         throw err;
       }
@@ -134,19 +134,71 @@ export class CartController {
   // ─── Clear Cart ──────────────────────────────────────────────────────────────
 
   clearCart = asyncHandler(async (req: Request, res: Response) => {
-    const customerId = parseInt(req.params.customerId as string, 10);
-
-    if (isNaN(customerId)) {
-      sendError(res, 'customerId must be a valid integer', 402);
-      return;
-    }
+    const customerId = req.customerId!;
 
     try {
-      await cartService.clearCart(customerId);
-      sendSuccess(res, 'Cart cleared successfully');
+      const cart = await cartService.clearCart(customerId);
+      sendSuccess(
+        res,
+        successMessage.CART_CLEARED.message,
+        StatusCodes.OK,
+        cart,
+      );
     } catch (err) {
-      if (err instanceof ServiceError) {
-        sendError(res, err.message, err.statusCode, err.errors);
+      if (
+        err instanceof CartNotFound ||
+        err instanceof CartItemNotFound ||
+        err instanceof RestaurantNotMatch ||
+        err instanceof QuantityExceed
+      ) {
+        sendError(res, err.statusCode, err.code, err.message);
+      } else {
+        throw err;
+      }
+    }
+  });
+
+  getTotalPrice = asyncHandler(async (req: Request, res: Response) => {
+    const customerId = req.customerId!;
+    try {
+      const totalPrice = await cartService.getTotalPrice(customerId);
+      sendSuccess(
+        res,
+        successMessage.TOTAL_PRICE_GET.message,
+        StatusCodes.OK,
+        totalPrice,
+      );
+    } catch (err) {
+      if (
+        err instanceof CartNotFound ||
+        err instanceof CartItemNotFound ||
+        err instanceof RestaurantNotMatch ||
+        err instanceof QuantityExceed
+      ) {
+        sendError(res, err.statusCode, err.code, err.message);
+      } else {
+        throw err;
+      }
+    }
+  });
+  getTotalQuantity = asyncHandler(async (req: Request, res: Response) => {
+    const customerId = req.customerId!;
+    try {
+      const totalQuantity = await cartService.getTotalQuantity(customerId);
+      sendSuccess(
+        res,
+        successMessage.TOTAL_QUANTITY_GET.message,
+        StatusCodes.OK,
+        totalQuantity,
+      );
+    } catch (err) {
+      if (
+        err instanceof CartNotFound ||
+        err instanceof CartItemNotFound ||
+        err instanceof RestaurantNotMatch ||
+        err instanceof QuantityExceed
+      ) {
+        sendError(res, err.statusCode, err.code, err.message);
       } else {
         throw err;
       }
