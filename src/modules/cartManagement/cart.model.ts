@@ -13,6 +13,7 @@ export interface DeleteCartItemInput {
 }
 
 export interface CartItemResponse {
+  customerId: number;
   itemId: number;
   itemQuantity: number;
   itemName: string;
@@ -26,7 +27,7 @@ export interface CartItem {
   itemId: number;
   itemQuantity: number;
   itemPrice: number;
-  ItemName: String;
+  itemName: String;
 }
 export interface ViewCartResponse {
   cartId: number;
