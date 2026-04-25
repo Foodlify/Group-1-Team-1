@@ -20,6 +20,10 @@ export const errorMessage = {
     code: 'MenuItemNotFoundException',
     message: 'MenuItem with the specified ID does not exist',
   },
+  ITEM_IDEMPOTENCY: {
+    code: 'CartItemIdempotencyException',
+    message: 'Item is already in the cart',
+  },
   RESTAURANT_NOT_MATCH: {
     code: 'RestaurantNotMatchException',
     message:

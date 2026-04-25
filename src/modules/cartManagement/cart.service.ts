@@ -1,4 +1,5 @@
 import { CartRepository } from './cart.repository';
+import { MenuRepository } from '../restaurantManagemet/menu.repository';
 import {
   CartItemInput,
   CartItemResponse,
@@ -9,6 +10,7 @@ import {
 } from './cart.model';
 
 import {
+  CartItemNotFound,
   CartNotFound,
   MenuItemNotFound,
   QuantityExceed,
@@ -19,80 +21,76 @@ import { errorMessage } from '../../shared_infrastructure/error/errorMessages';
 export class CartService {
   async getCustomerCart(customerId: number) {
     const cart = await CartRepository.findCartByCustomerId(customerId);
-    if (!cart) {
-      return null;
-    }
     return cart;
   }
 
   // ─── Add To Cart ───────────────────────────────────────────────────────────
-
   async addToCart(input: CartItemInput): Promise<CartItemResponse> {
     const { customerId, itemId, itemQuantity } = input;
 
-    // 2. Check if cart already exists for this user
+    // 1. Check if cart already exists for this user
     let cart = await this.getCustomerCart(customerId);
-
-    // 3. If cart exists and has items, enforce single-restaurant rule
-    if (cart && cart.cartItems.length > 0) {
-      const existingRestaurantId = cart.restaurantId;
-      // get menuItem from menuitem table
-      const menuItem;
-
-      if (existingRestaurantId !== menuItem.restaurantId) {
-        throw new RestaurantNotMatch(errorMessage.RESTAURANT_NOT_MATCH.message);
-      }
+    // 2. Check if item already exists in menuItems table
+    const menuItem = await MenuRepository.findMenuItemById(itemId);
+    if (!menuItem) {
+      throw new MenuItemNotFound(errorMessage.MENU_ITEM_NOT_FOUND.message);
     }
-
-    if (quantity > menuItem.quantity) {
-      throw new QuantityExceed(errorMessage.QUANTITY_EXCEED.message);
-    }
-
-    const cartItem = CartRepository.createCartItem();
-    // 4. Create empty cart if none exists
-    if (!cart) {
+    console.log(menuItem);
+    // 3. if cart not exist and menuitem exist create new cart and add item to it
+    if (!cart && menuItem) {
       cart = await CartRepository.createCartAndCartItems(
         customerId,
-        itemId,
         itemQuantity,
         menuItem,
       );
     }
 
+    // 4. If cart exists and has items, enforce single-restaurant rule
+    if (cart && cart.cartItems.length > 0) {
+      // avoid idempotency of entering same item again
+      const existingItem = await CartRepository.findCartItemByIdAndCartId(
+        cart.id,
+        menuItem.id,
+      );
+      if (existingItem) {
+        throw new Error('item already in the cart');
+      }
+      const existingRestaurantId = cart.restaurantId;
+
+      if (existingRestaurantId !== menuItem.restaurantId) {
+        throw new RestaurantNotMatch(errorMessage.RESTAURANT_NOT_MATCH.message);
+      }
+      // 5. check if menuItem stock is enough
+      if (itemQuantity > menuItem.stock) {
+        throw new QuantityExceed(errorMessage.QUANTITY_EXCEED.message);
+      }
+      const cartItem = await CartRepository.createCartItem(
+        cart.id,
+        itemQuantity,
+        menuItem,
+      );
+    }
     return {
       customerId,
       itemId,
       itemQuantity,
-      itemName: '',
+      itemName: menuItem.itemName,
     };
   }
 
   // ─── View Cart ─────────────────────────────────────────────────────────────
-
-  //   export interface CartItem {
-  //   itemId: number;
-  //   itemQuantity: number;
-  //   itemPrice: number;
-  //   ItemName: String;
-  // }
-  // export interface ViewCartResponse {
-  //   cartId: number;
-  //   cartItems: CartItem[];
-  // }
-
   async viewCart(customerId: number): Promise<ViewCartResponse> {
-    const cart = this.getCustomerCart(customerId);
+    const cart = await this.getCustomerCart(customerId);
     if (!cart) {
       throw new CartNotFound(errorMessage.CART_NOT_FOUND.message);
     }
-
     return {
       cartId: cart.id,
       cartItems: cart.cartItems.map((ci: any) => ({
-        ItemId: ci.id,
+        itemId: ci.id,
         itemQuantity: ci.quantity,
-        itemName: ci.menuItem.itemName,
-        itemPrice: ci.menuItem.price,
+        itemPrice: ci.price,
+        itemName: ci.name,
       })),
     };
   }
@@ -105,14 +103,16 @@ export class CartService {
     if (!cart) {
       throw new CartNotFound(errorMessage.CART_NOT_FOUND.message);
     }
-
     const cartItem = await CartRepository.findCartItemById(itemId);
+    if (!cartItem) {
+      throw new CartItemNotFound(errorMessage.CART_ITEM_NOT_FOUND.message);
+    }
 
-    const menuItem = await CartRepository.findMenuItemById(item.menuItemId);
+    const menuItem = await MenuRepository.findMenuItemById(cartItem.id);
     if (!menuItem) {
       throw new MenuItemNotFound(errorMessage.MENU_ITEM_NOT_FOUND.message);
     }
-    if (itemQuantity > menuItem.quantity) {
+    if (itemQuantity > menuItem.stock) {
       throw new QuantityExceed(errorMessage.QUANTITY_EXCEED.message);
     }
     const updateItem = await CartRepository.upsertCartItem(
@@ -120,9 +120,10 @@ export class CartService {
       itemQuantity,
     );
     return {
+      customerId,
       itemId,
       itemQuantity,
-      itemName: menuItem.name,
+      itemName: cartItem.name,
     };
   }
 
@@ -131,30 +132,33 @@ export class CartService {
     input: DeleteCartItemInput,
   ): Promise<DeleteCartItemResponse> {
     const { customerId, itemId } = input;
-    const cart = this.getCustomerCart(customerId);
+    const cart = await this.getCustomerCart(customerId);
     if (!cart) {
       throw new CartNotFound(errorMessage.CART_NOT_FOUND.message);
     }
+    const cartItem = await CartRepository.findCartItemById(itemId);
+    if (!cartItem) {
+      throw new CartItemNotFound(errorMessage.CART_ITEM_NOT_FOUND.message);
+    }
     const deletedItem = await CartRepository.deleteCartItem(cart.id, itemId);
     return {
-      itemId: deletedItem.id,
-      itemName: deletedItem.name,
+      itemId: cartItem.id,
+      itemName: cartItem.name,
     };
   }
 
   // ─── Clear Cart ────────────────────────────────────────────────────────────
 
   async clearCart(customerId: number): Promise<void> {
-    const cart = this.getCustomerCart(customerId);
+    const cart = await this.getCustomerCart(customerId);
     if (!cart) {
       throw new CartNotFound(errorMessage.CART_NOT_FOUND.message);
     }
-
     await CartRepository.clearCart(cart.id);
   }
 
   async getTotalPrice(customerId: number): Promise<number> {
-    const cart = this.getCustomerCart(customerId);
+    const cart = await this.getCustomerCart(customerId);
     if (!cart) {
       throw new CartNotFound(errorMessage.CART_NOT_FOUND.message);
     }
@@ -166,7 +170,7 @@ export class CartService {
     return totalPrice;
   }
   async getTotalQuantity(customerId: number): Promise<number> {
-    const cart = this.getCustomerCart(customerId);
+    const cart = await this.getCustomerCart(customerId);
     if (!cart) {
       throw new CartNotFound(errorMessage.CART_NOT_FOUND.message);
     }

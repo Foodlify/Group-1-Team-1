@@ -22,7 +22,7 @@ export const updateCartValidator = (
   res: Response,
   next: NextFunction,
 ) => {
-  const itemId = req.params.itemId;
+  const itemId = Number(req.params.itemId);
   const result = CartSchema.safeParse({ ...req.body, itemId });
   if (!result.success) {
     return res.status(StatusCodes.BAD_REQUEST).json({
@@ -38,8 +38,8 @@ export const deleteCartValidator = (
   res: Response,
   next: NextFunction,
 ) => {
-  const itemId = req.params.itemId;
-  const result = DeleteCartSchema.safeParse(itemId);
+  const itemId = Number(req.params.itemId);
+  const result = DeleteCartSchema.safeParse({itemId});
   if (!result.success) {
     return res.status(400).json({
       message: 'Validation failed',

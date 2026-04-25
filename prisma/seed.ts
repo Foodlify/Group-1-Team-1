@@ -1,4 +1,4 @@
-import prisma from "../lib/prisma";
+import prisma from '../lib/prisma';
 
 async function main() {
   console.log('🌱 Seeding database...');
@@ -35,11 +35,7 @@ async function main() {
   // CUSTOMERS  (1-to-1 with User)
   // ─────────────────────────────────────────
   await prisma.customer.createMany({
-    data: [
-      { userId: user1.id },
-      { userId: user2.id },
-      { userId: user3.id },
-    ],
+    data: [{ userId: user1.id }, { userId: user2.id }, { userId: user3.id }],
   });
 
   console.log('✅ Customers seeded');
@@ -84,22 +80,94 @@ async function main() {
   await prisma.menuItem.createMany({
     data: [
       // Burger Palace
-      { menuId: menu1.id, itemName: 'Classic Burger', price: 35, quantity: 100 },
-      { menuId: menu1.id, itemName: 'Cheese Burger', price: 40, quantity: 150 },
-      { menuId: menu1.id, itemName: 'Crispy Chicken', price: 38, quantity: 80 },
-      { menuId: menu1.id, itemName: 'French Fries', price: 15, quantity: 200 },
+      {
+        menuId: menu1.id,
+        restaurantId: restaurant1.id,
+        itemName: 'Classic Burger',
+        price: 35,
+        stock: 100,
+      },
+      {
+        menuId: menu1.id,
+        restaurantId: restaurant1.id,
+        itemName: 'Cheese Burger',
+        price: 40,
+        stock: 150,
+      },
+      {
+        menuId: menu1.id,
+        restaurantId: restaurant1.id,
+        itemName: 'Crispy Chicken',
+        price: 38,
+        stock: 80,
+      },
+      {
+        menuId: menu1.id,
+        restaurantId: restaurant1.id,
+        itemName: 'French Fries',
+        price: 15,
+        stock: 200,
+      },
 
       // Pizza Heaven
-      { menuId: menu2.id, itemName: 'Margherita Pizza', price: 55, quantity: 50 },
-      { menuId: menu2.id, itemName: 'Pepperoni Pizza', price: 65, quantity: 60 },
-      { menuId: menu2.id, itemName: 'BBQ Chicken Pizza', price: 70, quantity: 45 },
-      { menuId: menu2.id, itemName: 'Garlic Bread', price: 20, quantity: 120 },
+      {
+        menuId: menu2.id,
+        restaurantId: restaurant2.id,
+        itemName: 'Margherita Pizza',
+        price: 55,
+        stock: 50,
+      },
+      {
+        menuId: menu2.id,
+        restaurantId: restaurant2.id,
+        itemName: 'Pepperoni Pizza',
+        price: 65,
+        stock: 60,
+      },
+      {
+        menuId: menu2.id,
+        restaurantId: restaurant2.id,
+        itemName: 'BBQ Chicken Pizza',
+        price: 70,
+        stock: 45,
+      },
+      {
+        menuId: menu2.id,
+        restaurantId: restaurant2.id,
+        itemName: 'Garlic Bread',
+        price: 20,
+        stock: 120,
+      },
 
       // Sushi World
-      { menuId: menu3.id, itemName: 'Salmon Roll', price: 80, quantity: 30 },
-      { menuId: menu3.id, itemName: 'Tuna Nigiri (6 pcs)', price: 90, quantity: 25 },
-      { menuId: menu3.id, itemName: 'Veggie Roll', price: 60, quantity: 40 },
-      { menuId: menu3.id, itemName: 'Miso Soup', price: 25, quantity: 90 },
+      {
+        menuId: menu3.id,
+        restaurantId: restaurant3.id,
+        itemName: 'Salmon Roll',
+        price: 80,
+        stock: 30,
+      },
+      {
+        menuId: menu3.id,
+        restaurantId: restaurant3.id,
+        itemName: 'Tuna Nigiri (6 pcs)',
+        price: 90,
+        stock: 25,
+      },
+      {
+        menuId: menu3.id,
+        restaurantId: restaurant3.id,
+        itemName: 'Veggie Roll',
+        price: 60,
+        stock: 40,
+      },
+      {
+        menuId: menu3.id,
+        restaurantId: restaurant3.id,
+        itemName: 'Miso Soup',
+        price: 25,
+        stock: 90,
+      },
     ],
   });
 
