@@ -76,7 +76,8 @@ export class CartController {
 
   updateQuantity = asyncHandler(async (req: Request, res: Response) => {
     const customerId = req.customerId!;
-    const { itemId, itemQuantity } = req.body;
+    const itemId = Number(req.params.itemId);
+    const { itemQuantity } = req.body;
     try {
       const updatedItem = await cartService.updateQuantity({
         customerId,
@@ -105,7 +106,7 @@ export class CartController {
 
   deleteCartItem = asyncHandler(async (req: Request, res: Response) => {
     const customerId = req.customerId!;
-    const { itemId } = req.body;
+    const itemId = Number(req.params.itemId);
     try {
       const deletedItem = await cartService.deleteCartItem({
         customerId,

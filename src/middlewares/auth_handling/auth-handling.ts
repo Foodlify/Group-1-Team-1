@@ -13,12 +13,14 @@ export const authValidator = (
   res: Response,
   next: NextFunction,
 ) => {
-  const id = Number(req.headers.authorization);
+  const id = req.headers.authorization;
+  const customer_id = Number(id?.split(' ')[1]);
+
   if (!id) {
     return res.status(StatusCodes.UNAUTHORIZED).json({
       message: 'Token missing',
     });
   }
-  req.customerId = id;
+  req.customerId = customer_id;
   next();
 };

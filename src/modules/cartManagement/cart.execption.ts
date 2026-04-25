@@ -34,6 +34,15 @@ export class MenuItemNotFound extends Error {
     super(message);
   }
 }
+export class ItemIdempotency extends Error {
+  constructor(
+    public message: string,
+    public statusCode = StatusCodes.BAD_REQUEST,
+    public code = errorMessage.CART_ITEM_NOT_FOUND.code,
+  ) {
+    super(message);
+  }
+}
 export class RestaurantNotMatch extends Error {
   constructor(
     public message: string,

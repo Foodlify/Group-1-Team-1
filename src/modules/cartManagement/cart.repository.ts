@@ -10,11 +10,18 @@ export class CartRepository {
   static async findCartByCustomerId(customerId: number) {
     return prisma.cart.findUnique({
       where: { customerId },
+      include: { cartItems: true },
     });
   }
-  static async findCartItemById(itemId: number) {
+  static async findCartItemById(id: number) {
+    const item = prisma.cartItem.findUnique({
+      where: { id },
+    });
+    return item;
+  }
+  static async findCartItemByIdAndCartId(cartId: number, itemId: number) {
     return prisma.cartItem.findUnique({
-      where: { id: itemId },
+      where: { id: itemId, cartId: cartId },
     });
   }
 
@@ -30,8 +37,9 @@ export class CartRepository {
   static async createCartAndCartItems(
     customerId: number,
     quantity: number,
-    menuItem: menuItemType,
+    menuItem: any,
   ) {
+    console.log('from cart repo');
     const cartWithItems = await prisma.cart.create({
       data: {
         customerId,
@@ -42,7 +50,7 @@ export class CartRepository {
               menuItemId: menuItem.id,
               quantity,
               price: menuItem.price,
-              name: menuItem.name,
+              name: menuItem.itemName,
             },
           ],
         },
@@ -55,18 +63,14 @@ export class CartRepository {
   }
 
   /** Add item to existing cart */
-  static async createCartItem(
-    cartId: number,
-    quantity: number,
-    menuItem: menuItemType,
-  ) {
+  static async createCartItem(cartId: number, quantity: number, menuItem: any) {
     const item = await prisma.cartItem.create({
       data: {
         cartId,
         quantity,
         menuItemId: menuItem.id,
         price: menuItem.price,
-        name: menuItem.name,
+        name: menuItem.itemName,
       },
     });
     return item;
