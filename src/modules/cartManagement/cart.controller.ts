@@ -60,10 +60,7 @@ export class CartController {
       );
     } catch (err) {
       if (
-        err instanceof CartNotFound ||
-        err instanceof CartItemNotFound ||
-        err instanceof RestaurantNotMatch ||
-        err instanceof QuantityExceed
+        err instanceof CartNotFound
       ) {
         sendError(res, err.statusCode, err.code, err.message);
       } else {
@@ -94,7 +91,6 @@ export class CartController {
       if (
         err instanceof CartNotFound ||
         err instanceof CartItemNotFound ||
-        err instanceof RestaurantNotMatch ||
         err instanceof QuantityExceed
       ) {
         sendError(res, err.statusCode, err.code, err.message);
@@ -121,9 +117,7 @@ export class CartController {
     } catch (err) {
       if (
         err instanceof CartNotFound ||
-        err instanceof CartItemNotFound ||
-        err instanceof RestaurantNotMatch ||
-        err instanceof QuantityExceed
+        err instanceof CartItemNotFound
       ) {
         sendError(res, err.statusCode, err.code, err.message);
       } else {
@@ -147,10 +141,7 @@ export class CartController {
       );
     } catch (err) {
       if (
-        err instanceof CartNotFound ||
-        err instanceof CartItemNotFound ||
-        err instanceof RestaurantNotMatch ||
-        err instanceof QuantityExceed
+        err instanceof CartNotFound 
       ) {
         sendError(res, err.statusCode, err.code, err.message);
       } else {
@@ -159,10 +150,10 @@ export class CartController {
     }
   });
 
-  getTotalPrice = asyncHandler(async (req: Request, res: Response) => {
+  getTotalPriceAndQuantity = asyncHandler(async (req: Request, res: Response) => {
     const customerId = req.customerId!;
     try {
-      const totalPrice = await cartService.getTotalPrice(customerId);
+      const totalPrice = await cartService.getTotalPriceAndQuantity(customerId);
       sendSuccess(
         res,
         successMessage.TOTAL_PRICE_GET.message,
@@ -171,10 +162,7 @@ export class CartController {
       );
     } catch (err) {
       if (
-        err instanceof CartNotFound ||
-        err instanceof CartItemNotFound ||
-        err instanceof RestaurantNotMatch ||
-        err instanceof QuantityExceed
+        err instanceof CartNotFound 
       ) {
         sendError(res, err.statusCode, err.code, err.message);
       } else {
@@ -182,27 +170,25 @@ export class CartController {
       }
     }
   });
-  getTotalQuantity = asyncHandler(async (req: Request, res: Response) => {
-    const customerId = req.customerId!;
-    try {
-      const totalQuantity = await cartService.getTotalQuantity(customerId);
-      sendSuccess(
-        res,
-        successMessage.TOTAL_QUANTITY_GET.message,
-        StatusCodes.OK,
-        totalQuantity,
-      );
-    } catch (err) {
-      if (
-        err instanceof CartNotFound ||
-        err instanceof CartItemNotFound ||
-        err instanceof RestaurantNotMatch ||
-        err instanceof QuantityExceed
-      ) {
-        sendError(res, err.statusCode, err.code, err.message);
-      } else {
-        throw err;
-      }
-    }
-  });
+  
+
+  //   const customerId = req.customerId!;
+  //   try {
+  //     const totalQuantity = await cartService.getTotalQuantity(customerId);
+  //     sendSuccess(
+  //       res,
+  //       successMessage.TOTAL_QUANTITY_GET.message,
+  //       StatusCodes.OK,
+  //       totalQuantity,
+  //     );
+  //   } catch (err) {
+  //     if (
+  //       err instanceof CartNotFound
+  //     ) {
+  //       sendError(res, err.statusCode, err.code, err.message);
+  //     } else {
+  //       throw err;
+  //     }
+  //   }
+  // });
 }

@@ -18,24 +18,35 @@ import {
   RestaurantNotMatch,
 } from './cart.execption';
 import { errorMessage } from '../../shared_infrastructure/error/errorMessages';
+import { MenuService } from '../restaurantManagemet/menu.service';
 
 export class CartService {
   async getCustomerCart(customerId: number) {
     const cart = await CartRepository.findCartByCustomerId(customerId);
     return cart;
   }
+  async checkQuantity(itemId: number, itemQuantity: number) {
+    const menuItem = await MenuService.getMenuItem(itemId);
+    // 2. Check if item already exists in menuItems table
+    if (!menuItem) {
+      throw new MenuItemNotFound(errorMessage.MENU_ITEM_NOT_FOUND.message);
+    }
+
+    // 5. check if menuItem stock is enough
+    if (itemQuantity > menuItem.stock) {
+      throw new QuantityExceed(errorMessage.QUANTITY_EXCEED.message);
+    }
+    return menuItem;
+  }
 
   // ─── Add To Cart ───────────────────────────────────────────────────────────
   async addToCart(input: CartItemInput): Promise<CartItemResponse> {
+    // add transaction
     const { customerId, itemId, itemQuantity } = input;
 
     // 1. Check if cart already exists for this user
     let cart = await this.getCustomerCart(customerId);
-    // 2. Check if item already exists in menuItems table
-    const menuItem = await MenuRepository.findMenuItemById(itemId);
-    if (!menuItem) {
-      throw new MenuItemNotFound(errorMessage.MENU_ITEM_NOT_FOUND.message);
-    }
+    const menuItem = await this.checkQuantity(itemId, itemQuantity);
     // 3. if cart not exist and menuitem exist create new cart and add item to it
     if (!cart || (cart === null && menuItem)) {
       cart = await CartRepository.createCartAndCartItems(
@@ -54,15 +65,13 @@ export class CartService {
       if (existingItem) {
         throw new ItemIdempotency(errorMessage.ITEM_IDEMPOTENCY.message);
       }
+      // enforce one restaurant rule
       const existingRestaurantId = cart.restaurantId;
 
       if (existingRestaurantId !== menuItem.restaurantId) {
         throw new RestaurantNotMatch(errorMessage.RESTAURANT_NOT_MATCH.message);
       }
-      // 5. check if menuItem stock is enough
-      if (itemQuantity > menuItem.stock) {
-        throw new QuantityExceed(errorMessage.QUANTITY_EXCEED.message);
-      }
+
       const cartItem = await CartRepository.createCartItem(
         cart.id,
         itemQuantity,
@@ -98,6 +107,7 @@ export class CartService {
   // ─── Update Item Quantity ──────────────────────────────────────────────────
 
   async updateQuantity(input: CartItemInput): Promise<CartItemResponse> {
+    // add transaction
     const { customerId, itemId, itemQuantity } = input;
     const cart = this.getCustomerCart(customerId);
     if (!cart || cart === null) {
@@ -108,22 +118,13 @@ export class CartService {
       throw new CartItemNotFound(errorMessage.CART_ITEM_NOT_FOUND.message);
     }
 
-    const menuItem = await MenuRepository.findMenuItemById(cartItem.id);
-    if (!menuItem) {
-      throw new MenuItemNotFound(errorMessage.MENU_ITEM_NOT_FOUND.message);
-    }
-    if (itemQuantity > menuItem.stock) {
-      throw new QuantityExceed(errorMessage.QUANTITY_EXCEED.message);
-    }
-    const updateItem = await CartRepository.upsertCartItem(
-      itemId,
-      itemQuantity,
-    );
+    const menuItem = await this.checkQuantity(itemId, itemQuantity);
+    await CartRepository.upsertCartItem(itemId, itemQuantity);
     return {
       customerId,
       itemId,
       itemQuantity,
-      itemName: cartItem.name,
+      itemName: menuItem.name,
     };
   }
 
@@ -131,6 +132,7 @@ export class CartService {
   async deleteCartItem(
     input: DeleteCartItemInput,
   ): Promise<DeleteCartItemResponse> {
+    // add transaction
     const { customerId, itemId } = input;
     const cart = await this.getCustomerCart(customerId);
     if (!cart || cart === null) {
@@ -143,7 +145,7 @@ export class CartService {
     if (cart.cartItems.length === 1) {
       await CartRepository.clearCart(cart.id);
     }
-    const deletedItem = await CartRepository.deleteCartItem(cart.id, itemId);
+    await CartRepository.deleteCartItem(cart.id, itemId);
     return {
       itemId: cartItem.id,
       itemName: cartItem.name,
@@ -160,27 +162,22 @@ export class CartService {
     await CartRepository.clearCart(cart.id);
   }
 
-  async getTotalPrice(customerId: number): Promise<number> {
+  async getTotalPriceAndQuantity(customerId: number): Promise<any> {
     const cart = await this.getCustomerCart(customerId);
     if (!cart || cart === null) {
       throw new CartNotFound(errorMessage.CART_NOT_FOUND.message);
     }
+    // make one loop 
     const totalPrice = cart.cartItems.reduce(
       (sum: number, item: CartItems) =>
         sum + (item.quantity ?? 0) * (item.price ?? 0),
       0,
     );
-    return totalPrice;
-  }
-  async getTotalQuantity(customerId: number): Promise<number> {
-    const cart = await this.getCustomerCart(customerId);
-    if (!cart || cart === null) {
-      throw new CartNotFound(errorMessage.CART_NOT_FOUND.message);
-    }
     const totalQuantity = cart.cartItems.reduce(
       (sum: number, item: CartItems) => sum + (item.quantity ?? 0),
       0,
     );
-    return totalQuantity;
+
+    return { totalPrice, totalQuantity };
   }
 }

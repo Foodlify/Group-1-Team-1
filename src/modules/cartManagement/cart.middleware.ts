@@ -48,3 +48,15 @@ export const deleteCartValidator = (
   }
   next();
 };
+
+
+// export const getCustomerCart=(
+//     req: Request,
+//   res: Response,
+//   next: NextFunction,
+// )
+
+//   async getCustomerCart(customerId: number) {
+//     const cart = await CartRepository.findCartByCustomerId(customerId);
+//     return cart;
+//   }

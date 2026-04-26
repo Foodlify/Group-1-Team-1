@@ -36,8 +36,7 @@ router.delete(
 );
 
 // GET    /api/v1/cart — get total price of items in cart
-router.get('/price', authValidator, cartController.getTotalPrice);
-// GET    /api/v1/cart — get total amount  of items in cart
-router.get('/quantity', authValidator, cartController.getTotalQuantity);
+router.get('/price-quantity', authValidator, cartController.getTotalPriceAndQuantity);
+
 
 export { router as cartRouter };
