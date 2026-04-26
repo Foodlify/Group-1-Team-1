@@ -7,41 +7,54 @@
   },
   "servers": [
     {
-      "url": "http://localhost:4000",
+      "url": "http://localhost:3000",
       "description": "Local server"
     }
   ],
   "tags": [
     {
       "name": "Cart",
-      "description": "Operations related to cart"
+      "description": "Operations related to cart management"
     }
   ],
   "paths": {
     "/api/v1/cart/add": {
       "post": {
         "tags": ["Cart"],
-        "summary": "create cart and add items to it",
-        "security": [
-          {
-            "BearerAuth": [],
-            "CookieAuth": []
-          }
-        ],
+        "summary": "Create a cart and add items to it",
+        "description": "Validates the user, creates a new cart if it doesn't exist, and adds items ensuring they all belong to the specified restaurant.",
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "type": "object",
+                "required": ["userId", "restaurantId", "items"],
                 "properties": {
-                  "customerId": {
-                    "type": "string",
-                    "example": "48"
+                  "userId": {
+                    "type": "integer",
+                    "example": 1
                   },
-                  "itemId": {
-                    "type": "string",
-                    "example": "item_58"
+                  "restaurantId": {
+                    "type": "integer",
+                    "example": 2
+                  },
+                  "items": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "required": ["itemId", "quantity"],
+                      "properties": {
+                        "itemId": {
+                          "type": "integer",
+                          "example": 4
+                        },
+                        "quantity": {
+                          "type": "integer",
+                          "example": 2
+                        }
+                      }
+                    }
                   }
                 }
               }
@@ -50,76 +63,106 @@
         },
         "responses": {
           "200": {
-            "description": "Item added to cart successfully"
-          },
-          "404": {
-            "description": "Customer Not Found Or Item Not found"
+            "description": "Items added to cart successfully"
           },
           "400": {
-            "description": "Bad Request"
+            "description": "Client error (e.g., trying to add items from a different restaurant to an existing cart)"
+          },
+          "402": {
+            "description": "Validation error (missing or invalid structure)"
+          },
+          "404": {
+            "description": "User or Menu Item not found"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        }
+      }
+    },
+    "/api/v1/cart/customer/{customerId}": {
+      "get": {
+        "tags": ["Cart"],
+        "summary": "View entire cart by customer",
+        "parameters": [
+          {
+            "name": "customerId",
+            "in": "path",
+            "required": true,
+            "description": "Customer ID",
+            "schema": {
+              "type": "integer",
+              "example": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Cart retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CartResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Client Error"
+          },
+          "402": {
+            "description": "Validation Error (invalid customerId format)"
+          },
+          "404": {
+            "description": "Cart not found"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        }
+      }
+    },
+    "/api/v1/cart/clear/{customerId}": {
+      "delete": {
+        "tags": ["Cart"],
+        "summary": "Clear entire cart",
+        "description": "Removes all items from the cart and deletes the cart itself by customer ID.",
+        "parameters": [
+          {
+            "name": "customerId",
+            "in": "path",
+            "required": true,
+            "description": "Customer ID",
+            "schema": {
+              "type": "integer",
+              "example": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Cart cleared successfully"
+          },
+          "400": {
+            "description": "Client Error"
+          },
+          "402": {
+            "description": "Validation Error (invalid customerId format)"
+          },
+          "404": {
+            "description": "Cart not found"
+          },
+          "500": {
+            "description": "Internal Server Error"
           }
         }
       }
     },
     "/api/v1/cart/modify/{cartId}": {
-      "delete": {
-        "tags": ["Cart"],
-        "summary": "remove item from cart",
-        "security": [
-          {
-            "BearerAuth": [],
-            "CookieAuth": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "cartId",
-            "in": "path",
-            "required": true,
-            "description": "Cart ID",
-            "schema": {
-              "type": "string",
-              "example": "cart_10"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "itemId": {
-                    "type": "string",
-                    "example": "item_58"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Item removed successfully"
-          },
-          "404": {
-            "description": "Cart Not Found Or Item Not found"
-          },
-          "400": {
-            "description": "Bad Request"
-          }
-        }
-      },
       "put": {
         "tags": ["Cart"],
-        "summary": "increment /decrement item quantity in cart",
-        "security": [
-          {
-            "BearerAuth": [],
-            "CookieAuth": []
-          }
-        ],
+        "summary": "Update item quantity in cart",
+        "description": "Updates or sets the quantity of a specific menu item already inside the cart.",
         "parameters": [
           {
             "name": "cartId",
@@ -127,8 +170,8 @@
             "required": true,
             "description": "Cart ID",
             "schema": {
-              "type": "string",
-              "example": "cart_10"
+              "type": "integer",
+              "example": 1
             }
           }
         ],
@@ -138,14 +181,15 @@
             "application/json": {
               "schema": {
                 "type": "object",
+                "required": ["menuItemId", "quantity"],
                 "properties": {
-                  "itemId": {
-                    "type": "string",
-                    "example": "item_58"
+                  "menuItemId": {
+                    "type": "integer",
+                    "example": 4
                   },
-                  "event_type": {
-                    "type": "string",
-                    "enum": ["increment", "decrement"]
+                  "quantity": {
+                    "type": "integer",
+                    "example": 3
                   }
                 }
               }
@@ -154,137 +198,86 @@
         },
         "responses": {
           "200": {
-            "description": "Item updated successfully"
-          },
-          "404": {
-            "description": "Cart Not Found Or Item Not found"
+            "description": "Item quantity updated successfully"
           },
           "400": {
-            "description": "Bad Request"
-          }
-        }
-      }
-    },
-    "/api/v1/cart/{cartId}": {
-      "get": {
-        "tags": ["Cart"],
-        "summary": "view entire cart",
-        "security": [
-          {
-            "BearerAuth": [],
-            "CookieAuth": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "cartId",
-            "in": "path",
-            "required": true,
-            "description": "Cart ID",
-            "schema": {
-              "type": "string",
-              "example": "cart_10"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "cart items displayed successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/cartItems"
-                }
-              }
-            }
+            "description": "Client Error"
+          },
+          "402": {
+            "description": "Validation Error (invalid positive quantity or missing body)"
           },
           "404": {
-            "description": "Cart Not Found Or Item Not found"
+            "description": "Cart or MenuItem not found in cart"
           },
-          "400": {
-            "description": "Bad Request"
-          }
-        }
-      },
-      "delete": {
-        "tags": ["Cart"],
-        "summary": "delete entire cart",
-        "security": [
-          {
-            "BearerAuth": [],
-            "CookieAuth": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "cartId",
-            "in": "path",
-            "required": true,
-            "description": "Cart ID",
-            "schema": {
-              "type": "string",
-              "example": "cart_10"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "entire cart removed successfully"
-          },
-          "404": {
-            "description": "Cart Not Found"
-          },
-          "400": {
-            "description": "Bad Request"
+          "500": {
+            "description": "Internal Server Error"
           }
         }
       }
     }
   },
-
   "components": {
     "schemas": {
-      "cartItems": {
-        "type": "array",
-        "items": {
-          "type": "object",
-          "properties": {
-            "name": {
-              "type": "string",
-              "example": "Burger"
-            },
-            "description": {
-              "type": "string",
-              "example": "Beef burger with spicy sauce"
-            },
-            "image": {
-              "type": "string",
-              "example": "url"
-            },
-            "price": {
-              "type": "integer",
-              "example": 25
-            },
-            "quantity": {
-              "type": "integer",
-              "example": 2
+      "CartItem": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "example": 10
+          },
+          "cartId": {
+            "type": "integer",
+            "example": 1
+          },
+          "menuItemId": {
+            "type": "integer",
+            "example": 4
+          },
+          "quantity": {
+            "type": "integer",
+            "example": 2
+          },
+          "itemName": {
+            "type": "string",
+            "example": "Classic Burger"
+          },
+          "price": {
+            "type": "integer",
+            "example": 35
+          }
+        }
+      },
+      "CartResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "example": "success"
+          },
+          "message": {
+            "type": "string",
+            "example": "Cart retrieved successfully"
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "cartId": {
+                "type": "integer",
+                "example": 1
+              },
+              "userId": {
+                "type": "integer",
+                "example": 1
+              },
+              "items": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/CartItem"
+                }
+              }
             }
           }
         }
-      }
-    },
-    "securitySchemes": {
-      "BearerAuth": {
-        "description": "For accessToken, must add  headers to http request body with authorization: token ",
-        "type": "http",
-        "scheme": "bearer",
-        "bearerFormat": "JWT"
-      },
-      "CookieAuth": {
-        "description": "For RefreshToken, must add { withCredentials: true } to http request",
-        "type": "apiKey",
-        "in": "cookie",
-        "name": "token"
       }
     }
   }
