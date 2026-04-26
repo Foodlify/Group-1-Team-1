@@ -97,6 +97,7 @@ model CartItem {
   quantity   Int
   price      Int
   name       String
+  @@unique([cartId, menuItemId])
   cart       Cart     @relation(fields: [cartId], references: [id])
   menuItem   MenuItem @relation(fields: [menuItemId], references: [id])
 }
