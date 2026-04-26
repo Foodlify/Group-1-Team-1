@@ -21,7 +21,12 @@ export class CartRepository {
   }
   static async findCartItemByIdAndCartId(cartId: number, itemId: number) {
     return prisma.cartItem.findUnique({
-      where: { id: itemId, cartId: cartId },
+      where: {
+        cartId_menuItemId: {
+          cartId,
+          menuItemId: itemId,
+        },
+      },
     });
   }
 
@@ -39,7 +44,6 @@ export class CartRepository {
     quantity: number,
     menuItem: any,
   ) {
-    console.log('from cart repo');
     const cartWithItems = await prisma.cart.create({
       data: {
         customerId,
