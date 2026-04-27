@@ -1,4 +1,5 @@
 import prisma from '../lib/prisma';
+import { OrderStatus, TransactionStatus } from '@prisma/client';
 
 async function main() {
   console.log('🌱 Seeding database...');
@@ -8,11 +9,14 @@ async function main() {
   // ─────────────────────────────────────────
   await prisma.cartItem.deleteMany();
   await prisma.cart.deleteMany();
+  await prisma.address.deleteMany();
   await prisma.customer.deleteMany();
   await prisma.menuItem.deleteMany();
   await prisma.menu.deleteMany();
   await prisma.restaurant.deleteMany();
   await prisma.user.deleteMany();
+  await prisma.orderStatusRef.deleteMany();
+  await prisma.transactionStatusRef.deleteMany();
 
   // ─────────────────────────────────────────
   // USERS
@@ -28,6 +32,9 @@ async function main() {
   const user3 = await prisma.user.create({
     data: { name: 'Sara Ahmed', email: 'sara@foodlify.com' },
   });
+  const user4 = await prisma.user.create({
+    data: { name: 'John Baker', email: 'john@foodlify.com' },
+  });
 
   console.log('✅ Users seeded');
 
@@ -35,7 +42,12 @@ async function main() {
   // CUSTOMERS  (1-to-1 with User)
   // ─────────────────────────────────────────
   await prisma.customer.createMany({
-    data: [{ userId: user1.id }, { userId: user2.id }, { userId: user3.id }],
+    data: [
+      { userId: user1.id },
+      { userId: user2.id },
+      { userId: user3.id },
+      { userId: user4.id },
+    ],
   });
 
   console.log('✅ Customers seeded');
@@ -172,6 +184,76 @@ async function main() {
   });
 
   console.log('✅ Menu items seeded');
+  // ───────────────────────────────────────
+  // ORDER Status
+  // ───────────────────────────────────────
+  await prisma.orderStatusRef.createMany({
+    data: [
+      { status: OrderStatus.PENDING },
+      { status: OrderStatus.CONFIRMED },
+      { status: OrderStatus.PROCESSED },
+      { status: OrderStatus.READY_TO_PICKUP },
+      { status: OrderStatus.OUT_FOR_DELIVERY },
+      { status: OrderStatus.DELIVERED },
+      { status: OrderStatus.CANCELLED },
+      { status: OrderStatus.REFUNDED },
+    ],
+  });
+  console.log('✅ Order status seeded');
+  // ───────────────────────────────────────
+  // Transaction Status
+  // ───────────────────────────────────────
+  await prisma.transactionStatusRef.createMany({
+    data: [
+      { status: TransactionStatus.PENDING },
+      { status: TransactionStatus.SUCCEEDED },
+      { status: TransactionStatus.FAILED },
+      { status: TransactionStatus.REFUNDED },
+    ],
+  });
+  console.log('✅ Transaction status seeded');
+
+  // ───────────────────────────────────────
+  // Address
+  // ───────────────────────────────────────
+  await prisma.address.createMany({
+    data: [
+      {
+        customerId: 1,
+        street: '90 Street, New Cairo',
+        city: 'Cairo',
+        state: 'Cairo',
+        country: 'Egypt',
+        postalCode: '11835',
+      },
+      {
+        customerId: 2,
+        street: 'Nasr City, Abbas El Akkad Street',
+        city: 'Cairo',
+        state: 'Cairo',
+        country: 'Egypt',
+        postalCode: '11511',
+      },
+      {
+        customerId: 3,
+        street: 'Dokki, Tahrir Street',
+        city: 'Cairo',
+        state: 'Giza (Greater Cairo)',
+        country: 'Egypt',
+        postalCode: '12611',
+      },
+      {
+        customerId: 4,
+        street: 'Maadi, Road 9',
+        city: 'Cairo',
+        state: 'Cairo',
+        country: 'Egypt',
+        postalCode: '11728',
+      },
+    ],
+    skipDuplicates: true,
+  });
+  console.log('✅ Address seeded');
   console.log('🎉 Seeding complete!');
 }
 

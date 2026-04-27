@@ -27,10 +27,11 @@ model User {
 // ─────────────────────────────────────────
 
 model Customer {
-  id     Int   @id @default(autoincrement())
-  userId Int   @unique @map("user_id")
-  user   User  @relation(fields: [userId], references: [id])
-  cart   Cart?
+  id      Int      @id @default(autoincrement())
+  userId  Int      @unique @map("user_id")
+  user    User     @relation(fields: [userId], references: [id])
+  address Address?
+  cart    Cart?
 }
 
 // ─────────────────────────────────────────
@@ -67,7 +68,7 @@ model MenuItem {
   restaurantId Int        @map("restaurantId")
   itemName     String     @map("item_name")
   price        Int
-  stock     Int        @default(0)
+  stock        Int        @default(0)
   menu         Menu       @relation(fields: [menuId], references: [id])
   restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
   cartItems    CartItem[]
@@ -97,7 +98,57 @@ model CartItem {
   quantity   Int
   price      Int
   name       String
-  @@unique([cartId, menuItemId])
   cart       Cart     @relation(fields: [cartId], references: [id])
   menuItem   MenuItem @relation(fields: [menuItemId], references: [id])
+
+  @@unique([cartId, menuItemId])
+}
+
+// ─────────────────────────────────────────
+// ORDER STATUS
+// ─────────────────────────────────────────
+enum OrderStatus {
+  PENDING          @map("pending")
+  CONFIRMED        @map("confirmed")
+  PROCESSED        @map("processed")
+  READY_TO_PICKUP  @map("ready_to_pickup")
+  OUT_FOR_DELIVERY @map("out_for_delivery")
+  DELIVERED        @map("delivered")
+  CANCELLED        @map("cancelled")
+  REFUNDED         @map("refunded")
+}
+
+model OrderStatusRef{
+  id     Int         @id @default(autoincrement())
+  status OrderStatus @default(PENDING)
+}
+
+// ─────────────────────────────────────────
+// TRANSACTION STATUS
+// ─────────────────────────────────────────
+enum TransactionStatus {
+  PENDING   @map("pending")
+  SUCCEEDED @map("succeeded")
+  FAILED    @map("failed")
+  REFUNDED  @map("refunded")
+}
+
+model TransactionStatusRef {
+  id     Int               @id @default(autoincrement())
+  status TransactionStatus @default(PENDING)
+}
+
+// ─────────────────────────────────────────
+// Address
+// ─────────────────────────────────────────
+
+model Address {
+  id         Int      @id @default(autoincrement())
+  customerId Int      @unique
+  street     String
+  city       String
+  state      String?
+  country    String
+  postalCode String?
+  customer   Customer @relation(fields: [customerId], references: [id])
 }
