@@ -118,7 +118,7 @@ enum OrderStatus {
   REFUNDED         @map("refunded")
 }
 
-model OrderStatusRef{
+model OrderStatusRef {
   id     Int         @id @default(autoincrement())
   status OrderStatus @default(PENDING)
 }
@@ -136,6 +136,22 @@ enum TransactionStatus {
 model TransactionStatusRef {
   id     Int               @id @default(autoincrement())
   status TransactionStatus @default(PENDING)
+}
+
+// ─────────────────────────────────────────
+// TRANSACTION STATUS
+// ─────────────────────────────────────────
+enum PaymentType {
+  CASH   @map("cash")
+  CARD   @map("card")
+  WALLET @map("wallet")
+  STRIPE @map("stripe")
+  PAYPAL @map("paypal")
+}
+
+model PaymentTypeRef {
+  id   Int         @id @default(autoincrement())
+  name PaymentType @default(CARD)
 }
 
 // ─────────────────────────────────────────

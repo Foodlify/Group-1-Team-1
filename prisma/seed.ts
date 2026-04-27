@@ -1,5 +1,5 @@
 import prisma from '../lib/prisma';
-import { OrderStatus, TransactionStatus } from '@prisma/client';
+import { OrderStatus, TransactionStatus, PaymentType } from '@prisma/client';
 
 async function main() {
   console.log('🌱 Seeding database...');
@@ -17,6 +17,7 @@ async function main() {
   await prisma.user.deleteMany();
   await prisma.orderStatusRef.deleteMany();
   await prisma.transactionStatusRef.deleteMany();
+  await prisma.paymentTypeRef.deleteMany();
 
   // ─────────────────────────────────────────
   // USERS
@@ -212,6 +213,19 @@ async function main() {
     ],
   });
   console.log('✅ Transaction status seeded');
+  // ───────────────────────────────────────
+  // Transaction Status
+  // ───────────────────────────────────────
+  await prisma.paymentTypeRef.createMany({
+    data: [
+      { name: PaymentType.CARD },
+      { name: PaymentType.CASH },
+      { name: PaymentType.WALLET },
+      { name: PaymentType.STRIPE },
+      { name: PaymentType.PAYPAL },
+    ],
+  });
+  console.log('✅ Payment type seeded');
 
   // ───────────────────────────────────────
   // Address
