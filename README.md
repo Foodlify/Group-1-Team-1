@@ -1,1 +1,1 @@
-### code strategy branch for writing psudocode of all service's files
+### code strategy branch for writing pseudocode of all service's files
