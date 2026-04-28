@@ -247,3 +247,18 @@ model OrderSummary {
 
   order Order @relation(fields: [orderId], references: [id])
 }
+//______________________________________
+// Payment 
+//______________________________________
+model PaymentConfiguration {
+payIntegrationId  Int @id @default(autoincrement())
+configDetails     Json @default("{}")
+}
+
+model Transaction {
+  orderId            Int @map("order_id")
+  transactionNumber  Int @unique
+  amount             Int
+  statusId           TransactionStatus 
+  payIntegrationId   Int @map("PaymentConfiguration")
+}
