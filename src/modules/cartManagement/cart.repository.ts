@@ -1,4 +1,17 @@
+import { Prisma } from '@prisma/client/extension';
 import prisma from '../../../lib/prisma';
+import { errorMessage } from '../../shared_infrastructure/error/errorMessages';
+import {
+  CartItemNotFound,
+  CartNotFound,
+  QuantityExceed,
+} from './cart.execption';
+import {
+  CartItemInput,
+  CartItemResponse,
+  DeleteCartItemInput,
+  DeleteCartItemResponse,
+} from './cart.model';
 
 type menuItemType = {
   id: number;
@@ -108,5 +121,96 @@ export class CartRepository {
   /** Get All carts  */
   static async getCarts() {
     return prisma.cart.findMany();
+  }
+  static async updateQuantityTransaction(
+    input: CartItemInput,
+  ): Promise<CartItemResponse> {
+    const { customerId, itemId, itemQuantity } = input;
+
+    return prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+      // 1. Get cart
+      const cart = await tx.cart.findFirst({
+        where: { customerId },
+      });
+
+      if (!cart) {
+        throw new CartNotFound(errorMessage.CART_NOT_FOUND.message);
+      }
+
+      // 2. Get cart item
+      const cartItem = await tx.cartItem.findUnique({
+        where: { id: itemId },
+      });
+
+      if (!cartItem) {
+        throw new CartItemNotFound(errorMessage.CART_ITEM_NOT_FOUND.message);
+      }
+
+      // 3. Get menu item (stock check)
+      const menuItem = await tx.menuItem.findUnique({
+        where: { id: cartItem.menuItemId },
+      });
+
+      if (!menuItem || menuItem.quantity < itemQuantity) {
+        throw new QuantityExceed(errorMessage.QUANTITY_EXCEED.message);
+      }
+
+      // 4. Update cart item quantity
+      const updatedItem = await tx.cartItem.update({
+        where: { id: cartItem.id },
+        data: {
+          quantity: itemQuantity,
+        },
+      });
+
+      return {
+        customerId,
+        itemId: updatedItem.id,
+        itemQuantity: updatedItem.quantity,
+        itemName: menuItem.name,
+      };
+    });
+  }
+
+  static async deleteCartItemTransaction(
+    input: DeleteCartItemInput,
+  ): Promise<DeleteCartItemResponse> {
+    const { customerId, itemId } = input;
+
+    return prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+      // 1. Get cart with items
+      const cart = await tx.cart.findFirst({
+        where: { customerId },
+        include: { cartItems: true },
+      });
+
+      if (!cart) {
+        throw new CartNotFound(errorMessage.CART_NOT_FOUND.message);
+      }
+
+      // 2. Find the cart item (scoped to this cart)
+      const cartItem = cart.cartItems.find((ci: any) => ci.id === itemId);
+
+      if (!cartItem) {
+        throw new CartItemNotFound(errorMessage.CART_ITEM_NOT_FOUND.message);
+      }
+
+      // 3. If last item → delete whole cart
+      if (cart.cartItems.length === 1) {
+        await tx.cart.delete({
+          where: { id: cart.id },
+        });
+      } else {
+        // 4. Otherwise delete only the item
+        await tx.cartItem.delete({
+          where: { id: cartItem.id },
+        });
+      }
+
+      return {
+        itemId: cartItem.id,
+        itemName: cartItem.name,
+      };
+    });
   }
 }
