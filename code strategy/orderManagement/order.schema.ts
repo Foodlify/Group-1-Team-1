@@ -25,12 +25,14 @@
  -- statusId FK
  -- status date
 
+ 
   order-summary
  -- restaurant name
  -- total amount
  -- total quantity
  -- order date
  -- orderId  FK
+ -- customerId FK
 
  */
 /* 
@@ -104,5 +106,6 @@ What add here
  will be repeated in all status, as we write the table as event sourcing style.
  Where put it?, is needed?
 
+ live location of delivery----> current location
 =============================================================================================
 */
