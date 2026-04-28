@@ -1,5 +1,7 @@
+import prisma from '../../../lib/prisma';
 import { CartRepository } from './cart.repository';
 import { MenuRepository } from '../restaurantManagemet/menu.repository';
+
 import {
   CartItemInput,
   CartItemResponse,
@@ -109,23 +111,12 @@ export class CartService {
   async updateQuantity(input: CartItemInput): Promise<CartItemResponse> {
     // add transaction
     const { customerId, itemId, itemQuantity } = input;
-    const cart = this.getCustomerCart(customerId);
-    if (!cart || cart === null) {
-      throw new CartNotFound(errorMessage.CART_NOT_FOUND.message);
+    try {
+      const result = await CartRepository.updateQuantityTransaction(input);
+      return result;
+    } catch (error) {
+      throw error;
     }
-    const cartItem = await CartRepository.findCartItemById(itemId);
-    if (!cartItem) {
-      throw new CartItemNotFound(errorMessage.CART_ITEM_NOT_FOUND.message);
-    }
-
-    const menuItem = await this.checkQuantity(itemId, itemQuantity);
-    await CartRepository.upsertCartItem(itemId, itemQuantity);
-    return {
-      customerId,
-      itemId,
-      itemQuantity,
-      itemName: menuItem.name,
-    };
   }
 
   // ─── Delete Cart Item ────────────────────────────────────────────────────────────
@@ -134,22 +125,12 @@ export class CartService {
   ): Promise<DeleteCartItemResponse> {
     // add transaction
     const { customerId, itemId } = input;
-    const cart = await this.getCustomerCart(customerId);
-    if (!cart || cart === null) {
-      throw new CartNotFound(errorMessage.CART_NOT_FOUND.message);
+    try {
+      const result = await CartRepository.deleteCartItemTransaction(input);
+      return result;
+    } catch (error) {
+      throw error;
     }
-    const cartItem = await CartRepository.findCartItemById(itemId);
-    if (!cartItem) {
-      throw new CartItemNotFound(errorMessage.CART_ITEM_NOT_FOUND.message);
-    }
-    if (cart.cartItems.length === 1) {
-      await CartRepository.clearCart(cart.id);
-    }
-    await CartRepository.deleteCartItem(cart.id, itemId);
-    return {
-      itemId: cartItem.id,
-      itemName: cartItem.name,
-    };
   }
 
   // ─── Clear Cart ────────────────────────────────────────────────────────────
@@ -167,16 +148,20 @@ export class CartService {
     if (!cart || cart === null) {
       throw new CartNotFound(errorMessage.CART_NOT_FOUND.message);
     }
-    // make one loop 
-    const totalPrice = cart.cartItems.reduce(
-      (sum: number, item: CartItems) =>
-        sum + (item.quantity ?? 0) * (item.price ?? 0),
-      0,
+    const result = cart.cartItems.reduce(
+      (acc: { totalQuantity: number; totalPrice: number }, item: CartItems) => {
+        const quantity = item.quantity ?? 0;
+        const price = item.price ?? 0;
+
+        acc.totalQuantity += quantity;
+        acc.totalPrice += quantity * price;
+
+        return acc;
+      },
+      { totalQuantity: 0, totalPrice: 0 },
     );
-    const totalQuantity = cart.cartItems.reduce(
-      (sum: number, item: CartItems) => sum + (item.quantity ?? 0),
-      0,
-    );
+
+    const { totalQuantity, totalPrice } = result;
 
     return { totalPrice, totalQuantity };
   }
