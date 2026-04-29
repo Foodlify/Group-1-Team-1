@@ -13,11 +13,7 @@ import {
   DeleteCartItemResponse,
 } from './cart.model';
 
-type menuItemType = {
-  id: number;
-  price: number;
-  name: string;
-};
+
 export class CartRepository {
   /**  Check a cart is existed or not */
   static async findCartByCustomerId(customerId: number) {
