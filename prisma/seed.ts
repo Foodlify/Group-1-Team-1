@@ -1,5 +1,5 @@
 import prisma from '../lib/prisma';
-import { OrderStatus, TransactionStatus, PaymentType } from '@prisma/client';
+import { OrderStatusEnum, TransactionStatusEnum, PaymentTypeEnum } from '@prisma/client';
 
 async function main() {
   console.log('🌱 Seeding database...');
@@ -15,9 +15,9 @@ async function main() {
   await prisma.menu.deleteMany();
   await prisma.restaurant.deleteMany();
   await prisma.user.deleteMany();
-  await prisma.orderStatusRef.deleteMany();
-  await prisma.transactionStatusRef.deleteMany();
-  await prisma.paymentTypeRef.deleteMany();
+  await prisma.orderStatus.deleteMany();
+  await prisma.transactionStatus.deleteMany();
+  await prisma.paymentType.deleteMany();
 
   // ─────────────────────────────────────────
   // USERS
@@ -188,41 +188,41 @@ async function main() {
   // ───────────────────────────────────────
   // ORDER Status
   // ───────────────────────────────────────
-  await prisma.orderStatusRef.createMany({
+  await prisma.orderStatus.createMany({
     data: [
-      { status: OrderStatus.PENDING },
-      { status: OrderStatus.CONFIRMED },
-      { status: OrderStatus.PROCESSED },
-      { status: OrderStatus.READY_TO_PICKUP },
-      { status: OrderStatus.OUT_FOR_DELIVERY },
-      { status: OrderStatus.DELIVERED },
-      { status: OrderStatus.CANCELLED },
-      { status: OrderStatus.REFUNDED },
+      { name: OrderStatusEnum.PENDING },
+      { name: OrderStatusEnum.CONFIRMED },
+      { name: OrderStatusEnum.PROCESSED },
+      { name: OrderStatusEnum.READY_TO_PICKUP },
+      { name: OrderStatusEnum.OUT_FOR_DELIVERY },
+      { name: OrderStatusEnum.DELIVERED },
+      { name: OrderStatusEnum.CANCELLED },
+      { name: OrderStatusEnum.REFUNDED },
     ],
   });
   console.log('✅ Order status seeded');
   // ───────────────────────────────────────
   // Transaction Status
   // ───────────────────────────────────────
-  await prisma.transactionStatusRef.createMany({
+  await prisma.transactionStatus.createMany({
     data: [
-      { status: TransactionStatus.PENDING },
-      { status: TransactionStatus.SUCCEEDED },
-      { status: TransactionStatus.FAILED },
-      { status: TransactionStatus.REFUNDED },
+      { status: TransactionStatusEnum.PENDING },
+      { status: TransactionStatusEnum.SUCCEEDED },
+      { status: TransactionStatusEnum.FAILED },
+      { status: TransactionStatusEnum.REFUNDED },
     ],
   });
   console.log('✅ Transaction status seeded');
   // ───────────────────────────────────────
   // Transaction Status
   // ───────────────────────────────────────
-  await prisma.paymentTypeRef.createMany({
+  await prisma.paymentType.createMany({
     data: [
-      { name: PaymentType.CARD },
-      { name: PaymentType.CASH },
-      { name: PaymentType.WALLET },
-      { name: PaymentType.STRIPE },
-      { name: PaymentType.PAYPAL },
+      { name: PaymentTypeEnum.CARD },
+      { name: PaymentTypeEnum.CASH },
+      { name: PaymentTypeEnum.WALLET },
+      { name: PaymentTypeEnum.STRIPE },
+      { name: PaymentTypeEnum.PAYPAL },
     ],
   });
   console.log('✅ Payment type seeded');
