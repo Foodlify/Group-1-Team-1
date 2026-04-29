@@ -10,6 +10,45 @@ datasource db {
   provider = "postgresql"
 }
 
+// -----------------------------------------------------------------------------------------------------
+//                                           ENUMS
+//------------------------------------------------------------------------------------------------------
+// ─────────────────────────────────────────
+// OrderStatus
+// ─────────────────────────────────────────
+
+enum OrderStatusEnum {
+  PENDING          @map("pending")
+  CONFIRMED        @map("confirmed")
+  PROCESSED        @map("processed")
+  READY_TO_PICKUP  @map("ready_to_pickup")
+  OUT_FOR_DELIVERY @map("out_for_delivery")
+  DELIVERED        @map("delivered")
+  CANCELLED        @map("cancelled")
+  REFUNDED         @map("refunded")
+}
+
+// ─────────────────────────────────────────
+// TransactionStatus
+// ─────────────────────────────────────────
+enum TransactionStatusEnum {
+  PENDING   @map("pending")
+  SUCCEEDED @map("succeeded")
+  FAILED    @map("failed")
+  REFUNDED  @map("refunded")
+}
+
+enum PaymentTypeEnum {
+  CASH   @map("cash")
+  CARD   @map("card")
+  WALLET @map("wallet")
+  STRIPE @map("stripe")
+  PAYPAL @map("paypal")
+}
+
+// -----------------------------------------------------------------------------------------------------
+//                                           USER TABLES
+//------------------------------------------------------------------------------------------------------
 // ─────────────────────────────────────────
 // USER
 // ─────────────────────────────────────────
@@ -22,19 +61,42 @@ model User {
   cartId   Int?
 }
 
+// -----------------------------------------------------------------------------------------------------
+//                                           CUSTOMER TABLES
+//------------------------------------------------------------------------------------------------------
 // ─────────────────────────────────────────
 // CUSTOMER
 // ─────────────────────────────────────────
 
 model Customer {
-  id      Int      @id @default(autoincrement())
-  userId  Int      @unique @map("user_id")
-  user    User     @relation(fields: [userId], references: [id])
-  address Address?
-  cart    Cart?
-  orders  Order[]
+  id           Int           @id @default(autoincrement())
+  userId       Int           @unique @map("user_id")
+  user         User          @relation(fields: [userId], references: [id])
+  address      Address?
+  cart         Cart?
+  orders       Order[]
+  orderSummary OrderSummary[]
 }
 
+// ─────────────────────────────────────────
+// Address
+// ─────────────────────────────────────────
+
+model Address {
+  id         Int      @id @default(autoincrement())
+  customerId Int      @unique
+  street     String
+  city       String
+  state      String?
+  country    String
+  postalCode String?
+  customer   Customer @relation(fields: [customerId], references: [id])
+  orders     Order[]
+}
+
+// -----------------------------------------------------------------------------------------------------
+//                                           RESTAURANT & MENU TABLES
+//------------------------------------------------------------------------------------------------------
 // ─────────────────────────────────────────
 // RESTAURANT
 // ─────────────────────────────────────────
@@ -77,6 +139,9 @@ model MenuItem {
   orderDetails OrderDetail[]
 }
 
+// -----------------------------------------------------------------------------------------------------
+//                                           CART TABLES
+//------------------------------------------------------------------------------------------------------
 // ─────────────────────────────────────────
 // CART
 // ─────────────────────────────────────────
@@ -93,7 +158,6 @@ model Cart {
 // ─────────────────────────────────────────
 // CART ITEMS
 // ─────────────────────────────────────────
-
 model CartItem {
   id         Int      @id @default(autoincrement())
   cartId     Int      @map("cart_id")
@@ -107,100 +171,75 @@ model CartItem {
   @@unique([cartId, menuItemId])
 }
 
+// -----------------------------------------------------------------------------------------------------
+//                                           ORDERS TABLES
+//------------------------------------------------------------------------------------------------------
+
 // ─────────────────────────────────────────
 // ORDER STATUS
 // ─────────────────────────────────────────
-enum OrderStatus {
-  PENDING          @map("pending")
-  CONFIRMED        @map("confirmed")
-  PROCESSED        @map("processed")
-  READY_TO_PICKUP  @map("ready_to_pickup")
-  OUT_FOR_DELIVERY @map("out_for_delivery")
-  DELIVERED        @map("delivered")
-  CANCELLED        @map("cancelled")
-  REFUNDED         @map("refunded")
-}
 
-model OrderStatusRef {
+model OrderStatus {
   id             Int             @id @default(autoincrement())
-  status         OrderStatus     @default(PENDING)
+  name           OrderStatusEnum @default(PENDING)
   orderTrackings OrderTracking[]
   orders         Order[]
-}
-
-// ─────────────────────────────────────────
-// TRANSACTION STATUS
-// ─────────────────────────────────────────
-enum TransactionStatus {
-  PENDING   @map("pending")
-  SUCCEEDED @map("succeeded")
-  FAILED    @map("failed")
-  REFUNDED  @map("refunded")
-}
-
-model TransactionStatusRef {
-  id     Int               @id @default(autoincrement())
-  status TransactionStatus @default(PENDING)
-}
-
-// ─────────────────────────────────────────
-// TRANSACTION STATUS
-// ─────────────────────────────────────────
-enum PaymentType {
-  CASH   @map("cash")
-  CARD   @map("card")
-  WALLET @map("wallet")
-  STRIPE @map("stripe")
-  PAYPAL @map("paypal")
-}
-
-model PaymentTypeRef {
-  id     Int         @id @default(autoincrement())
-  name   PaymentType @default(CARD)
-  orders Order[]
-}
-
-// ─────────────────────────────────────────
-// Address
-// ─────────────────────────────────────────
-
-model Address {
-  id         Int      @id @default(autoincrement())
-  customerId Int      @unique
-  street     String
-  city       String
-  state      String?
-  country    String
-  postalCode String?
-  customer   Customer @relation(fields: [customerId], references: [id])
-  orders     Order[]
 }
 
 // ─────────────────────────────────────────
 // ORDER
 // ─────────────────────────────────────────
 
-model Order {
-  id            Int      @id @default(autoincrement())
-  customerId    Int      @map("customer_id")
-  restaurantId  Int      @map("restaurant_id")
-  addressId     Int      @map("address_id")
-  preferredDate DateTime @map("preferred_date")
-  totalPrice    Int      @map("total_price")
-  paymentTypeId Int      @map("payment_type_id")
-  orderStatusId Int      @map("order_status_id")
-  paid          Boolean  @default(false)
-  timestamp     DateTime @default(now())
+// model Order {
+//   id            Int      @id @default(autoincrement())
+//   customerId    Int      @map("customer_id") //Fk
+//   restaurantId  Int      @map("restaurant_id") //Fk
+//   addressId     Int      @map("address_id") //Fk
+//   paymentTypeId Int      @map("payment_type_id") //Fk
+//   orderStatusId Int      @map("order_status_id") //Fk 
+//   preferredDate DateTime @map("preferred_date")
+//   totalPrice    Int      @map("total_price")
+//   paid          Boolean  @default(false)
+//   timestamp     DateTime @default(now())
 
-  customer    Customer       @relation(fields: [customerId], references: [id])
-  restaurant  Restaurant     @relation(fields: [restaurantId], references: [id])
-  address     Address        @relation(fields: [addressId], references: [id])
-  paymentType PaymentTypeRef @relation(fields: [paymentTypeId], references: [id])
-  orderStatus OrderStatusRef @relation(fields: [orderStatusId], references: [id])
+//   customer    Customer    @relation(fields: [customerId], references: [id])
+//   restaurant  Restaurant  @relation(fields: [restaurantId], references: [id])
+//   address     Address     @relation(fields: [addressId], references: [id])
+//   paymentType PaymentType @relation(fields: [paymentTypeId], references: [id])
+//   orderStatus OrderStatus @relation(fields: [orderStatusId], references: [id])
+
+//   orderDetails   OrderDetail[]
+//   orderTrackings OrderTracking[]
+//   orderSummary   OrderSummary?
+//   transactions   Transaction[]
+// }
+
+model Order {
+  id              Int      @id @default(autoincrement())
+  customerId      Int      @map("customer_id") //Fk
+  restaurantId    Int      @map("restaurant_id") //Fk
+  restaurantName  String
+  addressId       Int      @map("address_id") //Fk
+  deliveryAddress String
+  paymentTypeId   Int      @map("payment_type_id") //Fk
+  paymentMethod   String
+  orderStatusId   Int      @map("order_status_id") //Fk 
+  status          String
+  preferredDate   DateTime @map("preferred_date")
+  totalPrice      Int      @map("total_price")
+  paid            Boolean  @default(false)
+  timestamp       DateTime @default(now())
+
+  customer    Customer    @relation(fields: [customerId], references: [id])
+  restaurant  Restaurant  @relation(fields: [restaurantId], references: [id])
+  address     Address     @relation(fields: [addressId], references: [id])
+  paymentType PaymentType @relation(fields: [paymentTypeId], references: [id])
+  orderStatus OrderStatus @relation(fields: [orderStatusId], references: [id])
 
   orderDetails   OrderDetail[]
   orderTrackings OrderTracking[]
   orderSummary   OrderSummary?
+  transactions   Transaction[]
 }
 
 // ─────────────────────────────────────────
@@ -208,12 +247,13 @@ model Order {
 // ─────────────────────────────────────────
 
 model OrderDetail {
-  id         Int @id @default(autoincrement())
-  orderId    Int @map("order_id")
-  menuItemId Int @map("menu_item_id")
-  price      Int
-  quantity   Int
-  totalPrice Int @map("total_price")
+  id           Int    @id @default(autoincrement())
+  orderId      Int    @map("order_id")
+  menuItemId   Int    @map("menu_item_id")
+  menuItemName String
+  price        Int
+  quantity     Int
+  // totalPrice Int @map("total_price")  no need here
 
   order    Order    @relation(fields: [orderId], references: [id])
   menuItem MenuItem @relation(fields: [menuItemId], references: [id])
@@ -229,8 +269,8 @@ model OrderTracking {
   statusId   Int      @map("status_id")
   statusDate DateTime @default(now()) @map("status_date")
 
-  order  Order          @relation(fields: [orderId], references: [id])
-  status OrderStatusRef @relation(fields: [statusId], references: [id])
+  order  Order       @relation(fields: [orderId], references: [id])
+  status OrderStatus @relation(fields: [statusId], references: [id])
 }
 
 // ─────────────────────────────────────────
@@ -239,26 +279,84 @@ model OrderTracking {
 
 model OrderSummary {
   id             Int      @id @default(autoincrement())
+  customerId     Int      @unique @map("customer_id")
   orderId        Int      @unique @map("order_id")
   restaurantName String   @map("restaurant_name")
   totalAmount    Int      @map("total_amount")
   totalQuantity  Int      @map("total_quantity")
   orderDate      DateTime @map("order_date")
 
-  order Order @relation(fields: [orderId], references: [id])
+  customer Customer @relation(fields: [customerId], references: [id])
+  order    Order    @relation(fields: [orderId], references: [id])
 }
+
+// -----------------------------------------------------------------------------------------------------
+//                                           PAYMENT TABLES
+//------------------------------------------------------------------------------------------------------
+
+// ─────────────────────────────────────────
+// Payment integration type
+// ─────────────────────────────────────────
+
+model PaymentType {
+  id                    Int                   @id @default(autoincrement())
+  name                  PaymentTypeEnum       @default(CARD)
+  orders                Order[]
+  paymentConfigurations PaymentConfiguration?
+  transaction           Transaction[]
+}
+
+//______________________________________
+// Payment Configuration
+//______________________________________
+
+model PaymentConfiguration {
+  id            Int         @id @default(autoincrement()) //PK
+  payTypeId     Int         @unique @map("pay_Type_id") //FK
+  configDetails Json        @default("{}")
+  paymentType   PaymentType @relation(fields: [payTypeId], references: [id])
+}
+
+// ─────────────────────────────────────────
+// TRANSACTION STATUS
+// ─────────────────────────────────────────
+
+model TransactionStatus {
+  id          Int                   @id @default(autoincrement())
+  status      TransactionStatusEnum @default(PENDING)
+  transaction Transaction[]
+}
+
+//______________________________________
+// Transaction
+//______________________________________
+
+model Transaction {
+  id                  Int @id @default(autoincrement()) //PK
+  orderId             Int @unique @map("order_id") //FK
+  transactionStatusId Int @unique @map("status_id") //FK
+  payTypeId           Int @unique @map("pay_type_id") //FK
+  transactionNumber   Int @unique
+  amount              Int
+
+  order             Order             @relation(fields: [orderId], references: [id])
+  paymentType       PaymentType       @relation(fields: [payTypeId], references: [id])
+  transactionStatus TransactionStatus @relation(fields: [transactionStatusId], references: [id])
+}
+
+// ============================================================================================================
 //______________________________________
 // Payment 
 //______________________________________
-model PaymentConfiguration {
-payIntegrationId  Int @id @default(autoincrement())
-configDetails     Json @default("{}")
-}
+// model PaymentConfiguration {
+// payIntegrationId  Int @id @default(autoincrement())
+// configDetails     Json @default("{}")
+// }
 
-model Transaction {
-  orderId            Int @map("order_id")
-  transactionNumber  Int @unique
-  amount             Int
-  statusId           TransactionStatus 
-  payIntegrationId   Int @map("PaymentConfiguration")
-}
+// model Transaction {
+//   orderId            Int @map("order_id")
+//   transactionNumber  Int @unique
+//   amount             Int
+//   statusId           TransactionStatus 
+//   payIntegrationId   Int @map("PaymentConfiguration")
+// }
