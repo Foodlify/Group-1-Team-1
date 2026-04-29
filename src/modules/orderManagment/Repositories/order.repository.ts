@@ -1,4 +1,5 @@
 import prisma from '../../../../lib/prisma';
+import { getSingleOrderView } from '@prisma/client/sql';
 import { CreateOrderInput } from '../order.model';
 import { CartRepository } from '../../cartManagement/cart.repository';
 import {
@@ -112,29 +113,58 @@ export class OrderRepository {
     });
   }
 
-  // Get single order with its order details
+  // Generate single order with its order details view
+
+  static async createSingleOrderView() {
+    const result = await prisma.$queryRawTyped(getSingleOrderView());
+  }
+  // drop single_order_details view
+  static async dropSingleOrderView() {
+    await prisma.$executeRaw`DROP VIEW IF EXISTS single_order_details_view`;
+  }
+  // Check if order in order view
   static async getSingleOrderById(orderId: number) {
-    const order = await prisma.order.findUnique({
-      where: { id: orderId },
+    return await prisma.$queryRaw`
+  SELECT id
+  FROM single_order_details_view
+  WHERE id = ${orderId}
+`;
+  }
+  // get order and its order details from view
+  static async getSingleOrderAndDetailsById(orderId: number) {
+    return await prisma.$queryRaw`
+SELECT 
+  o.order_id,
+  o.customer_id,
+  o.restaurant_name,
+  o.payment_method,
+  o.city,
+  o.street,
+  o.order_status,
+  o.total_price,
+  o.paid,
+  o.timestamp,
 
-      select: {
-        id: true,
-        restaurantName: true,
-        deliveryAddress: true,
-        paymentMethod: true,
-        Status: true,
-        totalPrice: true,
-        timestamp: true,
+  json_agg(
+    json_build_object(
+      'name', od.menu_item_name,
+      'quantity', od.quantity,
+      'price', od.price
+    )
+  ) AS order_details
 
-        orderDetails: {
-          select: {
-            id: true,
-            quantity: true,
-            price: true,
-          },
-        },
-      },
-    });
+FROM single_order_details_view o
+
+LEFT JOIN "OrderDetail" od 
+  ON od.order_id = o.id
+
+WHERE o.id = ${orderId}
+
+GROUP BY 
+  o.order_id, o.customer_id, o.restaurant_name, 
+  o.payment_method,o.state, o.city, o.street, 
+  o.order_status, o.total_price, o.paid, o.timestamp;
+`;
   }
 
   // to get order based on query of its status

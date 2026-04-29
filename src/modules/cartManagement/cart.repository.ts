@@ -1,10 +1,6 @@
 import prisma from '../../../lib/prisma';
 
-type menuItemType = {
-  id: number;
-  price: number;
-  name: string;
-};
+
 export class CartRepository {
   /**  Check a cart is existed or not */
   static async findCartByCustomerId(customerId: number) {

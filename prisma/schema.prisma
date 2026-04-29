@@ -2,8 +2,9 @@
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
-  provider = "prisma-client-js"
-  output   = "../node_modules/.prisma/client"
+  provider        = "prisma-client-js"
+  output          = "../node_modules/.prisma/client"
+  previewFeatures = ["typedSql"]
 }
 
 datasource db {
@@ -69,9 +70,9 @@ model User {
 // ─────────────────────────────────────────
 
 model Customer {
-  id           Int           @id @default(autoincrement())
-  userId       Int           @unique @map("user_id")
-  user         User          @relation(fields: [userId], references: [id])
+  id           Int            @id @default(autoincrement())
+  userId       Int            @unique @map("user_id")
+  user         User           @relation(fields: [userId], references: [id])
   address      Address?
   cart         Cart?
   orders       Order[]
@@ -190,45 +191,17 @@ model OrderStatus {
 // ORDER
 // ─────────────────────────────────────────
 
-// model Order {
-//   id            Int      @id @default(autoincrement())
-//   customerId    Int      @map("customer_id") //Fk
-//   restaurantId  Int      @map("restaurant_id") //Fk
-//   addressId     Int      @map("address_id") //Fk
-//   paymentTypeId Int      @map("payment_type_id") //Fk
-//   orderStatusId Int      @map("order_status_id") //Fk 
-//   preferredDate DateTime @map("preferred_date")
-//   totalPrice    Int      @map("total_price")
-//   paid          Boolean  @default(false)
-//   timestamp     DateTime @default(now())
-
-//   customer    Customer    @relation(fields: [customerId], references: [id])
-//   restaurant  Restaurant  @relation(fields: [restaurantId], references: [id])
-//   address     Address     @relation(fields: [addressId], references: [id])
-//   paymentType PaymentType @relation(fields: [paymentTypeId], references: [id])
-//   orderStatus OrderStatus @relation(fields: [orderStatusId], references: [id])
-
-//   orderDetails   OrderDetail[]
-//   orderTrackings OrderTracking[]
-//   orderSummary   OrderSummary?
-//   transactions   Transaction[]
-// }
-
 model Order {
-  id              Int      @id @default(autoincrement())
-  customerId      Int      @map("customer_id") //Fk
-  restaurantId    Int      @map("restaurant_id") //Fk
-  restaurantName  String
-  addressId       Int      @map("address_id") //Fk
-  deliveryAddress String
-  paymentTypeId   Int      @map("payment_type_id") //Fk
-  paymentMethod   String
-  orderStatusId   Int      @map("order_status_id") //Fk 
-  status          String
-  preferredDate   DateTime @map("preferred_date")
-  totalPrice      Int      @map("total_price")
-  paid            Boolean  @default(false)
-  timestamp       DateTime @default(now())
+  id            Int      @id @default(autoincrement())
+  customerId    Int      @map("customer_id") //Fk
+  restaurantId  Int      @map("restaurant_id") //Fk
+  addressId     Int      @map("address_id") //Fk
+  paymentTypeId Int      @map("payment_type_id") //Fk
+  orderStatusId Int      @map("order_status_id") //Fk 
+  preferredDate DateTime @map("preferred_date")
+  totalPrice    Int      @map("total_price")
+  paid          Boolean  @default(false)
+  timestamp     DateTime @default(now())
 
   customer    Customer    @relation(fields: [customerId], references: [id])
   restaurant  Restaurant  @relation(fields: [restaurantId], references: [id])
@@ -250,7 +223,7 @@ model OrderDetail {
   id           Int    @id @default(autoincrement())
   orderId      Int    @map("order_id")
   menuItemId   Int    @map("menu_item_id")
-  menuItemName String
+  menuItemName String @map("menu_item_name")
   price        Int
   quantity     Int
   // totalPrice Int @map("total_price")  no need here
