@@ -1,11 +1,11 @@
-import { CartService } from '../../cartManagement/cart.service';
+import { NotFound } from '../../../shared_infrastructure/error/error.execption';
+import { ENTITIES } from '../../../../prisma/entities';
 import {
   CreateOrderInput,
   CreateOrderResponse,
   SingleOrderResponse,
 } from '../order.model';
 import { OrderRepository } from '../Repositories/order.repository';
-const cartService = new CartService();
 export class OrderService {
   static async PlaceOrder(
     input: CreateOrderInput,
@@ -15,7 +15,7 @@ export class OrderService {
       return {
         orderId: result.id,
         totalPrice: result.totalPrice,
-        date: result.timestamp,
+        createdAt: result.timestamp,
         restaurantId: result.restaurantId,
         addressId: result.addressId,
         statusId: result.orderStatusId,
@@ -30,17 +30,28 @@ export class OrderService {
       throw error;
     }
   }
-  static async getSingleOrder(orderId: number): Promise<SingleOrderResponse> {
-    const order = await OrderRepository.getSingleOrderById(orderId);
+  static async getSingleOrder(
+    customerId: number,
+    orderId: number,
+  ): Promise<SingleOrderResponse> {
+    const order = await OrderRepository.getSingleOrderById(customerId, orderId);
+
     if (!order) {
-      await OrderRepository.dropSingleOrderView();
-      await OrderRepository.createSingleOrderView();
+      throw new NotFound(ENTITIES.ORDER);
+    }
+
+    const order_MV = await OrderRepository.getSingleOrderByIdMV(
+      customerId,
+      orderId,
+    );
+    if (!order_MV) {
+      await OrderRepository.refreshSingleOrderMV();
     }
     const result = (await OrderRepository.getSingleOrderAndDetailsById(
       orderId,
     )) as any[];
     if (!result || result.length === 0) {
-      throw new Error('no order');
+      throw new NotFound(ENTITIES.ORDER);
     }
     const orderRow = result[0];
     return {
@@ -54,9 +65,9 @@ export class OrderService {
       street: orderRow.street,
       status: orderRow.status,
       orderDetails: orderRow.order_details.map((od: any) => ({
-        name:od.item_name,
+        name: od.item_name,
         quantity: od.quantity,
-        price: od.price
+        price: od.price,
       })),
     } as SingleOrderResponse;
   }

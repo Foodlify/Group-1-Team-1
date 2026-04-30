@@ -13,7 +13,7 @@ export interface CreateOrderInput {
 export interface CreateOrderResponse {
   orderId: number;
   totalPrice: number;
-  date: Date;
+  createdAt: Date;
   restaurantId: number;
   addressId: number;
   statusId: number;

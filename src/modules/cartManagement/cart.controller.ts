@@ -9,7 +9,7 @@ import {
   QuantityExceed,
   RestaurantNotMatch,
 } from './cart.execption';
-import { successMessage } from '../../shared_infrastructure/error/errorMessages';
+import {successMessage} from '../../shared_infrastructure/success/successMessages';
 
 const cartService = new CartService();
 

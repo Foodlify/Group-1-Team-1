@@ -24,7 +24,6 @@ app.get('/api/health', async (req: Request, res: Response) => {
   try {
     // Check DB connection
     await prisma.$queryRaw`SELECT 1`;
-    await OrderRepository.createSingleOrderView();
     res.status(200).json({
       status: 'success',
       message: 'API and Database are running sequentially',

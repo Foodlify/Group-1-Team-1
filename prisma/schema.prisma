@@ -14,9 +14,6 @@ datasource db {
 // -----------------------------------------------------------------------------------------------------
 //                                           ENUMS
 //------------------------------------------------------------------------------------------------------
-// ─────────────────────────────────────────
-// OrderStatus
-// ─────────────────────────────────────────
 
 enum OrderStatusEnum {
   PENDING          @map("pending")
@@ -29,15 +26,16 @@ enum OrderStatusEnum {
   REFUNDED         @map("refunded")
 }
 
-// ─────────────────────────────────────────
-// TransactionStatus
-// ─────────────────────────────────────────
+// ───────────────────────────────────────────────────────────────────────────────────────────────────────
+
 enum TransactionStatusEnum {
   PENDING   @map("pending")
   SUCCEEDED @map("succeeded")
   FAILED    @map("failed")
   REFUNDED  @map("refunded")
 }
+
+// ───────────────────────────────────────────────────────────────────────────────────────────────────────
 
 enum PaymentTypeEnum {
   CASH   @map("cash")
@@ -50,9 +48,6 @@ enum PaymentTypeEnum {
 // -----------------------------------------------------------------------------------------------------
 //                                           USER TABLES
 //------------------------------------------------------------------------------------------------------
-// ─────────────────────────────────────────
-// USER
-// ─────────────────────────────────────────
 
 model User {
   id       Int       @id @default(autoincrement())
@@ -65,9 +60,6 @@ model User {
 // -----------------------------------------------------------------------------------------------------
 //                                           CUSTOMER TABLES
 //------------------------------------------------------------------------------------------------------
-// ─────────────────────────────────────────
-// CUSTOMER
-// ─────────────────────────────────────────
 
 model Customer {
   id           Int            @id @default(autoincrement())
@@ -79,9 +71,7 @@ model Customer {
   orderSummary OrderSummary[]
 }
 
-// ─────────────────────────────────────────
-// Address
-// ─────────────────────────────────────────
+// ───────────────────────────────────────────────────────────────────────────────────────────────────────
 
 model Address {
   id         Int      @id @default(autoincrement())
@@ -98,9 +88,6 @@ model Address {
 // -----------------------------------------------------------------------------------------------------
 //                                           RESTAURANT & MENU TABLES
 //------------------------------------------------------------------------------------------------------
-// ─────────────────────────────────────────
-// RESTAURANT
-// ─────────────────────────────────────────
 
 model Restaurant {
   id        Int        @id @default(autoincrement())
@@ -111,9 +98,7 @@ model Restaurant {
   orders    Order[]
 }
 
-// ─────────────────────────────────────────
-// MENU
-// ─────────────────────────────────────────
+// ───────────────────────────────────────────────────────────────────────────────────────────────────────
 
 model Menu {
   id           Int        @id @default(autoincrement())
@@ -123,9 +108,7 @@ model Menu {
   menuItems    MenuItem[]
 }
 
-// ─────────────────────────────────────────
-// MENU ITEMS
-// ─────────────────────────────────────────
+// ───────────────────────────────────────────────────────────────────────────────────────────────────────
 
 model MenuItem {
   id           Int           @id @default(autoincrement())
@@ -143,9 +126,6 @@ model MenuItem {
 // -----------------------------------------------------------------------------------------------------
 //                                           CART TABLES
 //------------------------------------------------------------------------------------------------------
-// ─────────────────────────────────────────
-// CART
-// ─────────────────────────────────────────
 
 model Cart {
   id           Int        @id @default(autoincrement())
@@ -156,9 +136,8 @@ model Cart {
   cartItems    CartItem[]
 }
 
-// ─────────────────────────────────────────
-// CART ITEMS
-// ─────────────────────────────────────────
+// ───────────────────────────────────────────────────────────────────────────────────────────────────────
+
 model CartItem {
   id         Int      @id @default(autoincrement())
   cartId     Int      @map("cart_id")
@@ -176,10 +155,6 @@ model CartItem {
 //                                           ORDERS TABLES
 //------------------------------------------------------------------------------------------------------
 
-// ─────────────────────────────────────────
-// ORDER STATUS
-// ─────────────────────────────────────────
-
 model OrderStatus {
   id             Int             @id @default(autoincrement())
   name           OrderStatusEnum @default(PENDING)
@@ -187,9 +162,7 @@ model OrderStatus {
   orders         Order[]
 }
 
-// ─────────────────────────────────────────
-// ORDER
-// ─────────────────────────────────────────
+// ───────────────────────────────────────────────────────────────────────────────────────────────────────
 
 model Order {
   id            Int      @id @default(autoincrement())
@@ -203,11 +176,11 @@ model Order {
   paid          Boolean  @default(false)
   timestamp     DateTime @default(now())
 
-  customer    Customer    @relation(fields: [customerId], references: [id])
-  restaurant  Restaurant  @relation(fields: [restaurantId], references: [id])
-  address     Address     @relation(fields: [addressId], references: [id])
-  paymentType PaymentType @relation(fields: [paymentTypeId], references: [id])
-  orderStatus OrderStatus @relation(fields: [orderStatusId], references: [id])
+  customer    Customer               @relation(fields: [customerId], references: [id])
+  restaurant  Restaurant             @relation(fields: [restaurantId], references: [id])
+  address     Address                @relation(fields: [addressId], references: [id])
+  paymentType PaymentIntegrationType @relation(fields: [paymentTypeId], references: [id])
+  orderStatus OrderStatus            @relation(fields: [orderStatusId], references: [id])
 
   orderDetails   OrderDetail[]
   orderTrackings OrderTracking[]
@@ -215,9 +188,7 @@ model Order {
   transactions   Transaction[]
 }
 
-// ─────────────────────────────────────────
-// ORDER DETAIL
-// ─────────────────────────────────────────
+// ───────────────────────────────────────────────────────────────────────────────────────────────────────
 
 model OrderDetail {
   id           Int    @id @default(autoincrement())
@@ -226,15 +197,12 @@ model OrderDetail {
   menuItemName String @map("menu_item_name")
   price        Int
   quantity     Int
-  // totalPrice Int @map("total_price")  no need here
 
   order    Order    @relation(fields: [orderId], references: [id])
   menuItem MenuItem @relation(fields: [menuItemId], references: [id])
 }
 
-// ─────────────────────────────────────────
-// ORDER TRACKING
-// ─────────────────────────────────────────
+// ───────────────────────────────────────────────────────────────────────────────────────────────────────
 
 model OrderTracking {
   id         Int      @id @default(autoincrement())
@@ -246,9 +214,7 @@ model OrderTracking {
   status OrderStatus @relation(fields: [statusId], references: [id])
 }
 
-// ─────────────────────────────────────────
-// ORDER SUMMARY
-// ─────────────────────────────────────────
+// ───────────────────────────────────────────────────────────────────────────────────────────────────────
 
 model OrderSummary {
   id             Int      @id @default(autoincrement())
@@ -267,11 +233,7 @@ model OrderSummary {
 //                                           PAYMENT TABLES
 //------------------------------------------------------------------------------------------------------
 
-// ─────────────────────────────────────────
-// Payment integration type
-// ─────────────────────────────────────────
-
-model PaymentType {
+model PaymentIntegrationType {
   id                    Int                   @id @default(autoincrement())
   name                  PaymentTypeEnum       @default(CARD)
   orders                Order[]
@@ -279,20 +241,16 @@ model PaymentType {
   transaction           Transaction[]
 }
 
-//______________________________________
-// Payment Configuration
-//______________________________________
+// ───────────────────────────────────────────────────────────────────────────────────────────────────────
 
 model PaymentConfiguration {
-  id            Int         @id @default(autoincrement()) //PK
-  payTypeId     Int         @unique @map("pay_Type_id") //FK
-  configDetails Json        @default("{}")
-  paymentType   PaymentType @relation(fields: [payTypeId], references: [id])
+  id            Int                    @id @default(autoincrement()) //PK
+  payTypeId     Int                    @unique @map("pay_Type_id") //FK
+  configDetails Json                   @default("{}")
+  paymentType   PaymentIntegrationType @relation(fields: [payTypeId], references: [id])
 }
 
-// ─────────────────────────────────────────
-// TRANSACTION STATUS
-// ─────────────────────────────────────────
+// ───────────────────────────────────────────────────────────────────────────────────────────────────────
 
 model TransactionStatus {
   id          Int                   @id @default(autoincrement())
@@ -300,9 +258,7 @@ model TransactionStatus {
   transaction Transaction[]
 }
 
-//______________________________________
-// Transaction
-//______________________________________
+// ───────────────────────────────────────────────────────────────────────────────────────────────────────
 
 model Transaction {
   id                  Int @id @default(autoincrement()) //PK
@@ -312,9 +268,9 @@ model Transaction {
   transactionNumber   Int @unique
   amount              Int
 
-  order             Order             @relation(fields: [orderId], references: [id])
-  paymentType       PaymentType       @relation(fields: [payTypeId], references: [id])
-  transactionStatus TransactionStatus @relation(fields: [transactionStatusId], references: [id])
+  order             Order                  @relation(fields: [orderId], references: [id])
+  paymentType       PaymentIntegrationType @relation(fields: [payTypeId], references: [id])
+  transactionStatus TransactionStatus      @relation(fields: [transactionStatusId], references: [id])
 }
 
 // ============================================================================================================
