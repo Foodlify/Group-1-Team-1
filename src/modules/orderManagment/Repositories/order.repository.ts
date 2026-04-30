@@ -8,8 +8,10 @@ import {
   QuantityExceed,
 } from '../../cartManagement/cart.execption';
 import { errorMessage } from '../../../shared_infrastructure/error/errorMessages';
-import { MenuRepository } from '../../restaurantManagemet/menu.repository';
 import { OrderStatusEnum } from '@prisma/client';
+import { NotFound } from '../../../shared_infrastructure/error/error.execption';
+import { PriceNotMatch } from '../order.exception';
+import { ENTITIES } from '../../../../prisma/entities';
 
 export class OrderRepository {
   /** Add order with details using transaction */
@@ -19,7 +21,7 @@ export class OrderRepository {
       // check if cart exist
       const cart = await CartRepository.findCartByCustomerId(customerId);
       if (!cart) {
-        throw new CartNotFound(errorMessage.CART_NOT_FOUND.message);
+        throw new NotFound(ENTITIES.CART);
       }
       // Check cartItems existence, quantity, price
       for (const ci of cart.cartItems) {
@@ -29,44 +31,47 @@ export class OrderRepository {
         });
 
         if (!menuItem) {
-          throw new MenuItemNotFound(errorMessage.MENU_ITEM_NOT_FOUND.message);
+          throw new NotFound(ENTITIES.MENU_ITEM);
         }
         if (quantity > menuItem?.stock) {
           throw new QuantityExceed(errorMessage.QUANTITY_EXCEED.message);
         }
         if (price != menuItem?.price) {
-          throw new Error(
-            `price of ${menuItem.itemName} has changed, please confirm if proceed or remove item`,
+          throw new PriceNotMatch(
+            `${menuItem.itemName}: ${errorMessage.PRICE_NOT_MATCH.message}`,
           );
         }
       }
       // check if address belong to Customer
       const address = await tx.address.findUnique({
         where: { id: addressId, customerId: customerId },
-        select: { city: true, street: true },
       });
       if (!address) {
-        throw new Error('that address not match');
+        throw new NotFound(ENTITIES.ADDRESS);
       }
       // get restaurant name
       const restaurant = await tx.restaurant.findUnique({
         where: { id: cart.restaurantId },
-        select: { name: true },
       });
       if (!restaurant) {
-        throw new Error('the restaurant not found');
+        throw new NotFound(ENTITIES.RESTAURANT);
       }
       // get paymentType name
-      const paymentType = await tx.paymentType.findUnique({
+      const paymentType = await tx.paymentIntegrationType.findUnique({
         where: { id: paymentTypeId },
         select: { name: true },
       });
-
+      if (!paymentType) {
+        throw new NotFound(ENTITIES.PAYMENT_INTEGRATION_TYPE);
+      }
       // get orderStatus name
       const orderStatus = await tx.orderStatus.findFirst({
         where: { name: 'PENDING' },
         select: { id: true, name: true },
       });
+      if (!orderStatus) {
+        throw new NotFound(ENTITIES.ORDER_STATUS);
+      }
 
       // 2. Calculate total price
       const totalPrice = cart.cartItems.reduce(
@@ -79,21 +84,12 @@ export class OrderRepository {
         data: {
           customerId: data.customerId,
           restaurantId: cart.restaurantId,
-          restaurantName: restaurant.name, // snapshot
-
           addressId: data.addressId,
-          deliveryAddress: `${address.city}, ${address.street}`, // snapshot
-
           paymentTypeId: data.paymentTypeId,
-          paymentMethod: paymentType!.name, // snapshot
-
           orderStatusId: orderStatus!.id,
-          status: orderStatus!.name, // snapshot
-
           preferredDate,
           totalPrice,
           paid: false,
-
           orderDetails: {
             create: cart.cartItems.map((item) => ({
               menuItemId: item.menuItemId,
@@ -115,55 +111,61 @@ export class OrderRepository {
 
   // Generate single order with its order details view
 
-  static async createSingleOrderView() {
+  static async createSingleOrderMV() {
     const result = await prisma.$queryRawTyped(getSingleOrderView());
   }
   // drop single_order_details view
-  static async dropSingleOrderView() {
-    await prisma.$executeRaw`DROP VIEW IF EXISTS single_order_details_view`;
+  static async refreshSingleOrderMV() {
+    await prisma.$executeRaw`REFRESH MATERIALIZED VIEW CONCURRENTLY single_order_details_view`;
   }
-  // Check if order in order view
-  static async getSingleOrderById(orderId: number) {
+  // Check if order in order  table
+  static async getSingleOrderById(customerId: number, orderId: number) {
+    return await prisma.order.findUnique({
+      where: { id: orderId, customerId },
+    });
+  }
+  // Check if order in order  Materialized view
+  static async getSingleOrderByIdMV(customerId: number, orderId: number) {
     return await prisma.$queryRaw`
   SELECT id
-  FROM single_order_details_view
-  WHERE id = ${orderId}
+  FROM single_order_details_MV
+  WHERE id = ${orderId} AND customer_id= ${customerId}
 `;
   }
   // get order and its order details from view
   static async getSingleOrderAndDetailsById(orderId: number) {
     return await prisma.$queryRaw`
-SELECT 
-  o.order_id,
-  o.customer_id,
-  o.restaurant_name,
-  o.payment_method,
-  o.city,
-  o.street,
-  o.order_status,
-  o.total_price,
-  o.paid,
-  o.timestamp,
-
-  json_agg(
-    json_build_object(
-      'name', od.menu_item_name,
-      'quantity', od.quantity,
-      'price', od.price
-    )
-  ) AS order_details
-
-FROM single_order_details_view o
-
-LEFT JOIN "OrderDetail" od 
-  ON od.order_id = o.id
-
-WHERE o.id = ${orderId}
-
-GROUP BY 
-  o.order_id, o.customer_id, o.restaurant_name, 
-  o.payment_method,o.state, o.city, o.street, 
-  o.order_status, o.total_price, o.paid, o.timestamp;
+        SELECT 
+          o.order_id,
+          o.customer_id,
+          o.restaurant_name,
+          o.payment_method,
+          o.city,
+          o.street,
+          o.order_status,
+          o.total_price,
+          o.paid,
+          o.timestamp,
+        
+          json_agg(
+            json_build_object(
+              'name', od.menu_item_name,
+              'quantity', od.quantity,
+              'price', od.price
+            )
+          ) AS order_details
+        
+        FROM single_order_details_MV o
+        
+        LEFT JOIN "OrderDetail" od 
+          ON od.order_id = o.id
+        
+        WHERE o.id = ${orderId}
+        
+        GROUP BY 
+          o.order_id, o.customer_id, o.restaurant_name, 
+          o.payment_method,o.state, o.city, o.street, 
+          o.order_status, o.total_price, o.paid, o.timestamp;
 `;
   }
 

@@ -1,4 +1,4 @@
-CREATE VIEW single_order_details_view AS
+CREATE MATERIALIZED VIEW single_order_details_MV AS
 SELECT 
   o.id     AS order_id,
   o.customer_id,
@@ -13,7 +13,7 @@ SELECT
   a.street,
   os.name       AS order_status,
 
-  od.menu_item_name As item_name
+  od.menu_item_name As item_name,
   od.quantity,
   od.price
 
