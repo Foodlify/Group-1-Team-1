@@ -7,7 +7,7 @@ import {
 } from '../order.model';
 import { OrderRepository } from '../Repositories/order.repository';
 export class OrderService {
-  static async PlaceOrder(
+  static async placeOrder(
     input: CreateOrderInput,
   ): Promise<CreateOrderResponse> {
     try {
@@ -72,3 +72,5 @@ export class OrderService {
     } as SingleOrderResponse;
   }
 }
+
+

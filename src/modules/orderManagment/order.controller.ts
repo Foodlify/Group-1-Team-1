@@ -18,7 +18,7 @@ export class OrderController {
     const customerId = req.customerId!;
     const { addressId, paymentTypeId, preferredDate } = req.body;
     try {
-      const order = await OrderService.PlaceOrder({
+      const order = await OrderService.placeOrder({
         customerId,
         addressId,
         paymentTypeId,
