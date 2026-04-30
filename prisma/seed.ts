@@ -17,7 +17,7 @@ async function main() {
   await prisma.user.deleteMany();
   await prisma.orderStatus.deleteMany();
   await prisma.transactionStatus.deleteMany();
-  await prisma.paymentType.deleteMany();
+  await prisma.paymentIntegrationType.deleteMany();
 
   // ─────────────────────────────────────────
   // USERS
@@ -215,8 +215,7 @@ async function main() {
   console.log('✅ Transaction status seeded');
   // ───────────────────────────────────────
   // Transaction Status
-  // ───────────────────────────────────────
-  await prisma.paymentType.createMany({
+  await prisma.paymentIntegrationType.createMany({
     data: [
       { name: PaymentTypeEnum.CARD },
       { name: PaymentTypeEnum.CASH },
