@@ -19,17 +19,23 @@ import { AddressRepository } from '../../customerManagement/address.repository';
 import { RestaurantRepository } from '../../restaurantManagemet/restaurant.repository';
 import { PaymentRepository } from '../../paymentManagement/payment.repository';
 export class OrderService {
-  static async placeOrder(
-    input: CreateOrderInput,
-  ): Promise<CreateOrderResponse> {
-    const { customerId, addressId, paymentTypeId, preferredDate } = input;
+  // Validate if cart exist and its items are valid to create order [is exist, is stock ok, is price changed]
+  static async validCartAntItems(customerId: number) {
     return await prisma.$transaction(async (tx) => {
-      // check if cart exist
+      // Check if  customer has a cart
       const cart = await CartRepository.findCartByCustomerId(tx, customerId);
       if (!cart) {
         throw new NOT_FOUND(ENTITIES.CART);
       }
-      // Check cartItems existence, quantity, price
+      // Check if  restaurant exist
+      const restaurant = await RestaurantRepository.findRestaurantById(
+        tx,
+        cart.restaurantId,
+      );
+      if (!restaurant) {
+        throw new NOT_FOUND(ENTITIES.RESTAURANT);
+      }
+      // Check cart items
       for (const ci of cart.cartItems) {
         const { menuItemId, quantity, price } = ci;
         const menuItem = await MenuRepository.findMenuItemById(tx, menuItemId);
@@ -46,6 +52,21 @@ export class OrderService {
           );
         }
       }
+      //  Calculate total price
+      const totalPrice = cart.cartItems.reduce(
+        (sum, item) => sum + item.price * item.quantity,
+        0,
+      );
+      return { cart, totalPrice };
+    });
+  }
+
+  static async placeOrder(
+    input: CreateOrderInput,
+  ): Promise<CreateOrderResponse> {
+    const { customerId, addressId, paymentTypeId, preferredDate } = input;
+    const { cart, totalPrice } = await this.validCartAntItems(customerId);
+    return await prisma.$transaction(async (tx) => {
       // check if address belong to Customer
       const address = await AddressRepository.findAddressByIdAndCustomerId(
         tx,
@@ -55,17 +76,7 @@ export class OrderService {
       if (!address) {
         throw new NOT_FOUND(ENTITIES.ADDRESS);
       }
-
-      // get restaurant name
-      const restaurant = await RestaurantRepository.findRestaurantById(
-        tx,
-        cart.restaurantId,
-      );
-      if (!restaurant) {
-        throw new NOT_FOUND(ENTITIES.RESTAURANT);
-      }
-
-      // get paymentType name
+      // Check if Payment integration type exist in system
       const paymentType = await PaymentRepository.findPaymentTypeById(
         tx,
         paymentTypeId,
@@ -79,12 +90,7 @@ export class OrderService {
         throw new NOT_FOUND(ENTITIES.ORDER_STATUS);
       }
 
-      // 2. Calculate total price
-      const totalPrice = cart.cartItems.reduce(
-        (sum, item) => sum + item.price * item.quantity,
-        0,
-      );
-
+      // Create Order and its details
       const order = await OrderRepository.createOrderAndDetails(tx, {
         customerId,
         addressId,
@@ -118,7 +124,6 @@ export class OrderService {
     orderId: number,
   ): Promise<SingleOrderResponse> {
     const order = await OrderRepository.getSingleOrderById(customerId, orderId);
-
     if (!order) {
       throw new NOT_FOUND(ENTITIES.ORDER);
     }

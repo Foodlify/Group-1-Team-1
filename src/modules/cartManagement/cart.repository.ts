@@ -165,7 +165,7 @@ export class CartRepository {
         customerId,
         itemId: updatedItem.id,
         itemQuantity: updatedItem.quantity,
-        itemName: menuItem.name,
+        itemName: menuItem.itemName,
       };
     });
   }

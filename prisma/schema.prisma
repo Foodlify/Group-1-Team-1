@@ -16,7 +16,7 @@ datasource db {
 //------------------------------------------------------------------------------------------------------
 
 enum OrderStatusEnum {
-  PENDING          @map("pending")
+  PENDING         @map("pending")
   CONFIRMED        @map("confirmed")
   PROCESSED        @map("processed")
   READY_TO_PICKUP  @map("ready_to_pickup")
