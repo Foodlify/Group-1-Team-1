@@ -147,7 +147,7 @@ export class OrderService {
     return {
       orderId: orderRow.order_id,
       totalPrice: orderRow.total_price,
-      date: orderRow.date,
+      date: orderRow.timestamp,
       restaurantName: orderRow.restaurant_name,
       paymentMethod: orderRow.payment_method,
       state: orderRow.state,
@@ -221,7 +221,7 @@ export class OrderService {
       restaurantName: orderDetails.restaurantName,
       totalAmount: orderDetails.totalPrice,
       totalQuantity,
-      orderDate: new Date(orderDetails.date)
+      orderDate: orderDetails.date instanceof Date ? orderDetails.date : new Date(orderDetails.date)
     });
   }
 }

@@ -10,16 +10,8 @@ export class OrderSummaryRepository {
     totalQuantity: number;
     orderDate: Date;
   }) {
-    return prisma.orderSummary.upsert({
-      where: { customerId: summaryData.customerId },
-      update: {
-        orderId: summaryData.orderId,
-        restaurantName: summaryData.restaurantName,
-        totalAmount: summaryData.totalAmount,
-        totalQuantity: summaryData.totalQuantity,
-        orderDate: summaryData.orderDate,
-      },
-      create: summaryData,
+    return prisma.orderSummary.create({
+      data: summaryData,
     });
   }
 

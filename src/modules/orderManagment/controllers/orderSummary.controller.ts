@@ -10,11 +10,16 @@ export class OrderSummaryController {
     
     const summaries = await OrderSummaryService.getByCustomerId(customerId);
     
+    const formatted = summaries.map((s: any) => ({
+      ...s,
+      orderDate: new Date(s.orderDate).toISOString().split('T')[0],
+    }));
+
     sendSuccess(
       res,
       'Order summaries retrieved successfully',
       StatusCodes.OK,
-      summaries
+      formatted
     );
   });
 }
