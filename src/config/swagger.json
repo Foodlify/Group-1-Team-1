@@ -19,336 +19,20 @@
     {
       "name": "Order",
       "description": "Operations related to order management"
+    },
+    {
+      "name": "Order Summary",
+      "description": "Operations related to order summaries"
     }
   ],
-  "paths": {
-    "/api/v1/cart/add": {
-      "post": {
-        "tags": ["Cart"],
-        "summary": "Create a cart and add items to it",
-        "description": "Validates the user, creates a new cart if it doesn't exist, and adds items ensuring they all belong to the specified restaurant.",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "required": ["userId", "restaurantId", "items"],
-                "properties": {
-                  "userId": {
-                    "type": "integer",
-                    "example": 1
-                  },
-                  "restaurantId": {
-                    "type": "integer",
-                    "example": 2
-                  },
-                  "items": {
-                    "type": "array",
-                    "items": {
-                      "type": "object",
-                      "required": ["itemId", "quantity"],
-                      "properties": {
-                        "itemId": {
-                          "type": "integer",
-                          "example": 4
-                        },
-                        "quantity": {
-                          "type": "integer",
-                          "example": 2
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Items added to cart successfully"
-          },
-          "400": {
-            "description": "Client error (e.g., trying to add items from a different restaurant to an existing cart)"
-          },
-          "402": {
-            "description": "Validation error (missing or invalid structure)"
-          },
-          "404": {
-            "description": "User or Menu Item not found"
-          },
-          "500": {
-            "description": "Internal Server Error"
-          }
-        }
-      }
-    },
-    "/api/v1/cart/customer/{customerId}": {
-      "get": {
-        "tags": ["Cart"],
-        "summary": "View entire cart by customer",
-        "parameters": [
-          {
-            "name": "customerId",
-            "in": "path",
-            "required": true,
-            "description": "Customer ID",
-            "schema": {
-              "type": "integer",
-              "example": 1
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Cart retrieved successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CartResponse"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Client Error"
-          },
-          "402": {
-            "description": "Validation Error (invalid customerId format)"
-          },
-          "404": {
-            "description": "Cart not found"
-          },
-          "500": {
-            "description": "Internal Server Error"
-          }
-        }
-      }
-    },
-    "/api/v1/cart/clear/{customerId}": {
-      "delete": {
-        "tags": ["Cart"],
-        "summary": "Clear entire cart",
-        "description": "Removes all items from the cart and deletes the cart itself by customer ID.",
-        "parameters": [
-          {
-            "name": "customerId",
-            "in": "path",
-            "required": true,
-            "description": "Customer ID",
-            "schema": {
-              "type": "integer",
-              "example": 1
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Cart cleared successfully"
-          },
-          "400": {
-            "description": "Client Error"
-          },
-          "402": {
-            "description": "Validation Error (invalid customerId format)"
-          },
-          "404": {
-            "description": "Cart not found"
-          },
-          "500": {
-            "description": "Internal Server Error"
-          }
-        }
-      }
-    },
-    "/api/v1/cart/modify/{cartId}": {
-      "put": {
-        "tags": ["Cart"],
-        "summary": "Update item quantity in cart",
-        "description": "Updates or sets the quantity of a specific menu item already inside the cart.",
-        "parameters": [
-          {
-            "name": "cartId",
-            "in": "path",
-            "required": true,
-            "description": "Cart ID",
-            "schema": {
-              "type": "integer",
-              "example": 1
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "required": ["menuItemId", "quantity"],
-                "properties": {
-                  "menuItemId": {
-                    "type": "integer",
-                    "example": 4
-                  },
-                  "quantity": {
-                    "type": "integer",
-                    "example": 3
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Item quantity updated successfully"
-          },
-          "400": {
-            "description": "Client Error"
-          },
-          "402": {
-            "description": "Validation Error (invalid positive quantity or missing body)"
-          },
-          "404": {
-            "description": "Cart or MenuItem not found in cart"
-          },
-          "500": {
-            "description": "Internal Server Error"
-          }
-        }
-      }
-    },
-    "/api/v1/order": {
-      "post": {
-        "tags": ["Order"],
-        "summary": "Place a new order",
-        "description": "Creates a new order from the user's cart.",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "required": ["addressId", "paymentTypeId", "preferredDate"],
-                "properties": {
-                  "addressId": {
-                    "type": "integer",
-                    "example": 1
-                  },
-                  "paymentTypeId": {
-                    "type": "integer",
-                    "example": 1
-                  },
-                  "preferredDate": {
-                    "type": "string",
-                    "format": "date-time",
-                    "example": "2026-05-01T12:00:00Z"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "Order created successfully"
-          },
-          "400": {
-            "description": "Client Error (e.g. Price not match or Quantity exceed)"
-          },
-          "404": {
-            "description": "Not Found (e.g. Cart, Address, or Menu Item not found)"
-          },
-          "500": {
-            "description": "Internal Server Error"
-          }
-        }
-      }
-    },
-    "/api/v1/order/{orderId}": {
-      "get": {
-        "tags": ["Order"],
-        "summary": "Get single order details",
-        "description": "Retrieves the details of a specific order by ID.",
-        "parameters": [
-          {
-            "name": "orderId",
-            "in": "path",
-            "required": true,
-            "description": "Order ID",
-            "schema": {
-              "type": "integer",
-              "example": 1
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Order details retrieved successfully"
-          },
-          "404": {
-            "description": "Order not found"
-          },
-          "500": {
-            "description": "Internal Server Error"
-          }
-        }
-      }
-    },
-    "/api/v1/order/{orderId}/status": {
-      "patch": {
-        "tags": ["Order"],
-        "summary": "Update order status",
-        "description": "Updates the status of an order using the State Design Pattern. Allowed actions transition the order strictly according to valid business rules.",
-        "parameters": [
-          {
-            "name": "orderId",
-            "in": "path",
-            "required": true,
-            "description": "Order ID",
-            "schema": {
-              "type": "integer",
-              "example": 1
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "required": ["action"],
-                "properties": {
-                  "action": {
-                    "type": "string",
-                    "enum": ["confirm", "process", "pickup", "out_for_delivery", "deliver", "cancel", "refund"],
-                    "example": "confirm"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Order status updated successfully"
-          },
-          "400": {
-            "description": "Invalid state transition or validation error"
-          },
-          "404": {
-            "description": "Order not found"
-          },
-          "500": {
-            "description": "Internal Server Error"
-          }
-        }
-      }
-    }
-  },
   "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    },
     "schemas": {
       "CartItem": {
         "type": "object",
@@ -409,6 +93,238 @@
               }
             }
           }
+        }
+      }
+    }
+  },
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "paths": {
+    "/api/v1/cart": {
+      "post": {
+        "tags": ["Cart"],
+        "summary": "Add item to cart",
+        "description": "Validates the user, creates a new cart if it doesn't exist, and adds item to cart.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["itemId", "itemQuantity"],
+                "properties": {
+                  "itemId": {
+                    "type": "integer",
+                    "example": 4
+                  },
+                  "itemQuantity": {
+                    "type": "integer",
+                    "example": 2
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Items added to cart successfully" },
+          "400": { "description": "Client error" },
+          "404": { "description": "Not found" },
+          "500": { "description": "Internal Server Error" }
+        }
+      },
+      "get": {
+        "tags": ["Cart"],
+        "summary": "View entire cart by customer",
+        "responses": {
+          "200": {
+            "description": "Cart retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/CartResponse" }
+              }
+            }
+          },
+          "404": { "description": "Cart not found" },
+          "500": { "description": "Internal Server Error" }
+        }
+      },
+      "delete": {
+        "tags": ["Cart"],
+        "summary": "Clear entire cart",
+        "description": "Removes all items from the customer's cart.",
+        "responses": {
+          "200": { "description": "Cart cleared successfully" },
+          "404": { "description": "Cart not found" },
+          "500": { "description": "Internal Server Error" }
+        }
+      }
+    },
+    "/api/v1/cart/{itemId}": {
+      "patch": {
+        "tags": ["Cart"],
+        "summary": "Update item quantity in cart",
+        "description": "Updates the quantity of a specific menu item already inside the cart.",
+        "parameters": [
+          {
+            "name": "itemId",
+            "in": "path",
+            "required": true,
+            "description": "Item ID",
+            "schema": { "type": "integer", "example": 4 }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["itemQuantity"],
+                "properties": {
+                  "itemQuantity": { "type": "integer", "example": 3 }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Item quantity updated successfully" },
+          "400": { "description": "Client Error" },
+          "404": { "description": "Cart or MenuItem not found" },
+          "500": { "description": "Internal Server Error" }
+        }
+      },
+      "delete": {
+        "tags": ["Cart"],
+        "summary": "Delete an item from cart",
+        "parameters": [
+          {
+            "name": "itemId",
+            "in": "path",
+            "required": true,
+            "description": "Item ID",
+            "schema": { "type": "integer", "example": 4 }
+          }
+        ],
+        "responses": {
+          "200": { "description": "Item deleted successfully" },
+          "400": { "description": "Validation Error" },
+          "404": { "description": "Item not found" },
+          "500": { "description": "Internal Server Error" }
+        }
+      }
+    },
+    "/api/v1/cart/price-quantity": {
+      "get": {
+        "tags": ["Cart"],
+        "summary": "Get total price and quantity of items in cart",
+        "responses": {
+          "200": { "description": "Price and quantity retrieved successfully" },
+          "500": { "description": "Internal Server Error" }
+        }
+      }
+    },
+    "/api/v1/orders": {
+      "post": {
+        "tags": ["Order"],
+        "summary": "Place a new order",
+        "description": "Creates a new order from the user's cart.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["addressId", "paymentTypeId", "preferredDate"],
+                "properties": {
+                  "addressId": { "type": "integer", "example": 1 },
+                  "paymentTypeId": { "type": "integer", "example": 1 },
+                  "preferredDate": { "type": "string", "example": "2026-05-01" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Order created successfully" },
+          "400": { "description": "Client Error (e.g. Price not match)" },
+          "404": { "description": "Not Found" },
+          "500": { "description": "Internal Server Error" }
+        }
+      }
+    },
+    "/api/v1/orders/{orderId}": {
+      "get": {
+        "tags": ["Order"],
+        "summary": "Get single order details",
+        "description": "Retrieves the details of a specific order by ID.",
+        "parameters": [
+          {
+            "name": "orderId",
+            "in": "path",
+            "required": true,
+            "description": "Order ID",
+            "schema": { "type": "integer", "example": 1 }
+          }
+        ],
+        "responses": {
+          "200": { "description": "Order details retrieved successfully" },
+          "404": { "description": "Order not found" },
+          "500": { "description": "Internal Server Error" }
+        }
+      }
+    },
+    "/api/v1/orders/{orderId}/status": {
+      "patch": {
+        "tags": ["Order"],
+        "summary": "Update order status",
+        "description": "Updates the status of an order using the State Design Pattern.",
+        "parameters": [
+          {
+            "name": "orderId",
+            "in": "path",
+            "required": true,
+            "description": "Order ID",
+            "schema": { "type": "integer", "example": 1 }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["action"],
+                "properties": {
+                  "action": {
+                    "type": "string",
+                    "enum": ["confirm", "process", "pickup", "out_for_delivery", "deliver", "cancel", "refund"],
+                    "example": "confirm"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Order status updated successfully" },
+          "400": { "description": "Invalid state transition" },
+          "404": { "description": "Order not found" },
+          "500": { "description": "Internal Server Error" }
+        }
+      }
+    },
+    "/api/v1/order-summary": {
+      "get": {
+        "tags": ["Order Summary"],
+        "summary": "Get all order summaries by customer",
+        "responses": {
+          "200": { "description": "Order summaries retrieved successfully" },
+          "500": { "description": "Internal Server Error" }
         }
       }
     }

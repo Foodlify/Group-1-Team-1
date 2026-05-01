@@ -133,8 +133,8 @@ export class OrderService {
     const order_MV = await OrderRepository.getSingleOrderByIdMV(
       customerId,
       orderId,
-    );
-    if (!order_MV) {
+    ) as any[];
+    if (!order_MV || order_MV.length === 0) {
       await OrderRepository.refreshSingleOrderMV();
     }
     const result = (await OrderRepository.getSingleOrderAndDetailsById(
@@ -146,16 +146,16 @@ export class OrderService {
     const orderRow = result[0];
     return {
       orderId: orderRow.order_id,
-      totalPrice: orderRow.totalPrice,
+      totalPrice: orderRow.total_price,
       date: orderRow.date,
       restaurantName: orderRow.restaurant_name,
-      paymentMethod: orderRow.paymentMethod,
+      paymentMethod: orderRow.payment_method,
       state: orderRow.state,
       city: orderRow.city,
       street: orderRow.street,
-      status: orderRow.status,
+      status: orderRow.order_status,
       orderDetails: orderRow.order_details.map((od: any) => ({
-        name: od.item_name,
+        name: od.name,
         quantity: od.quantity,
         price: od.price,
       })),

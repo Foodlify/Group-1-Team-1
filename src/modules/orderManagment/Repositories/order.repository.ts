@@ -65,7 +65,7 @@ export class OrderRepository {
   }
   // Refresh single_order_details  Materialized view
   static async refreshSingleOrderMV() {
-    await prisma.$executeRaw`REFRESH MATERIALIZED VIEW CONCURRENTLY single_order_details_view`;
+    await prisma.$executeRaw`REFRESH MATERIALIZED VIEW single_order_details_MV`;
   }
   // Check if order in order  table
   static async getSingleOrderById(customerId: number, orderId: number) {
@@ -76,9 +76,9 @@ export class OrderRepository {
   // Check if order in single_order_details Materialized view
   static async getSingleOrderByIdMV(customerId: number, orderId: number) {
     return await prisma.$queryRaw`
-  SELECT id
+  SELECT order_id
   FROM single_order_details_MV
-  WHERE id = ${orderId} AND customer_id= ${customerId}
+  WHERE order_id = ${orderId} AND customer_id= ${customerId}
 `;
   }
   // get order and its order details from view
@@ -107,9 +107,9 @@ export class OrderRepository {
         FROM single_order_details_MV o
         
         LEFT JOIN "OrderDetail" od 
-          ON od.order_id = o.id
+          ON od.order_id = o.order_id
         
-        WHERE o.id = ${orderId}
+        WHERE o.order_id = ${orderId}
         
         GROUP BY 
           o.order_id, o.customer_id, o.restaurant_name, 

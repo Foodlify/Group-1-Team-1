@@ -15,6 +15,7 @@ export const placeOrderValidator = (
       errors: result.error.issues,
     });
   }
+  req.body = result.data;
   next();
 };
 export const getOrderValidator = (
