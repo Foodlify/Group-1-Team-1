@@ -1,10 +1,13 @@
+import { Prisma } from '@prisma/client';
 import prisma from '../../../lib/prisma';
-
 
 export class CartRepository {
   /**  Check a cart is existed or not */
-  static async findCartByCustomerId(customerId: number) {
-    return prisma.cart.findUnique({
+  static async findCartByCustomerId(
+    tx: Prisma.TransactionClient,
+    customerId: number,
+  ) {
+    return tx.cart.findUnique({
       where: { customerId },
       include: { cartItems: true },
     });

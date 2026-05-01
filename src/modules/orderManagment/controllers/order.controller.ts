@@ -1,13 +1,13 @@
 import { Request, Response } from 'express';
-import { OrderService } from './Services/order.service';
-import { sendSuccess, sendError } from '../../utils/reponse';
-import asyncHandler from '../../utils/asyncHandler';
+import { OrderService } from "../Services/order.service"
+import { sendSuccess, sendError } from '../../../utils/reponse';
+import asyncHandler from '../../../utils/asyncHandler';
 import { StatusCodes } from 'http-status-codes';
-import { NotFound } from '../../shared_infrastructure/error/error.execption';
-import { PriceNotMatch } from './order.exception';
-import { successMessage } from '../../shared_infrastructure/success/successMessages';
-import { QuantityExceed } from '../cartManagement/cart.execption';
-import { ENTITIES } from '../../../prisma/entities';
+import { PriceNotMatch } from '../order.exception';
+import { successMessage } from '../../../shared_infrastructure/success/successMessages';
+import { QuantityExceed } from '../../cartManagement/cart.execption';
+import { ENTITIES } from '../../../../prisma/entities';
+import { BAD_REQUEST, NOT_FOUND } from '../../../shared_infrastructure/error/error.execption';
 
 const cartService = new OrderService();
 
@@ -32,9 +32,10 @@ export class OrderController {
       );
     } catch (err) {
       if (
-        err instanceof NotFound ||
+        err instanceof NOT_FOUND ||
         err instanceof PriceNotMatch ||
-        err instanceof QuantityExceed
+        err instanceof QuantityExceed||
+        err instanceof BAD_REQUEST
       ) {
         sendError(res, err.statusCode, err.code, err.message);
       } else {
@@ -58,7 +59,7 @@ export class OrderController {
         order,
       );
     } catch (err) {
-      if (err instanceof NotFound) {
+      if (err instanceof NOT_FOUND) {
         sendError(res, err.statusCode, err.code, err.message);
       } else {
         throw err;
