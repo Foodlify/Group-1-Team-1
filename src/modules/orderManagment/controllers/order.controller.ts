@@ -78,4 +78,31 @@ export class OrderController {
       }
     }
   });
+
+  // ─── Update Order Status ──────────────────────────────────────────────────────────────
+
+  updateOrderStatus = asyncHandler(async (req: Request, res: Response) => {
+    const customerId = req.customerId!;
+    const orderId = Number(req.params.orderId);
+    const { action } = req.body;
+
+    try {
+      await OrderService.updateOrderStatus(customerId, orderId, action);
+      sendSuccess(
+        res,
+        `Order status updated successfully`,
+        StatusCodes.OK,
+        null,
+      );
+    } catch (err: any) {
+      if (err instanceof NotFound) {
+        sendError(res, err.statusCode, err.code, err.message);
+      } else if (err.message && err.message.includes('Cannot')) {
+        // State transition errors
+        sendError(res, StatusCodes.BAD_REQUEST, 'INVALID_STATE_TRANSITION', err.message);
+      } else {
+        throw err;
+      }
+    }
+  });
 }

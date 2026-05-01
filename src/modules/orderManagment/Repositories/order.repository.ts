@@ -133,11 +133,24 @@ export class OrderRepository {
     });
   }
 
+  /** Get order status by ID */
+  static async getOrderStatusById(statusId: number) {
+    return prisma.orderStatus.findUnique({
+      where: { id: statusId },
+    });
+  }
+
   /** Edit order status */
-  static async updateOrderStatus(orderId: number, orderStatusId: number) {
+  static async updateOrderStatusByName(orderId: number, statusName: OrderStatusEnum) {
+    const status = await prisma.orderStatus.findFirst({
+      where: { name: statusName },
+    });
+    if (!status) {
+      throw new Error(`Order status ${statusName} not found in database.`);
+    }
     return prisma.order.update({
       where: { id: orderId },
-      data: { orderStatusId },
+      data: { orderStatusId: status.id },
     });
   }
 }

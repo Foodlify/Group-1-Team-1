@@ -18,6 +18,8 @@ import { MenuRepository } from '../../restaurantManagemet/menu.repository';
 import { AddressRepository } from '../../customerManagement/address.repository';
 import { RestaurantRepository } from '../../restaurantManagemet/restaurant.repository';
 import { PaymentRepository } from '../../paymentManagement/payment.repository';
+import { OrderContext } from '../States/OrderContext';
+import { OrderSummaryService } from './orderSummary.service';
 export class OrderService {
   // Validate if cart exist and its items are valid to create order [is exist, is stock ok, is price changed]
   static async validCartAntItems(customerId: number) {
@@ -158,5 +160,68 @@ export class OrderService {
         price: od.price,
       })),
     } as SingleOrderResponse;
+  }
+
+  static async updateOrderStatus(
+    customerId: number,
+    orderId: number,
+    action: 'confirm' | 'process' | 'pickup' | 'out_for_delivery' | 'deliver' | 'cancel' | 'refund'
+  ): Promise<void> {
+    const order = await OrderRepository.getSingleOrderById(customerId, orderId);
+    if (!order) {
+      throw new NOT_FOUND(ENTITIES.ORDER);
+    }
+
+    const currentStatusEntity = await OrderRepository.getOrderStatusById(order.orderStatusId);
+    if (!currentStatusEntity) {
+      throw new Error('Order status not found');
+    }
+
+    const context = new OrderContext(currentStatusEntity.name);
+
+    switch (action) {
+      case 'confirm':
+        context.confirm();
+        break;
+      case 'process':
+        context.process();
+        break;
+      case 'pickup':
+        context.pickup();
+        break;
+      case 'out_for_delivery':
+        context.outForDelivery();
+        break;
+      case 'deliver':
+        context.deliver();
+        await OrderService.insertOrderSummaryTrigger(customerId, orderId);
+        break;
+      case 'cancel':
+        context.cancel();
+        break;
+      case 'refund':
+        context.refund();
+        break;
+      default:
+        throw new Error(`Invalid action ${action}`);
+    }
+
+    const newStatusEnum = context.getCurrentStatus();
+    await OrderRepository.updateOrderStatusByName(orderId, newStatusEnum);
+  }
+
+  private static async insertOrderSummaryTrigger(customerId: number, orderId: number) {
+    const orderDetails = await OrderService.getSingleOrder(customerId, orderId);
+
+    const totalQuantity = orderDetails.orderDetails.reduce((sum: number, item: any) => sum + item.quantity, 0);
+
+    await OrderSummaryService.addOrderSummary({
+      customerId,
+      orderId,
+      restaurantName: orderDetails.restaurantName,
+      totalAmount: orderDetails.totalPrice,
+      totalQuantity,
+      orderDate: new Date(orderDetails.date)
+    });
   }
 }

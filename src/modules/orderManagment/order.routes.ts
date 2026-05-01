@@ -1,6 +1,6 @@
 import express from 'express';
-import { OrderController } from './order.controller';
-import { placeOrderValidator, getOrderValidator } from './order.middleware';
+import { OrderController } from './controllers/order.controller';
+import { placeOrderValidator, getOrderValidator, updateOrderStatusValidator } from './order.middleware';
 import { authValidator } from '../../middlewares/auth_handling/auth-handling';
 
 const router = express.Router();
@@ -20,6 +20,14 @@ router.get(
   authValidator,
   getOrderValidator,
   orderController.getSingleOrder,
+);
+
+// PATCH  /api/v1/order/:orderId/status — update order status
+router.patch(
+  '/:orderId/status',
+  authValidator,
+  updateOrderStatusValidator,
+  orderController.updateOrderStatus,
 );
 
 export { router as orderRouter };
