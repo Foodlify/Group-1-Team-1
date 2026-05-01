@@ -1,6 +1,5 @@
 import { Request, Response } from 'express';
-<<<<<<< HEAD
-import { OrderService } from "../Services/order.service"
+import { OrderService } from '../Services/order.service';
 import { sendSuccess, sendError } from '../../../utils/reponse';
 import asyncHandler from '../../../utils/asyncHandler';
 import { StatusCodes } from 'http-status-codes';
@@ -9,19 +8,7 @@ import { successMessage } from '../../../shared_infrastructure/success/successMe
 import { QuantityExceed } from '../../cartManagement/cart.execption';
 import { ENTITIES } from '../../../../prisma/entities';
 import { BAD_REQUEST, NOT_FOUND } from '../../../shared_infrastructure/error/error.execption';
-=======
-import { OrderService } from './../Services/order.service';
-import { sendSuccess, sendError } from '../../../utils/reponse';
-import asyncHandler from '../../../utils/asyncHandler';
-import { StatusCodes } from 'http-status-codes';
-import { NotFound } from '../../../shared_infrastructure/error/error.execption';
-import { PriceNotMatch } from './../order.exception';
-import { successMessage } from '../../../shared_infrastructure/success/successMessages';
-import { QuantityExceed } from './../../cartManagement/cart.execption';
-import { ENTITIES } from '../../../../prisma/entities';
->>>>>>> b96512fd (refactor: optimize order processing logic in order controller)
 
-const cartService = new OrderService();
 
 export class OrderController {
   // ─── Place Order ────────────────────────────────────────────────────────────
@@ -46,7 +33,7 @@ export class OrderController {
       if (
         err instanceof NOT_FOUND ||
         err instanceof PriceNotMatch ||
-        err instanceof QuantityExceed||
+        err instanceof QuantityExceed ||
         err instanceof BAD_REQUEST
       ) {
         sendError(res, err.statusCode, err.code, err.message);
@@ -95,7 +82,7 @@ export class OrderController {
         null,
       );
     } catch (err: any) {
-      if (err instanceof NotFound) {
+      if (err instanceof NOT_FOUND) {
         sendError(res, err.statusCode, err.code, err.message);
       } else if (err.message && err.message.includes('Cannot')) {
         // State transition errors

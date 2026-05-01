@@ -174,7 +174,7 @@ export class OrderService {
 
     const currentStatusEntity = await OrderRepository.getOrderStatusById(order.orderStatusId);
     if (!currentStatusEntity) {
-      throw new Error('Order status not found');
+      throw new BAD_REQUEST(ENTITIES.ORDER_STATUS);
     }
 
     const context = new OrderContext(currentStatusEntity.name);
