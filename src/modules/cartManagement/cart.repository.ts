@@ -1,4 +1,4 @@
-import { Prisma } from '@prisma/client/extension';
+import { Prisma } from '@prisma/client';
 import prisma from '../../../lib/prisma';
 import { errorMessage } from '../../shared_infrastructure/error/errorMessages';
 import {
@@ -13,11 +13,13 @@ import {
   DeleteCartItemResponse,
 } from './cart.model';
 
-
 export class CartRepository {
   /**  Check a cart is existed or not */
-  static async findCartByCustomerId(customerId: number) {
-    return prisma.cart.findUnique({
+  static async findCartByCustomerId(
+    tx: Prisma.TransactionClient,
+    customerId: number,
+  ) {
+    return tx.cart.findUnique({
       where: { customerId },
       include: { cartItems: true },
     });
@@ -147,7 +149,7 @@ export class CartRepository {
         where: { id: cartItem.menuItemId },
       });
 
-      if (!menuItem || menuItem.quantity < itemQuantity) {
+      if (!menuItem || menuItem.stock < itemQuantity) {
         throw new QuantityExceed(errorMessage.QUANTITY_EXCEED.message);
       }
 

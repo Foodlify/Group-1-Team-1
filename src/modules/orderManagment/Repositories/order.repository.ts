@@ -1,120 +1,69 @@
 import prisma from '../../../../lib/prisma';
 import { getSingleOrderView } from '@prisma/client/sql';
-import { CreateOrderInput } from '../order.model';
-import { CartRepository } from '../../cartManagement/cart.repository';
-import {
-  CartNotFound,
-  MenuItemNotFound,
-  QuantityExceed,
-} from '../../cartManagement/cart.execption';
-import { errorMessage } from '../../../shared_infrastructure/error/errorMessages';
-import { OrderStatusEnum } from '@prisma/client';
-import { NotFound } from '../../../shared_infrastructure/error/error.execption';
-import { PriceNotMatch } from '../order.exception';
-import { ENTITIES } from '../../../../prisma/entities';
+import { OrderStatusEnum, Prisma } from '@prisma/client';
 
 export class OrderRepository {
+  // Get order status name
+  static async getOrderStatusPending(tx: Prisma.TransactionClient) {
+    return tx.orderStatus.findFirst({
+      where: { name: 'PENDING' },
+      select: { id: true, name: true },
+    });
+  }
   /** Add order with details using transaction */
-  static async createOrderAndDetails(data: CreateOrderInput) {
-    const { customerId, addressId, paymentTypeId, preferredDate } = data;
-    return await prisma.$transaction(async (tx) => {
-      // check if cart exist
-      const cart = await CartRepository.findCartByCustomerId(customerId);
-      if (!cart) {
-        throw new NotFound(ENTITIES.CART);
-      }
-      // Check cartItems existence, quantity, price
-      for (const ci of cart.cartItems) {
-        const { menuItemId, quantity, price } = ci;
-        const menuItem = await tx.menuItem.findUnique({
-          where: { id: menuItemId },
-        });
-
-        if (!menuItem) {
-          throw new NotFound(ENTITIES.MENU_ITEM);
-        }
-        if (quantity > menuItem?.stock) {
-          throw new QuantityExceed(errorMessage.QUANTITY_EXCEED.message);
-        }
-        if (price != menuItem?.price) {
-          throw new PriceNotMatch(
-            `${menuItem.itemName}: ${errorMessage.PRICE_NOT_MATCH.message}`,
-          );
-        }
-      }
-      // check if address belong to Customer
-      const address = await tx.address.findUnique({
-        where: { id: addressId, customerId: customerId },
-      });
-      if (!address) {
-        throw new NotFound(ENTITIES.ADDRESS);
-      }
-      // get restaurant name
-      const restaurant = await tx.restaurant.findUnique({
-        where: { id: cart.restaurantId },
-      });
-      if (!restaurant) {
-        throw new NotFound(ENTITIES.RESTAURANT);
-      }
-      // get paymentType name
-      const paymentType = await tx.paymentIntegrationType.findUnique({
-        where: { id: paymentTypeId },
-        select: { name: true },
-      });
-      if (!paymentType) {
-        throw new NotFound(ENTITIES.PAYMENT_INTEGRATION_TYPE);
-      }
-      // get orderStatus name
-      const orderStatus = await tx.orderStatus.findFirst({
-        where: { name: 'PENDING' },
-        select: { id: true, name: true },
-      });
-      if (!orderStatus) {
-        throw new NotFound(ENTITIES.ORDER_STATUS);
-      }
-
-      // 2. Calculate total price
-      const totalPrice = cart.cartItems.reduce(
-        (sum, item) => sum + item.price * item.quantity,
-        0,
-      );
-
-      // 3. Create Order + OrderDetails
-      const order = await tx.order.create({
-        data: {
-          customerId: data.customerId,
-          restaurantId: cart.restaurantId,
-          addressId: data.addressId,
-          paymentTypeId: data.paymentTypeId,
-          orderStatusId: orderStatus!.id,
-          preferredDate,
-          totalPrice,
-          paid: false,
-          orderDetails: {
-            create: cart.cartItems.map((item) => ({
+  static async createOrderAndDetails(
+    tx: Prisma.TransactionClient,
+    data: {
+      customerId: number;
+      addressId: number;
+      paymentTypeId: number;
+      preferredDate: Date;
+      orderStatusId: number;
+      totalPrice: number;
+      cart: any;
+    },
+  ) {
+    // 3. Create Order + OrderDetails
+    const order = await tx.order.create({
+      data: {
+        customerId: data.customerId,
+        restaurantId: data.cart.restaurantId,
+        addressId: data.addressId,
+        paymentTypeId: data.paymentTypeId,
+        orderStatusId: data.orderStatusId,
+        preferredDate: data.preferredDate,
+        totalPrice: data.totalPrice,
+        paid: false,
+        orderDetails: {
+          create: data.cart.cartItems.map(
+            (item: {
+              menuItemId: any;
+              name: any;
+              quantity: any;
+              price: any;
+            }) => ({
               menuItemId: item.menuItemId,
               menuItemName: item.name,
               quantity: item.quantity,
               price: item.price,
-            })),
-          },
+            }),
+          ),
         },
+      },
 
-        include: {
-          orderDetails: true,
-        },
-      });
-
-      return order;
+      include: {
+        orderDetails: true,
+      },
     });
+
+    return order;
   }
 
-  // Generate single order with its order details view
-
+  // Generate single order with its order details Materialized view
   static async createSingleOrderMV() {
     const result = await prisma.$queryRawTyped(getSingleOrderView());
   }
-  // drop single_order_details view
+  // Refresh single_order_details  Materialized view
   static async refreshSingleOrderMV() {
     await prisma.$executeRaw`REFRESH MATERIALIZED VIEW CONCURRENTLY single_order_details_view`;
   }
@@ -124,7 +73,7 @@ export class OrderRepository {
       where: { id: orderId, customerId },
     });
   }
-  // Check if order in order  Materialized view
+  // Check if order in single_order_details Materialized view
   static async getSingleOrderByIdMV(customerId: number, orderId: number) {
     return await prisma.$queryRaw`
   SELECT id

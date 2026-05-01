@@ -4,6 +4,10 @@ export const errorMessage = {
     code: 'NotFoundException',
     message: 'with the specified ID does not exist',
   },
+  BAD_REQUEST: {
+    code: 'BadRequestException',
+    message: 'failed to created',
+  },
   CART_NOT_FOUND: {
     code: 'CartNotFoundException',
     message: 'Cart with the specified ID does not exist',
