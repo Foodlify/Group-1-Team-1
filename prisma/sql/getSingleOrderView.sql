@@ -19,7 +19,7 @@ SELECT
 
 FROM "Order" o
 JOIN "Restaurant" r ON o.restaurant_id = r.id
-JOIN "PaymentType" pt ON o.payment_type_id = pt.id
+JOIN "PaymentIntegrationType" pt ON o.payment_type_id = pt.id
 JOIN "Address" a ON o.address_id = a.id
 JOIN "OrderStatus" os ON o.order_status_id = os.id
 LEFT JOIN "OrderDetail" od ON od.order_id = o.id;

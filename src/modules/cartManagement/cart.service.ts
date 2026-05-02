@@ -24,7 +24,7 @@ import { MenuService } from '../restaurantManagemet/menu.service';
 
 export class CartService {
   async getCustomerCart(customerId: number) {
-    const cart = await CartRepository.findCartByCustomerId(customerId);
+    const cart = await CartRepository.findCartAndCartItems(customerId);
     return cart;
   }
   async checkQuantity(itemId: number, itemQuantity: number) {

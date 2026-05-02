@@ -218,7 +218,7 @@ model OrderTracking {
 
 model OrderSummary {
   id             Int      @id @default(autoincrement())
-  customerId     Int      @unique @map("customer_id")
+  customerId     Int      @map("customer_id")
   orderId        Int      @unique @map("order_id")
   restaurantName String   @map("restaurant_name")
   totalAmount    Int      @map("total_amount")

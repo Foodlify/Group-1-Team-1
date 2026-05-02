@@ -18,6 +18,8 @@ import { MenuRepository } from '../../restaurantManagemet/menu.repository';
 import { AddressRepository } from '../../customerManagement/address.repository';
 import { RestaurantRepository } from '../../restaurantManagemet/restaurant.repository';
 import { PaymentRepository } from '../../paymentManagement/payment.repository';
+import { OrderContext } from '../States/OrderContext';
+import { OrderSummaryService } from './orderSummary.service';
 export class OrderService {
   // Validate if cart exist and its items are valid to create order [is exist, is stock ok, is price changed]
   static async validCartAntItems(customerId: number) {
@@ -131,8 +133,8 @@ export class OrderService {
     const order_MV = await OrderRepository.getSingleOrderByIdMV(
       customerId,
       orderId,
-    );
-    if (!order_MV) {
+    ) as any[];
+    if (!order_MV || order_MV.length === 0) {
       await OrderRepository.refreshSingleOrderMV();
     }
     const result = (await OrderRepository.getSingleOrderAndDetailsById(
@@ -144,19 +146,82 @@ export class OrderService {
     const orderRow = result[0];
     return {
       orderId: orderRow.order_id,
-      totalPrice: orderRow.totalPrice,
-      date: orderRow.date,
+      totalPrice: orderRow.total_price,
+      date: orderRow.timestamp,
       restaurantName: orderRow.restaurant_name,
-      paymentMethod: orderRow.paymentMethod,
+      paymentMethod: orderRow.payment_method,
       state: orderRow.state,
       city: orderRow.city,
       street: orderRow.street,
-      status: orderRow.status,
+      status: orderRow.order_status,
       orderDetails: orderRow.order_details.map((od: any) => ({
-        name: od.item_name,
+        name: od.name,
         quantity: od.quantity,
         price: od.price,
       })),
     } as SingleOrderResponse;
+  }
+
+  static async updateOrderStatus(
+    customerId: number,
+    orderId: number,
+    action: 'confirm' | 'process' | 'pickup' | 'out_for_delivery' | 'deliver' | 'cancel' | 'refund'
+  ): Promise<void> {
+    const order = await OrderRepository.getSingleOrderById(customerId, orderId);
+    if (!order) {
+      throw new NOT_FOUND(ENTITIES.ORDER);
+    }
+
+    const currentStatusEntity = await OrderRepository.getOrderStatusById(order.orderStatusId);
+    if (!currentStatusEntity) {
+      throw new BAD_REQUEST(ENTITIES.ORDER_STATUS);
+    }
+
+    const context = new OrderContext(currentStatusEntity.name);
+
+    switch (action) {
+      case 'confirm':
+        context.confirm();
+        break;
+      case 'process':
+        context.process();
+        break;
+      case 'pickup':
+        context.pickup();
+        break;
+      case 'out_for_delivery':
+        context.outForDelivery();
+        break;
+      case 'deliver':
+        context.deliver();
+        await OrderService.insertOrderSummaryTrigger(customerId, orderId);
+        break;
+      case 'cancel':
+        context.cancel();
+        break;
+      case 'refund':
+        context.refund();
+        break;
+      default:
+        throw new Error(`Invalid action ${action}`);
+    }
+
+    const newStatusEnum = context.getCurrentStatus();
+    await OrderRepository.updateOrderStatusByName(orderId, newStatusEnum);
+  }
+
+  private static async insertOrderSummaryTrigger(customerId: number, orderId: number) {
+    const orderDetails = await OrderService.getSingleOrder(customerId, orderId);
+
+    const totalQuantity = orderDetails.orderDetails.reduce((sum: number, item: any) => sum + item.quantity, 0);
+
+    await OrderSummaryService.addOrderSummary({
+      customerId,
+      orderId,
+      restaurantName: orderDetails.restaurantName,
+      totalAmount: orderDetails.totalPrice,
+      totalQuantity,
+      orderDate: orderDetails.date instanceof Date ? orderDetails.date : new Date(orderDetails.date)
+    });
   }
 }
