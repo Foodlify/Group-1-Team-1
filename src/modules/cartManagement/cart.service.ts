@@ -21,6 +21,10 @@ import {
 } from './cart.execption';
 import { errorMessage } from '../../shared_infrastructure/error/errorMessages';
 import { MenuService } from '../restaurantManagemet/menu.service';
+import { NOT_FOUND } from '../../shared_infrastructure/error/error.execption';
+import { ENTITIES } from '../../../prisma/entities';
+import { RestaurantRepository } from '../restaurantManagemet/restaurant.repository';
+import { PriceNotMatch } from '../orderManagment/order.exception';
 
 export class CartService {
   async getCustomerCart(customerId: number) {
@@ -164,5 +168,46 @@ export class CartService {
     const { totalQuantity, totalPrice } = result;
 
     return { totalPrice, totalQuantity };
+  }
+  // Validate if cart exist and its items are valid to create order [is exist, is stock ok, is price changed]
+  static async validCartAntItems(customerId: number) {
+    return await prisma.$transaction(async (tx) => {
+      // Check if  customer has a cart
+      const cart = await CartRepository.findCartByCustomerId(tx, customerId);
+      if (!cart) {
+        throw new NOT_FOUND(ENTITIES.CART);
+      }
+      // Check if  restaurant exist
+      const restaurant = await RestaurantRepository.findRestaurantById(
+        tx,
+        cart.restaurantId,
+      );
+      if (!restaurant) {
+        throw new NOT_FOUND(ENTITIES.RESTAURANT);
+      }
+      // Check cart items
+      for (const ci of cart.cartItems) {
+        const { menuItemId, quantity, price } = ci;
+        const menuItem = await MenuRepository.findMenuItemById(tx, menuItemId);
+
+        if (!menuItem) {
+          throw new NOT_FOUND(ENTITIES.MENU_ITEM);
+        }
+        if (quantity > menuItem?.stock) {
+          throw new QuantityExceed(errorMessage.QUANTITY_EXCEED.message);
+        }
+        if (price != menuItem?.price) {
+          throw new PriceNotMatch(
+            `${menuItem.itemName}: ${errorMessage.PRICE_NOT_MATCH.message}`,
+          );
+        }
+      }
+      //  Calculate total price
+      const totalPrice = cart.cartItems.reduce(
+        (sum, item) => sum + item.price * item.quantity,
+        0,
+      );
+      return { cart, totalPrice };
+    });
   }
 }
