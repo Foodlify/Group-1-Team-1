@@ -10,14 +10,7 @@ import {
   SingleOrderResponse,
 } from '../order.model';
 import { OrderRepository } from '../Repositories/order.repository';
-import { CartRepository } from '../../cartManagement/cart.repository';
-import { QuantityExceed } from '../../cartManagement/cart.execption';
-import { errorMessage } from '../../../shared_infrastructure/error/errorMessages';
-import { PriceNotMatch } from '../order.exception';
-import { MenuRepository } from '../../restaurantManagemet/menu.repository';
-import { AddressRepository } from '../../customerManagement/Repositories/address.repository';
-import { RestaurantRepository } from '../../restaurantManagemet/restaurant.repository';
-import { PaymentRepository } from '../../paymentManagement/payment.repository';
+import { PaymentService } from '../../paymentManagement/payment.service';
 import { OrderContext } from '../States/OrderContext';
 import { OrderSummaryService } from './orderSummary.service';
 import { AddressService } from '../../customerManagement/Services/address.service';
@@ -27,16 +20,17 @@ export class OrderService {
     input: CreateOrderInput,
   ): Promise<CreateOrderResponse> {
     const { customerId, addressId, paymentTypeId, preferredDate } = input;
-    const { cart, totalPrice } = await CartService.validCartAntItems(customerId);
+    const { cart, totalPrice } =
+      await CartService.validCartAntItems(customerId);
     // check if address belong to Customer
     const address = await AddressService.getAddressByCustomerId(
       customerId,
       addressId,
     );
     // Check if Payment integration type exist in system
-    const paymentId =  await PaymentRepository.findPaymentTypeById(paymentTypeId);
+    const paymentId = await PaymentService.getPaymentTypeById(paymentTypeId);
+    if (!paymentTypeId) throw new NOT_FOUND(ENTITIES.PAYMENT_INTEGRATION_TYPE);
     return await prisma.$transaction(async (tx) => {
-    
       // get orderStatusId of "pending"
       const orderStatus = await OrderRepository.getOrderStatusPending(tx);
       if (!orderStatus) {
