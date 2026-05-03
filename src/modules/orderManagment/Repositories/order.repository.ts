@@ -1,6 +1,7 @@
 import prisma from '../../../../lib/prisma';
 import { getSingleOrderView } from '@prisma/client/sql';
-import { OrderStatusEnum, Prisma } from '@prisma/client';
+import { OrderStatusEnum } from '@prisma/client';
+import { Prisma } from '@prisma/client/extension';
 
 export class OrderRepository {
   // Get order status name

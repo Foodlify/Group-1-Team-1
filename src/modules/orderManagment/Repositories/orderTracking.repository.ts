@@ -16,7 +16,7 @@ export class OrderTrackingRepository {
 
   /** Get all order tracking columns by order id */
   static async getOrderTrackingsByOrderId(orderId: number) {
-    return prisma.orderTracking.findMany({
+    return await prisma.orderTracking.findMany({
       where: { orderId },
       include: {
         status: true,
@@ -25,5 +25,6 @@ export class OrderTrackingRepository {
         statusDate: 'desc', // order by newest tracking first
       },
     });
+
   }
 }

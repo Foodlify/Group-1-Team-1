@@ -261,31 +261,25 @@ model TransactionStatus {
 // ───────────────────────────────────────────────────────────────────────────────────────────────────────
 
 model Transaction {
-  id                  Int @id @default(autoincrement()) //PK
-  orderId             Int @unique @map("order_id") //FK
-  transactionStatusId Int @unique @map("status_id") //FK
-  payTypeId           Int @unique @map("pay_type_id") //FK
-  transactionNumber   Int @unique
+  id                  Int    @id @default(autoincrement()) //PK
+  orderId             Int    @unique @map("order_id") //FK
+  transactionStatusId Int    @unique @map("status_id") //FK
+  payTypeId           Int    @unique @map("pay_type_id") //FK
+  transactionNumber   String @unique
   amount              Int
 
   order             Order                  @relation(fields: [orderId], references: [id])
   paymentType       PaymentIntegrationType @relation(fields: [payTypeId], references: [id])
   transactionStatus TransactionStatus      @relation(fields: [transactionStatusId], references: [id])
+
+  tracking TransactionStatusTracking[]
 }
 
-// ============================================================================================================
-//______________________________________
-// Payment 
-//______________________________________
-// model PaymentConfiguration {
-// payIntegrationId  Int @id @default(autoincrement())
-// configDetails     Json @default("{}")
-// }
-
-// model Transaction {
-//   orderId            Int @map("order_id")
-//   transactionNumber  Int @unique
-//   amount             Int
-//   statusId           TransactionStatus 
-//   payIntegrationId   Int @map("PaymentConfiguration")
-// }
+// ───────────────────────────────────────────────────────────────────────────────────────────────────────
+model TransactionStatusTracking {
+  id            Int                   @id @default(autoincrement())
+  transactionId Int                   @map("transaction_id") //FK
+  status        TransactionStatusEnum @default(PENDING)
+  timestamp     DateTime              @default(now())
+  transaction   Transaction           @relation(fields: [transactionId], references: [id])
+}

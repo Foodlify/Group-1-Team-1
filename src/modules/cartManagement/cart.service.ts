@@ -25,6 +25,7 @@ import { NOT_FOUND } from '../../shared_infrastructure/error/error.execption';
 import { ENTITIES } from '../../../prisma/entities';
 import { RestaurantRepository } from '../restaurantManagemet/restaurant.repository';
 import { PriceNotMatch } from '../orderManagment/order.exception';
+import { Prisma } from '@prisma/client/extension';
 
 export class CartService {
   async getCustomerCart(customerId: number) {
@@ -171,7 +172,7 @@ export class CartService {
   }
   // Validate if cart exist and its items are valid to create order [is exist, is stock ok, is price changed]
   static async validCartAntItems(customerId: number) {
-    return await prisma.$transaction(async (tx) => {
+    return await prisma.$transaction(async (tx:Prisma.TransactionClient) => {
       // Check if  customer has a cart
       const cart = await CartRepository.findCartByCustomerId(tx, customerId);
       if (!cart) {
@@ -204,7 +205,7 @@ export class CartService {
       }
       //  Calculate total price
       const totalPrice = cart.cartItems.reduce(
-        (sum, item) => sum + item.price * item.quantity,
+        (sum: number, item: { price: number; quantity: number; }) => sum + item.price * item.quantity,
         0,
       );
       return { cart, totalPrice };
