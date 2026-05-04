@@ -1,6 +1,6 @@
-import { ENTITIES } from "../../../../prisma/entities";
-import { NOT_FOUND } from "../../../shared_infrastructure/error/error.execption";
-import { AddressRepository } from "../Repositories/address.repository";
+import { ENTITIES } from '../../../../prisma/entities';
+import { NOT_FOUND } from '../../../shared_infrastructure/error/error.execption';
+import { AddressRepository } from '../Repositories/address.repository';
 
 export class AddressService {
   static async getAddressByCustomerId(customerId: number, addressId: number) {
@@ -11,5 +11,6 @@ export class AddressService {
     if (!address) {
       throw new NOT_FOUND(ENTITIES.ADDRESS);
     }
+    return address;
   }
 }

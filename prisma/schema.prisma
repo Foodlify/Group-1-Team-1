@@ -83,6 +83,8 @@ model Address {
   postalCode String?
   customer   Customer @relation(fields: [customerId], references: [id])
   orders     Order[]
+
+  @@unique([id, customerId])
 }
 
 // -----------------------------------------------------------------------------------------------------
@@ -262,10 +264,10 @@ model TransactionStatus {
 
 model Transaction {
   id                  Int    @id @default(autoincrement()) //PK
-  orderId             Int    @unique @map("order_id") //FK
-  transactionStatusId Int    @unique @map("status_id") //FK
-  payTypeId           Int    @unique @map("pay_type_id") //FK
-  transactionNumber   String @unique
+  orderId             Int    @map("order_id") //FK
+  transactionStatusId Int    @map("status_id") //FK
+  payTypeId           Int    @map("pay_type_id") //FK
+  transactionNumber   String? @unique
   amount              Int
 
   order             Order                  @relation(fields: [orderId], references: [id])
@@ -283,3 +285,4 @@ model TransactionStatusTracking {
   timestamp     DateTime              @default(now())
   transaction   Transaction           @relation(fields: [transactionId], references: [id])
 }
+

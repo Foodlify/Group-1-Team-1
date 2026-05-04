@@ -7,13 +7,19 @@ import swaggerDocument from './config/swagger.json';
 import prisma from '../lib/prisma';
 import router from './routes';
 import { errorHandler } from './middlewares/error_handling/error-handling';
-import { OrderRepository } from './modules/orderManagment/Repositories/order.repository';
+import { webhookRouter } from './modules/paymentManagement/routes/webhook.route';
+
+import 'dotenv/config';
+import { TransactionService } from './modules/paymentManagement/Services/transaction.service';
+import { TransactionStatusEnum } from '@prisma/client';
 const app = express();
 app.use(cors());
 app.use(helmet());
 app.use(morgan('dev'));
-app.use(express.json());
 
+app.use('/webhook', webhookRouter);
+
+app.use(express.json());
 app.use('/api/v1', router);
 
 // Swagger Docs Setup

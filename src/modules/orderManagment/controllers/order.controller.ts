@@ -7,8 +7,10 @@ import { PriceNotMatch } from '../order.exception';
 import { successMessage } from '../../../shared_infrastructure/success/successMessages';
 import { QuantityExceed } from '../../cartManagement/cart.execption';
 import { ENTITIES } from '../../../../prisma/entities';
-import { BAD_REQUEST, NOT_FOUND } from '../../../shared_infrastructure/error/error.execption';
-
+import {
+  BAD_REQUEST,
+  NOT_FOUND,
+} from '../../../shared_infrastructure/error/error.execption';
 
 export class OrderController {
   // ─── Place Order ────────────────────────────────────────────────────────────
@@ -17,7 +19,7 @@ export class OrderController {
     const customerId = req.customerId!;
     const { addressId, paymentTypeId, preferredDate } = req.body;
     try {
-      const order = await OrderService.placeOrder({
+      const paymentSession = await OrderService.placeOrder({
         customerId,
         addressId,
         paymentTypeId,
@@ -27,7 +29,7 @@ export class OrderController {
         res,
         `${ENTITIES.ORDER} ${successMessage.RECORD_ADDED.message}`,
         StatusCodes.CREATED,
-        order,
+        paymentSession,
       );
     } catch (err) {
       if (
@@ -86,7 +88,12 @@ export class OrderController {
         sendError(res, err.statusCode, err.code, err.message);
       } else if (err.message && err.message.includes('Cannot')) {
         // State transition errors
-        sendError(res, StatusCodes.BAD_REQUEST, 'INVALID_STATE_TRANSITION', err.message);
+        sendError(
+          res,
+          StatusCodes.BAD_REQUEST,
+          'INVALID_STATE_TRANSITION',
+          err.message,
+        );
       } else {
         throw err;
       }

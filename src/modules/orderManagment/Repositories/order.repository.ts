@@ -5,9 +5,12 @@ import { Prisma } from '@prisma/client/extension';
 
 export class OrderRepository {
   // Get order status name
-  static async getOrderStatusPending(tx: Prisma.TransactionClient) {
+  static async getOrderStatusByName(
+    tx: Prisma.TransactionClient,
+    statusName: OrderStatusEnum,
+  ) {
     return tx.orderStatus.findFirst({
-      where: { name: 'PENDING' },
+      where: { name: statusName },
       select: { id: true, name: true },
     });
   }
@@ -74,6 +77,48 @@ export class OrderRepository {
       where: { id: orderId, customerId },
     });
   }
+  static async getSingleOrderAndDetailsById(orderId: number) {
+    const order = await prisma.order.findUnique({
+      where: { id: orderId },
+
+      select: {
+        id: true,
+        customerId: true,
+        totalPrice: true,
+        paid: true,
+        timestamp: true,
+
+        restaurant: {
+          select: { name: true },
+        },
+
+        paymentType: {
+          select: { name: true },
+        },
+
+        address: {
+          select: {
+            state: true,
+            city: true,
+            street: true,
+          },
+        },
+
+        orderStatus: {
+          select: { name: true },
+        },
+
+        orderDetails: {
+          select: {
+            menuItemName: true,
+            quantity: true,
+            price: true,
+          },
+        },
+      },
+    });
+    return order;
+  }
   // Check if order in single_order_details Materialized view
   static async getSingleOrderByIdMV(customerId: number, orderId: number) {
     return await prisma.$queryRaw`
@@ -83,7 +128,7 @@ export class OrderRepository {
 `;
   }
   // get order and its order details from view
-  static async getSingleOrderAndDetailsById(orderId: number) {
+  static async getSingleOrderAndDetailsById_MV(orderId: number) {
     return await prisma.$queryRaw`
         SELECT 
           o.order_id,
@@ -120,6 +165,7 @@ export class OrderRepository {
   }
 
   // to get order based on query of its status
+  // Service, controller
   static async getOrdersByCustomerAndOrderStatus(
     customerId: number,
     orderStatus: OrderStatusEnum,
@@ -142,7 +188,10 @@ export class OrderRepository {
   }
 
   /** Edit order status */
-  static async updateOrderStatusByName(orderId: number, statusName: OrderStatusEnum) {
+  static async updateOrderStatusByName(
+    orderId: number,
+    statusName: OrderStatusEnum,
+  ) {
     const status = await prisma.orderStatus.findFirst({
       where: { name: statusName },
     });

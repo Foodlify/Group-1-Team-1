@@ -4,66 +4,83 @@ import {
   NOT_FOUND,
 } from '../../../shared_infrastructure/error/error.execption';
 import { ENTITIES } from '../../../../prisma/entities';
-import {
-  CreateOrderInput,
-  CreateOrderResponse,
-  SingleOrderResponse,
-} from '../order.model';
+import { CreateOrderInput, SingleOrderResponse } from '../order.model';
 import { OrderRepository } from '../Repositories/order.repository';
-import { PaymentService } from '../../paymentManagement/payment.service';
+import { PaymentService } from '../../paymentManagement/Services/payment.service';
 import { OrderContext } from '../States/OrderContext';
 import { OrderSummaryService } from './orderSummary.service';
 import { AddressService } from '../../customerManagement/Services/address.service';
 import { CartService } from '../../cartManagement/cart.service';
+import { PaymentStrategy } from '../../paymentManagement/PaymentStrategies/payment.strategy';
+import { TransactionService } from '../../paymentManagement/Services/transaction.service';
+import { OrderStatusEnum, PaymentTypeEnum, Prisma } from '@prisma/client';
 export class OrderService {
-  static async placeOrder(
-    input: CreateOrderInput,
-  ): Promise<CreateOrderResponse> {
+  static async getOrderStatus(
+    tx: Prisma.TransactionClient,
+    paymentName: PaymentTypeEnum,
+  ) {
+    let orderStatus;
+    if (paymentName === PaymentTypeEnum.CASH) {
+      orderStatus = await OrderRepository.getOrderStatusByName(
+        tx,
+        OrderStatusEnum.CONFIRMED,
+      );
+    } else {
+      orderStatus = await OrderRepository.getOrderStatusByName(
+        tx,
+        OrderStatusEnum.PENDING,
+      );
+    }
+    if (!orderStatus) {
+      throw new NOT_FOUND(ENTITIES.ORDER_STATUS);
+    }
+    return orderStatus.id;
+  }
+  static async placeOrder(input: CreateOrderInput): Promise<any> {
     const { customerId, addressId, paymentTypeId, preferredDate } = input;
     const { cart, totalPrice } =
       await CartService.validCartAntItems(customerId);
+
     // check if address belong to Customer
     const address = await AddressService.getAddressByCustomerId(
       customerId,
       addressId,
     );
     // Check if Payment integration type exist in system
-    const paymentId = await PaymentService.getPaymentTypeById(paymentTypeId);
-    if (!paymentTypeId) throw new NOT_FOUND(ENTITIES.PAYMENT_INTEGRATION_TYPE);
-    return await prisma.$transaction(async (tx) => {
-      // get orderStatusId of "pending"
-      const orderStatus = await OrderRepository.getOrderStatusPending(tx);
-      if (!orderStatus) {
-        throw new NOT_FOUND(ENTITIES.ORDER_STATUS);
-      }
+    const paymentType = await PaymentService.getPaymentTypeById(paymentTypeId);
+    if (!paymentType) throw new NOT_FOUND(ENTITIES.PAYMENT_INTEGRATION_TYPE);
 
-      // Create Order and its details
+    // Create Order and its details
+    await prisma.$transaction(async (tx) => {
+      const statusId = await OrderService.getOrderStatus(tx, paymentType.name);
       const order = await OrderRepository.createOrderAndDetails(tx, {
         customerId,
         addressId,
-        paymentTypeId: paymentId!.id,
+        paymentTypeId: paymentType.id,
         preferredDate,
-        orderStatusId: orderStatus.id,
+        orderStatusId: statusId,
         totalPrice,
         cart,
       });
+
       if (!order) {
         throw new BAD_REQUEST(ENTITIES.ORDER);
       }
-      return {
-        orderId: order.id,
-        totalPrice: order.totalPrice,
-        createdAt: order.timestamp,
-        restaurantId: order.restaurantId,
-        addressId: order.addressId,
-        statusId: order.orderStatusId,
-        orderDetails: ((order as any).orderDetails ?? []).map(
-          (detail: any) => ({
-            ...detail,
-            name: detail.menuItemName,
-          }),
-        ),
-      };
+      //  Call payment strategy
+      const paymentStrategy = new PaymentStrategy(paymentType.name);
+
+      const transaction = await paymentStrategy.createPayment(order);
+      if (!transaction) {
+        throw new BAD_REQUEST(ENTITIES.TRANSACTION);
+      }
+      await TransactionService.createTransaction(
+        tx,
+        order.id,
+        paymentType.id,
+        transaction.id,
+        order.totalPrice,
+      );
+      return transaction;
     });
   }
   static async getSingleOrder(
@@ -74,32 +91,22 @@ export class OrderService {
     if (!order) {
       throw new NOT_FOUND(ENTITIES.ORDER);
     }
-
-    const order_MV = (await OrderRepository.getSingleOrderByIdMV(
-      customerId,
-      orderId,
-    )) as any[];
-    if (!order_MV || order_MV.length === 0) {
-      await OrderRepository.refreshSingleOrderMV();
-    }
-    const result = (await OrderRepository.getSingleOrderAndDetailsById(
-      orderId,
-    )) as any[];
-    if (!result || result.length === 0) {
+    const result = await OrderRepository.getSingleOrderAndDetailsById(orderId);
+    if (!result) {
       throw new NOT_FOUND(ENTITIES.ORDER);
     }
-    const orderRow = result[0];
+    const orderRow = result;
     return {
-      orderId: orderRow.order_id,
-      totalPrice: orderRow.total_price,
+      orderId: orderRow.id,
+      totalPrice: orderRow.totalPrice,
       date: orderRow.timestamp,
-      restaurantName: orderRow.restaurant_name,
-      paymentMethod: orderRow.payment_method,
-      state: orderRow.state,
-      city: orderRow.city,
-      street: orderRow.street,
-      status: orderRow.order_status,
-      orderDetails: orderRow.order_details.map((od: any) => ({
+      restaurantName: orderRow.restaurant.name,
+      paymentMethod: orderRow.paymentType.name,
+      state: orderRow.address.state,
+      city: orderRow.address.city,
+      street: orderRow.address.street,
+      status: orderRow.orderStatus.name,
+      orderDetails: orderRow.orderDetails.map((od: any) => ({
         name: od.name,
         quantity: od.quantity,
         price: od.price,

@@ -2,46 +2,58 @@ import prisma from '../../../../lib/prisma';
 import { Prisma, TransactionStatusEnum } from '@prisma/client';
 
 export class TransactionRepository {
+  //Create Transaction with its tracking status record
   static async createTransaction(
+    tx: Prisma.TransactionClient,
     orderId: number,
     paymentId: number,
     sessionId: string,
     totalPrice: number,
   ) {
-    await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
-      const statusId = await tx.transactionStatus.findFirst({
-        where: { status: TransactionStatusEnum.PENDING },
+    const statusId = await tx.transactionStatus.findFirst({
+      where: { status: TransactionStatusEnum.PENDING },
+    });
+    const result = await tx.transaction.create({
+      data: {
+        orderId,
+        transactionStatusId: statusId!.id,
+        payTypeId: paymentId,
+        transactionNumber: sessionId,
+        amount: totalPrice,
+        tracking: { create: { status: statusId!.status } },
+      },
+      include: { tracking: true },
+    });
+    return result;
+  }
+  static async updateTransactionAndTracking(
+    orderId: number,
+    sessionId: string | null,
+    transactionStatus: TransactionStatusEnum,
+  ) {
+    return await prisma.$transaction(async (tx) => {
+      const status = await tx.transactionStatus.findFirst({
+        where: { status: transactionStatus },
       });
-      await tx.transaction.create({
-        data: {
+      if (!status) throw new Error('Status not found');
+      const transaction = await prisma.transaction.findFirst({
+        where: {
           orderId,
-          transactionStatusId: statusId!.id,
-          payTypeId: paymentId,
-          transactionNumber: sessionId,
-          amount: totalPrice,
-          transactionStatusTracking: { create: { status: statusId!.status } },
+          OR: [{ transactionNumber: sessionId }, { transactionNumber: null }],
         },
       });
-    });
-  }
-  static async updateTransactionAndTracking(sessionId: string) {
-    await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
-      const statusId = await tx.transactionStatus.findFirst({
-        where: { status: TransactionStatusEnum.SUCCEEDED },
+      await prisma.transaction.update({
+        where: { id: transaction!.id },
+        data: { transactionStatusId: status.id },
       });
-      const transaction = await tx.transaction.update({
-        where: { transactionNumber: sessionId },
+      await tx.transactionStatusTracking.create({
         data: {
-          transactionStatusId: statusId!.id,
+          transactionId: transaction!.id,
+          status: transactionStatus,
         },
       });
 
-      await tx.transactionStatusTracking.create({
-        data: {
-          transactionId: transaction.id,
-          status: TransactionStatusEnum.SUCCEEDED,
-        },
-      });
+      return transaction;
     });
   }
 }
