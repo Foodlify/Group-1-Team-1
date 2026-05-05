@@ -11,6 +11,7 @@ import {
   BAD_REQUEST,
   NOT_FOUND,
 } from '../../../shared_infrastructure/error/error.execption';
+import { OrderStatusEnum } from '@prisma/client';
 
 export class OrderController {
   // ─── Place Order ────────────────────────────────────────────────────────────
@@ -74,10 +75,10 @@ export class OrderController {
   updateOrderStatus = asyncHandler(async (req: Request, res: Response) => {
     const customerId = req.customerId!;
     const orderId = Number(req.params.orderId);
-    const { action } = req.body;
+    const { status } = req.body;
 
     try {
-      await OrderService.updateOrderStatus(customerId, orderId, action);
+      await OrderService.updateOrderStatus(customerId, orderId, status);
       sendSuccess(
         res,
         `Order status updated successfully`,
@@ -95,6 +96,29 @@ export class OrderController {
           'INVALID_STATE_TRANSITION',
           err.message,
         );
+      } else {
+        throw err;
+      }
+    }
+  });
+
+  // ─── Get Orders By Status ──────────────────────────────────────────────────────────────
+
+  getOrdersByStatus = asyncHandler(async (req: Request, res: Response) => {
+    const customerId = req.customerId!;
+    const status = req.query.status as OrderStatusEnum;
+
+    try {
+      const orders = await OrderService.getOrdersByStatus(customerId, status);
+      sendSuccess(
+        res,
+        `${ENTITIES.ORDER} ${successMessage.RECORD_GET.message}`,
+        StatusCodes.OK,
+        orders,
+      );
+    } catch (err) {
+      if (err instanceof NOT_FOUND) {
+        sendError(res, err.statusCode, err.code, err.message);
       } else {
         throw err;
       }

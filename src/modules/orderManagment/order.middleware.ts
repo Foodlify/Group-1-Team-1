@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { PlaceOrderSchema, GetOrderSchema, UpdateOrderStatusSchema } from './order.validation';
+import { PlaceOrderSchema, GetOrderSchema, UpdateOrderStatusSchema, GetOrdersByStatusSchema } from './order.validation';
 import { StatusCodes } from 'http-status-codes';
 
 export const placeOrderValidator = (
@@ -40,8 +40,23 @@ export const updateOrderStatusValidator = (
   next: NextFunction,
 ) => {
   const orderId = Number(req.params.orderId);
-  const action = req.body.action;
-  const result = UpdateOrderStatusSchema.safeParse({ orderId, action });
+  const status = req.body.status;
+  const result = UpdateOrderStatusSchema.safeParse({ orderId, status });
+  if (!result.success) {
+    return res.status(StatusCodes.BAD_REQUEST).json({
+      message: 'Validation failed',
+      errors: result.error.issues,
+    });
+  }
+  next();
+};
+
+export const getOrdersByStatusValidator = (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  const result = GetOrdersByStatusSchema.safeParse({ status: req.query.status });
   if (!result.success) {
     return res.status(StatusCodes.BAD_REQUEST).json({
       message: 'Validation failed',

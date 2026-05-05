@@ -31,3 +31,16 @@ export interface SingleOrderResponse {
   status: string;
   orderDetails: OrderDetails[];
 }
+
+export interface CustomerOrdersByStatusResponse {
+  orderId: number;
+  totalPrice: number;
+  date: Date;
+  restaurantName: string;
+  paymentMethod: string;
+  state: string;
+  city: string;
+  street: string;
+  status: string;
+  orderDetails: OrderDetails[];
+}

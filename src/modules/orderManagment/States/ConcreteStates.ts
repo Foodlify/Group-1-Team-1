@@ -39,8 +39,8 @@ export class ProcessedState extends OrderStatusState {
     context.setState(new ReadyToPickupState());
   }
 
-  outForDelivery(context: OrderContext): void {
-    context.setState(new OutForDeliveryState());
+  cancel(context: OrderContext): void {
+    context.setState(new CancelledState());
   }
 }
 
@@ -49,8 +49,12 @@ export class ReadyToPickupState extends OrderStatusState {
     return OrderStatusEnum.READY_TO_PICKUP;
   }
 
-  deliver(context: OrderContext): void {
-    context.setState(new DeliveredState());
+  outForDelivery(context: OrderContext): void {
+    context.setState(new OutForDeliveryState());
+  }
+
+  cancel(context: OrderContext): void {
+    context.setState(new CancelledState());
   }
 }
 
@@ -61,6 +65,9 @@ export class OutForDeliveryState extends OrderStatusState {
 
   deliver(context: OrderContext): void {
     context.setState(new DeliveredState());
+  }
+  cancel(context: OrderContext): void {
+    context.setState(new CancelledState());
   }
 }
 
