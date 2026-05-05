@@ -19,17 +19,18 @@ export class OrderController {
     const customerId = req.customerId!;
     const { addressId, paymentTypeId, preferredDate } = req.body;
     try {
-      const paymentSession = await OrderService.placeOrder({
+      const paymentIntent = await OrderService.placeOrder({
         customerId,
         addressId,
         paymentTypeId,
         preferredDate,
       });
+      const { client_secret } = paymentIntent;
       sendSuccess(
         res,
         `${ENTITIES.ORDER} ${successMessage.RECORD_ADDED.message}`,
         StatusCodes.CREATED,
-        paymentSession,
+        client_secret,
       );
     } catch (err) {
       if (

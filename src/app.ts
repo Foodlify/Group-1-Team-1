@@ -8,14 +8,27 @@ import prisma from '../lib/prisma';
 import router from './routes';
 import { errorHandler } from './middlewares/error_handling/error-handling';
 import { webhookRouter } from './modules/paymentManagement/routes/webhook.route';
-
+import { resolve } from 'path';
+import path from 'path';
 import 'dotenv/config';
-import { TransactionService } from './modules/paymentManagement/Services/transaction.service';
-import { TransactionStatusEnum } from '@prisma/client';
+
 const app = express();
 app.use(cors());
 app.use(helmet());
 app.use(morgan('dev'));
+
+app.use(
+  helmet.contentSecurityPolicy({
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", 'https://js.stripe.com'],
+      frameSrc: ["'self'", 'https://js.stripe.com'],
+      connectSrc: ["'self'", 'https://api.stripe.com'],
+    },
+  }),
+);
+
+app.use(express.static(path.join(__dirname, '../public')));
 
 app.use('/webhook', webhookRouter);
 

@@ -1,11 +1,9 @@
 import { PaymentStrategyInterface } from './paymentStrategyInterface';
-import { loadStripe } from '@stripe/stripe-js';
-
 import { stripe } from '../../../config/stripe';
 import { TransactionService } from '../Services/transaction.service';
 import { OrderService } from '../../orderManagment/Services/order.service';
-import { PaymentTypeEnum, TransactionStatusEnum } from '@prisma/client';
-import { meta } from 'zod/v4/core';
+import {TransactionStatusEnum } from '@prisma/client';
+
 
 export class StripeStrategy implements PaymentStrategyInterface {
   async createPayment(order: any): Promise<any> {
@@ -26,7 +24,7 @@ export class StripeStrategy implements PaymentStrategyInterface {
   }
 
   async handleWebhook(event: any) {
-    event.type = 'payment_intent.succeeded'; // this should be come from frontend, but put here for testing
+    console.log(event)
     if (event.type == 'payment_intent.succeeded') {
       const session = event.data.object;
       const orderId = Number(session.metadata.orderId);

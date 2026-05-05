@@ -51,7 +51,7 @@ export class OrderService {
     if (!paymentType) throw new NOT_FOUND(ENTITIES.PAYMENT_INTEGRATION_TYPE);
 
     // Create Order and its details
-    await prisma.$transaction(async (tx) => {
+    return await prisma.$transaction(async (tx) => {
       const statusId = await OrderService.getOrderStatus(tx, paymentType.name);
       const order = await OrderRepository.createOrderAndDetails(tx, {
         customerId,
