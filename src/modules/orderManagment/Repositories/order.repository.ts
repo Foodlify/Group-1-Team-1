@@ -177,6 +177,40 @@ export class OrderRepository {
           name: orderStatus,
         },
       },
+      select: {
+        id: true,
+        totalPrice: true,
+        paid: true,
+        timestamp: true,
+
+        restaurant: {
+          select: { name: true },
+        },
+
+        paymentType: {
+          select: { name: true },
+        },
+
+        address: {
+          select: {
+            state: true,
+            city: true,
+            street: true,
+          },
+        },
+
+        orderStatus: {
+          select: { name: true },
+        },
+
+        orderDetails: {
+          select: {
+            menuItemName: true,
+            quantity: true,
+            price: true,
+          },
+        },
+      },
     });
   }
 

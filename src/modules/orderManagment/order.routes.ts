@@ -1,6 +1,6 @@
 import express from 'express';
 import { OrderController } from './controllers/order.controller';
-import { placeOrderValidator, getOrderValidator, updateOrderStatusValidator } from './order.middleware';
+import { placeOrderValidator, getOrderValidator, updateOrderStatusValidator, getOrdersByStatusValidator } from './order.middleware';
 import { authValidator } from '../../middlewares/auth_handling/auth-handling';
 
 const router = express.Router();
@@ -28,6 +28,14 @@ router.patch(
   authValidator,
   updateOrderStatusValidator,
   orderController.updateOrderStatus,
+);
+
+// GET    /api/v1/order/status?status=PENDING — get all orders by status
+router.get(
+  '/status',
+  authValidator,
+  getOrdersByStatusValidator,
+  orderController.getOrdersByStatus,
 );
 
 export { router as orderRouter };

@@ -4,7 +4,7 @@ import {
   NOT_FOUND,
 } from '../../../shared_infrastructure/error/error.execption';
 import { ENTITIES } from '../../../../prisma/entities';
-import { CreateOrderInput, SingleOrderResponse } from '../order.model';
+import { CreateOrderInput, SingleOrderResponse, CustomerOrdersByStatusResponse } from '../order.model';
 import { OrderRepository } from '../Repositories/order.repository';
 import { PaymentService } from '../../paymentManagement/Services/payment.service';
 import { OrderContext } from '../States/OrderContext';
@@ -123,14 +123,7 @@ export class OrderService {
   static async updateOrderStatus(
     customerId: number,
     orderId: number,
-    action:
-      | 'confirm'
-      | 'process'
-      | 'pickup'
-      | 'out_for_delivery'
-      | 'deliver'
-      | 'cancel'
-      | 'refund',
+    newStatus: OrderStatusEnum,
   ): Promise<void> {
     const order = await OrderRepository.getSingleOrderById(customerId, orderId);
     if (!order) {
@@ -146,35 +139,63 @@ export class OrderService {
 
     const context = new OrderContext(currentStatusEntity.name);
 
-    switch (action) {
-      case 'confirm':
+    // Map the target status enum to the corresponding state transition
+    switch (newStatus) {
+      case OrderStatusEnum.CONFIRMED:
         context.confirm();
         break;
-      case 'process':
+      case OrderStatusEnum.PROCESSED:
         context.process();
         break;
-      case 'pickup':
+      case OrderStatusEnum.READY_TO_PICKUP:
         context.pickup();
         break;
-      case 'out_for_delivery':
+      case OrderStatusEnum.OUT_FOR_DELIVERY:
         context.outForDelivery();
         break;
-      case 'deliver':
+      case OrderStatusEnum.DELIVERED:
         context.deliver();
         await OrderService.insertOrderSummaryTrigger(customerId, orderId);
         break;
-      case 'cancel':
+      case OrderStatusEnum.CANCELLED:
         context.cancel();
         break;
-      case 'refund':
+      case OrderStatusEnum.REFUNDED:
         context.refund();
         break;
       default:
-        throw new Error(`Invalid action ${action}`);
+        throw new Error(`Cannot transition to status ${newStatus}`);
     }
 
-    const newStatusEnum = context.getCurrentStatus();
-    await OrderRepository.updateOrderStatusByName(orderId, newStatusEnum);
+    const resolvedStatus = context.getCurrentStatus();
+    await OrderRepository.updateOrderStatusByName(orderId, resolvedStatus);
+  }
+
+  static async getOrdersByStatus(
+    customerId: number,
+    status: OrderStatusEnum,
+  ): Promise<CustomerOrdersByStatusResponse[]> {
+    const orders = await OrderRepository.getOrdersByCustomerAndOrderStatus(
+      customerId,
+      status,
+    );
+
+    return orders.map((order: any) => ({
+      orderId: order.id,
+      totalPrice: order.totalPrice,
+      date: order.timestamp,
+      restaurantName: order.restaurant.name,
+      paymentMethod: order.paymentType.name,
+      state: order.address.state,
+      city: order.address.city,
+      street: order.address.street,
+      status: order.orderStatus.name,
+      orderDetails: order.orderDetails.map((od: any) => ({
+        name: od.menuItemName,
+        quantity: od.quantity,
+        price: od.price,
+      })),
+    }));
   }
 
   private static async insertOrderSummaryTrigger(

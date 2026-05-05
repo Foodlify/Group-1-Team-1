@@ -12,5 +12,26 @@ export const GetOrderSchema = z.object({
 
 export const UpdateOrderStatusSchema = z.object({
   orderId: z.number().min(1),
-  action: z.enum(['confirm', 'process', 'pickup', 'out_for_delivery', 'deliver', 'cancel', 'refund']),
+  status: z.enum([
+    'CONFIRMED',
+    'PROCESSED',
+    'READY_TO_PICKUP',
+    'OUT_FOR_DELIVERY',
+    'DELIVERED',
+    'CANCELLED',
+    'REFUNDED',
+  ]),
+});
+
+export const GetOrdersByStatusSchema = z.object({
+  status: z.enum([
+    'PENDING',
+    'CONFIRMED',
+    'PROCESSED',
+    'READY_TO_PICKUP',
+    'OUT_FOR_DELIVERY',
+    'DELIVERED',
+    'CANCELLED',
+    'REFUNDED',
+  ]),
 });
