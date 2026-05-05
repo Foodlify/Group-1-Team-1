@@ -38,8 +38,6 @@ export class OrderService {
   }
   static async placeOrder(input: CreateOrderInput): Promise<any> {
     const { customerId, addressId, paymentTypeId, preferredDate } = input;
-    const { cart, totalPrice } =
-      await CartService.validCartAntItems(customerId);
 
     // check if address belong to Customer
     const address = await AddressService.getAddressByCustomerId(
@@ -52,6 +50,12 @@ export class OrderService {
 
     // Create Order and its details
     return await prisma.$transaction(async (tx) => {
+      // lock Cart, Check price,deduct menu item stock
+      const { cart, totalPrice } = await CartService.validCartAntItemsForOrder(
+        tx,
+        customerId,
+      );
+      // create Order
       const statusId = await OrderService.getOrderStatus(tx, paymentType.name);
       const order = await OrderRepository.createOrderAndDetails(tx, {
         customerId,

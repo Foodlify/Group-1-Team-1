@@ -2,29 +2,30 @@ import { PaymentStrategyInterface } from './paymentStrategyInterface';
 import { stripe } from '../../../config/stripe';
 import { TransactionService } from '../Services/transaction.service';
 import { OrderService } from '../../orderManagment/Services/order.service';
-import {TransactionStatusEnum } from '@prisma/client';
-
+import { TransactionStatusEnum } from '@prisma/client';
 
 export class StripeStrategy implements PaymentStrategyInterface {
   async createPayment(order: any): Promise<any> {
-    const paymentIntent = await stripe.paymentIntents.create({
-      amount: order.totalPrice * 100, 
-      currency: 'egp',
+    const paymentIntent = await stripe.paymentIntents.create(
+      {
+        amount: order.totalPrice * 100,
+        currency: 'egp',
 
-      metadata: {
-        orderId: order.id,
-        customerId: order.customerId,
-      },
+        metadata: {
+          orderId: order.id,
+          customerId: order.customerId,
+        },
 
-      automatic_payment_methods: {
-        enabled: true,
+        automatic_payment_methods: {
+          enabled: true,
+        },
       },
-    });
+      { idempotencyKey: `order ${order.id}` },
+    );
     return paymentIntent;
   }
 
   async handleWebhook(event: any) {
-    console.log(event)
     if (event.type == 'payment_intent.succeeded') {
       const session = event.data.object;
       const orderId = Number(session.metadata.orderId);

@@ -133,6 +133,8 @@ model Cart {
   id           Int        @id @default(autoincrement())
   customerId   Int        @unique @map("customer_id")
   restaurantId Int
+  isLocked     Boolean    @default(false)
+  lockedAt     DateTime?
   customer     Customer   @relation(fields: [customerId], references: [id])
   restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
   cartItems    CartItem[]
@@ -263,10 +265,10 @@ model TransactionStatus {
 // ───────────────────────────────────────────────────────────────────────────────────────────────────────
 
 model Transaction {
-  id                  Int    @id @default(autoincrement()) //PK
-  orderId             Int    @map("order_id") //FK
-  transactionStatusId Int    @map("status_id") //FK
-  payTypeId           Int    @map("pay_type_id") //FK
+  id                  Int     @id @default(autoincrement()) //PK
+  orderId             Int     @map("order_id") //FK
+  transactionStatusId Int     @map("status_id") //FK
+  payTypeId           Int     @map("pay_type_id") //FK
   transactionNumber   String? @unique
   amount              Int
 
@@ -285,4 +287,3 @@ model TransactionStatusTracking {
   timestamp     DateTime              @default(now())
   transaction   Transaction           @relation(fields: [transactionId], references: [id])
 }
-

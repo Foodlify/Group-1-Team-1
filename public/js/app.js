@@ -30,6 +30,7 @@ const confirmPayment = () => {
     });
 
     const data = await res.json();
+    console.log(data)
     if (!data.data) {
       console.error('Missing clientSecret from backend');
       return;
