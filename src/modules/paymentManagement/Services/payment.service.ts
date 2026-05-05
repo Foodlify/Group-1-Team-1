@@ -4,6 +4,9 @@ import { PaymentRepository } from '../Repositories/payment.repository';
 
 export class PaymentService {
   static async getPaymentTypeById(paymentTypeId: number) {
-    return await PaymentRepository.findPaymentTypeById(paymentTypeId);
+    const paymentType =
+      await PaymentRepository.findPaymentTypeById(paymentTypeId);
+    if (!paymentType) throw new NOT_FOUND(ENTITIES.PAYMENT_INTEGRATION_TYPE);
+    return paymentType;
   }
 }

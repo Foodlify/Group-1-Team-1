@@ -53,6 +53,7 @@ export class CartService {
 
     // 1. Check if cart already exists for this user
     let cart = await this.getCustomerCart(customerId);
+
     const menuItem = await this.checkQuantity(itemId, itemQuantity);
     // 3. if cart not exist and menuitem exist create new cart and add item to it
     if (!cart || (cart === null && menuItem)) {
@@ -64,6 +65,9 @@ export class CartService {
     }
     // 4. If cart exists and has items, enforce single-restaurant rule
     else if (cart && cart.cartItems.length > 0) {
+      if(cart.isLocked){
+        throw new Error ("This cart is locked, you can't add anything to it");
+      }
       // avoid idempotency of entering same item again
       const existingItem = await CartRepository.findCartItemByIdAndCartId(
         cart.id,

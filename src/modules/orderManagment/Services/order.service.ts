@@ -14,6 +14,8 @@ import { CartService } from '../../cartManagement/cart.service';
 import { PaymentStrategy } from '../../paymentManagement/PaymentStrategies/payment.strategy';
 import { TransactionService } from '../../paymentManagement/Services/transaction.service';
 import { OrderStatusEnum, PaymentTypeEnum, Prisma } from '@prisma/client';
+import { error } from 'console';
+const cart_service = new CartService();
 export class OrderService {
   static async getOrderStatus(
     tx: Prisma.TransactionClient,
@@ -38,7 +40,11 @@ export class OrderService {
   }
   static async placeOrder(input: CreateOrderInput): Promise<any> {
     const { customerId, addressId, paymentTypeId, preferredDate } = input;
-
+    const cart = await cart_service.getCustomerCart(customerId);
+    // prevent duplicate place order of same cart
+    if (cart?.isLocked) {
+      throw new Error('This cart already placed');
+    }
     // check if address belong to Customer
     const address = await AddressService.getAddressByCustomerId(
       customerId,
@@ -46,7 +52,6 @@ export class OrderService {
     );
     // Check if Payment integration type exist in system
     const paymentType = await PaymentService.getPaymentTypeById(paymentTypeId);
-    if (!paymentType) throw new NOT_FOUND(ENTITIES.PAYMENT_INTEGRATION_TYPE);
 
     // Create Order and its details
     return await prisma.$transaction(async (tx) => {
@@ -59,7 +64,7 @@ export class OrderService {
       const statusId = await OrderService.getOrderStatus(tx, paymentType.name);
       const order = await OrderRepository.createOrderAndDetails(tx, {
         customerId,
-        addressId,
+        addressId: address.id,
         paymentTypeId: paymentType.id,
         preferredDate,
         orderStatusId: statusId,
@@ -70,13 +75,9 @@ export class OrderService {
       if (!order) {
         throw new BAD_REQUEST(ENTITIES.ORDER);
       }
-      //  Call payment strategy
+      // Create pending transaction
       const paymentStrategy = new PaymentStrategy(paymentType.name);
-
       const transaction = await paymentStrategy.createPayment(order);
-      if (!transaction) {
-        throw new BAD_REQUEST(ENTITIES.TRANSACTION);
-      }
       await TransactionService.createTransaction(
         tx,
         order.id,
@@ -87,6 +88,7 @@ export class OrderService {
       return transaction;
     });
   }
+  // -------------------------------------------------------------------------------------------------------
   static async getSingleOrder(
     customerId: number,
     orderId: number,
