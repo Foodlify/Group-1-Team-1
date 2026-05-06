@@ -2,7 +2,7 @@ import { PaymentStrategyInterface } from './paymentStrategyInterface';
 import { stripe } from '../../../config/stripe';
 import { TransactionService } from '../Services/transaction.service';
 import { OrderService } from '../../orderManagment/Services/order.service';
-import { TransactionStatusEnum } from '@prisma/client';
+import { OrderStatusEnum, TransactionStatusEnum } from '@prisma/client';
 
 export class StripeStrategy implements PaymentStrategyInterface {
   async createPayment(order: any): Promise<any> {
@@ -39,7 +39,7 @@ export class StripeStrategy implements PaymentStrategyInterface {
       );
       // admin check if transaction succeeded----> send notification and update order confirmed
       // order paid
-      await OrderService.updateOrderStatus(customerId, orderId, 'confirm');
+      await OrderService.updateOrderStatus(customerId, orderId, OrderStatusEnum.CONFIRMED);
     } else if (event.type === 'payment_intent.payment_failed') {
       console.log('failed');
       const session = event.data.object;

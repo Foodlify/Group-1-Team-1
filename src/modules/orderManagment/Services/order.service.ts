@@ -41,6 +41,8 @@ export class OrderService {
   static async placeOrder(input: CreateOrderInput): Promise<any> {
     const { customerId, addressId, paymentTypeId, preferredDate } = input;
     const cart = await cart_service.getCustomerCart(customerId);
+    console.log( cart?.isLocked)
+    console.log( cart?.id)
     // prevent duplicate place order of same cart
     if (cart?.isLocked) {
       throw new Error('This cart already placed');
