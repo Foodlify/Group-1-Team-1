@@ -1,5 +1,7 @@
 import prisma from '../../../../lib/prisma';
-import { getSingleOrderView } from '@prisma/client/sql';
+// @ts-ignore
+//import { getSingleOrderView } from '../../../../prisma/sql/getSingleOrderView.sql';
+import { getSingleOrderView } from '@prisma/client'; 
 import { OrderStatusEnum } from '@prisma/client';
 import { Prisma } from '@prisma/client/extension';
 

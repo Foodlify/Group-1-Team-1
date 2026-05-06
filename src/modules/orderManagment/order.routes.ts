@@ -30,4 +30,10 @@ router.patch(
   orderController.updateOrderStatus,
 );
 
+// router.patch(
+//   '/orders/:orderId/status',
+//   authValidator,
+//   getOrderValidator,
+//   orderController.updateOrderTrackingStatus);
+
 export { router as orderRouter };

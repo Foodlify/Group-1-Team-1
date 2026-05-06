@@ -8,8 +8,9 @@ import { successMessage } from '../../../shared_infrastructure/success/successMe
 import { QuantityExceed } from '../../cartManagement/cart.execption';
 import { ENTITIES } from '../../../../prisma/entities';
 import { BAD_REQUEST, NOT_FOUND } from '../../../shared_infrastructure/error/error.execption';
-
-
+import { OrderTrackingService} from '../Services/orderTracking.service';
+import { OrderStatusEnum } from '@prisma/client';
+import { OrderTrackingRepository } from '../Repositories/orderTracking.repository';
 export class OrderController {
   // ─── Place Order ────────────────────────────────────────────────────────────
 
@@ -92,4 +93,32 @@ export class OrderController {
       }
     }
   });
+  // update order Tracking status 
+  // static async updateOrderTrackingStatus(orderId: number, newStatus: OrderStatusEnum) {
+  //   const order = await OrderTrackingRepository.findById(orderId)  as { status: OrderStatusEnum } | null;
+
+  //   if (!order) {
+  //     throw new Error("Order not found");
+  //   }
+
+  //   const currentStatus = order.status;
+
+  //   // transition rules
+  //   const allowedTransitions: Record<OrderStatusEnum, OrderStatusEnum[]> = {
+  //     pending: ["confirmed"],
+  //     confirmed: ["processed"],
+  //     processed: ["ready_to_pickup"],
+  //     ready_to_pickup: ["out_for_delivery"],
+  //     out_for_delivery: ["delivered"],
+  //     delivered: [],
+  //   };
+
+  //   if (!allowedTransitions[currentStatus]?.includes(newStatus)) {
+  //     throw new Error(
+  //       `Cannot change status from ${currentStatus} to ${newStatus}`
+  //     );
+  //   }
+
+  //   return await OrderRepository.updateStatus(orderId, newStatus);
+  // }
 }

@@ -1,8 +1,8 @@
 import prisma from '../../../../lib/prisma';
-
+import { OrderStatusEnum } from '@prisma/client' ; 
 export class OrderTrackingRepository {
   /** Add order tracking status */
-  static async addOrderTrackingStatus(orderId: number, statusId: number) {
+  static async addOrderTrackingStatus(orderId: number, statusId: number ) {
     return prisma.orderTracking.create({
       data: {
         orderId,
@@ -27,4 +27,14 @@ export class OrderTrackingRepository {
     });
 
   }
+  /** get last status of an order */
+  static async getLatestStatus(orderId: number) {
+  return prisma.orderTracking.findFirst({
+    where: { orderId },
+    include: { status: true },
+    orderBy: {
+      statusDate: 'desc',
+    },
+  });
+}
 }
