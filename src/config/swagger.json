@@ -298,12 +298,12 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["action"],
+                "required": ["status"],
                 "properties": {
-                  "action": {
+                  "status": {
                     "type": "string",
-                    "enum": ["confirm", "process", "pickup", "out_for_delivery", "deliver", "cancel", "refund"],
-                    "example": "confirm"
+                    "enum": ["CONFIRMED", "PROCESSED", "READY_TO_PICKUP", "OUT_FOR_DELIVERY", "DELIVERED", "CANCELLED", "REFUNDED"],
+                    "example": "CONFIRMED"
                   }
                 }
               }
@@ -314,6 +314,72 @@
           "200": { "description": "Order status updated successfully" },
           "400": { "description": "Invalid state transition" },
           "404": { "description": "Order not found" },
+          "500": { "description": "Internal Server Error" }
+        }
+      }
+    },
+    "/api/v1/orders/status": {
+      "get": {
+        "tags": ["Order"],
+        "summary": "Get all orders by status",
+        "description": "Retrieves all orders for the authenticated customer filtered by order status.",
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": true,
+            "description": "Order status to filter by",
+            "schema": {
+              "type": "string",
+              "enum": ["PENDING", "CONFIRMED", "PROCESSED", "READY_TO_PICKUP", "OUT_FOR_DELIVERY", "DELIVERED", "CANCELLED", "REFUNDED"],
+              "example": "PENDING"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Orders retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "string", "example": "success" },
+                    "message": { "type": "string", "example": "Order Record retrieved successfully" },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "orderId": { "type": "integer", "example": 1 },
+                          "totalPrice": { "type": "integer", "example": 150 },
+                          "date": { "type": "string", "format": "date-time", "example": "2026-05-01T00:00:00.000Z" },
+                          "restaurantName": { "type": "string", "example": "Pizza Palace" },
+                          "paymentMethod": { "type": "string", "example": "CASH" },
+                          "state": { "type": "string", "example": "Cairo" },
+                          "city": { "type": "string", "example": "Nasr City" },
+                          "street": { "type": "string", "example": "Abbas El Akkad" },
+                          "status": { "type": "string", "example": "PENDING" },
+                          "orderDetails": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "name": { "type": "string", "example": "Classic Burger" },
+                                "quantity": { "type": "integer", "example": 2 },
+                                "price": { "type": "integer", "example": 35 }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "description": "Validation failed (invalid status value)" },
           "500": { "description": "Internal Server Error" }
         }
       }

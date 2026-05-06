@@ -31,3 +31,25 @@ export interface SingleOrderResponse {
   status: string;
   orderDetails: OrderDetails[];
 }
+
+export interface CustomerOrdersByStatusResponse {
+  orderId: number;
+  totalPrice: number;
+  date: Date;
+  restaurantName: string;
+  paymentMethod: string;
+  state: string;
+  city: string;
+  street: string;
+  status: string;
+  orderDetails: OrderDetails[];
+}
+
+export interface OrderSummaryResponse {
+  id: number;
+  orderId: number;
+  restaurantName: string;
+  totalAmount: number;
+  totalQuantity: number;
+  orderDate: string; // formatted as YYYY-MM-DD
+}

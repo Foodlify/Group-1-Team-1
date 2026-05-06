@@ -7,10 +7,12 @@ import { PriceNotMatch } from '../order.exception';
 import { successMessage } from '../../../shared_infrastructure/success/successMessages';
 import { QuantityExceed } from '../../cartManagement/cart.execption';
 import { ENTITIES } from '../../../../prisma/entities';
-import { BAD_REQUEST, NOT_FOUND } from '../../../shared_infrastructure/error/error.execption';
-import { OrderTrackingService} from '../Services/orderTracking.service';
+import {
+  BAD_REQUEST,
+  NOT_FOUND,
+} from '../../../shared_infrastructure/error/error.execption';
 import { OrderStatusEnum } from '@prisma/client';
-import { OrderTrackingRepository } from '../Repositories/orderTracking.repository';
+
 export class OrderController {
   // ─── Place Order ────────────────────────────────────────────────────────────
 
@@ -18,17 +20,18 @@ export class OrderController {
     const customerId = req.customerId!;
     const { addressId, paymentTypeId, preferredDate } = req.body;
     try {
-      const order = await OrderService.placeOrder({
+      const paymentIntent = await OrderService.placeOrder({
         customerId,
         addressId,
         paymentTypeId,
         preferredDate,
       });
+      const { client_secret } = paymentIntent;
       sendSuccess(
         res,
         `${ENTITIES.ORDER} ${successMessage.RECORD_ADDED.message}`,
         StatusCodes.CREATED,
-        order,
+        client_secret,
       );
     } catch (err) {
       if (
@@ -72,10 +75,10 @@ export class OrderController {
   updateOrderStatus = asyncHandler(async (req: Request, res: Response) => {
     const customerId = req.customerId!;
     const orderId = Number(req.params.orderId);
-    const { action } = req.body;
+    const { status } = req.body;
 
     try {
-      await OrderService.updateOrderStatus(customerId, orderId, action);
+      await OrderService.updateOrderStatus(customerId, orderId, status);
       sendSuccess(
         res,
         `Order status updated successfully`,
@@ -87,7 +90,35 @@ export class OrderController {
         sendError(res, err.statusCode, err.code, err.message);
       } else if (err.message && err.message.includes('Cannot')) {
         // State transition errors
-        sendError(res, StatusCodes.BAD_REQUEST, 'INVALID_STATE_TRANSITION', err.message);
+        sendError(
+          res,
+          StatusCodes.BAD_REQUEST,
+          'INVALID_STATE_TRANSITION',
+          err.message,
+        );
+      } else {
+        throw err;
+      }
+    }
+  });
+
+  // ─── Get Orders By Status ──────────────────────────────────────────────────────────────
+
+  getOrdersByStatus = asyncHandler(async (req: Request, res: Response) => {
+    const customerId = req.customerId!;
+    const status = req.query.status as OrderStatusEnum;
+
+    try {
+      const orders = await OrderService.getOrdersByStatus(customerId, status);
+      sendSuccess(
+        res,
+        `${ENTITIES.ORDER} ${successMessage.RECORD_GET.message}`,
+        StatusCodes.OK,
+        orders,
+      );
+    } catch (err) {
+      if (err instanceof NOT_FOUND) {
+        sendError(res, err.statusCode, err.code, err.message);
       } else {
         throw err;
       }

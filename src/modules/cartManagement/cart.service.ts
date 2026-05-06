@@ -53,6 +53,7 @@ export class CartService {
 
     // 1. Check if cart already exists for this user
     let cart = await this.getCustomerCart(customerId);
+
     const menuItem = await this.checkQuantity(itemId, itemQuantity);
     // 3. if cart not exist and menuitem exist create new cart and add item to it
     if (!cart || (cart === null && menuItem)) {
@@ -64,6 +65,9 @@ export class CartService {
     }
     // 4. If cart exists and has items, enforce single-restaurant rule
     else if (cart && cart.cartItems.length > 0) {
+      if(cart.isLocked){
+        throw new Error ("This cart is locked, you can't add anything to it");
+      }
       // avoid idempotency of entering same item again
       const existingItem = await CartRepository.findCartItemByIdAndCartId(
         cart.id,
@@ -171,44 +175,57 @@ export class CartService {
     return { totalPrice, totalQuantity };
   }
   // Validate if cart exist and its items are valid to create order [is exist, is stock ok, is price changed]
-  static async validCartAntItems(customerId: number) {
-    return await prisma.$transaction(async (tx:Prisma.TransactionClient) => {
-      // Check if  customer has a cart
-      const cart = await CartRepository.findCartByCustomerId(tx, customerId);
-      if (!cart) {
-        throw new NOT_FOUND(ENTITIES.CART);
-      }
-      // Check if  restaurant exist
-      const restaurant = await RestaurantRepository.findRestaurantById(
-        tx,
-        cart.restaurantId,
-      );
-      if (!restaurant) {
-        throw new NOT_FOUND(ENTITIES.RESTAURANT);
-      }
-      // Check cart items
-      for (const ci of cart.cartItems) {
-        const { menuItemId, quantity, price } = ci;
-        const menuItem = await MenuRepository.findMenuItemById(tx, menuItemId);
-
-        if (!menuItem) {
-          throw new NOT_FOUND(ENTITIES.MENU_ITEM);
-        }
-        if (quantity > menuItem?.stock) {
-          throw new QuantityExceed(errorMessage.QUANTITY_EXCEED.message);
-        }
-        if (price != menuItem?.price) {
-          throw new PriceNotMatch(
-            `${menuItem.itemName}: ${errorMessage.PRICE_NOT_MATCH.message}`,
-          );
-        }
-      }
-      //  Calculate total price
-      const totalPrice = cart.cartItems.reduce(
-        (sum: number, item: { price: number; quantity: number; }) => sum + item.price * item.quantity,
-        0,
-      );
-      return { cart, totalPrice };
+  static async validCartAntItemsForOrder(
+    tx: Prisma.TransactionClient,
+    customerId: number,
+  ) {
+    // Check if  customer has a cart
+    let cart = await CartRepository.findCartByCustomerId(tx, customerId);
+    if (!cart) {
+      throw new NOT_FOUND(ENTITIES.CART);
+    }
+    // Check if  restaurant exist
+    const restaurant = await RestaurantRepository.findRestaurantById(
+      tx,
+      cart.restaurantId,
+    );
+    if (!restaurant) {
+      throw new NOT_FOUND(ENTITIES.RESTAURANT);
+    }
+    // Lock Cart
+    await tx.cart.update({
+      where: { customerId: customerId },
+      data: {
+        isLocked: true,
+        lockedAt: new Date(),
+      },
     });
+    // Check cart items
+    for (const ci of cart.cartItems) {
+      const { menuItemId, quantity, price } = ci;
+      const menuItem = await MenuRepository.findMenuItemById(tx, menuItemId);
+      if (!menuItem) {
+        throw new NOT_FOUND(ENTITIES.MENU_ITEM);
+      }
+      if (price != menuItem?.price) {
+        throw new PriceNotMatch(
+          `${menuItem.itemName}: ${errorMessage.PRICE_NOT_MATCH.message}`,
+        );
+      }
+      const updated = await MenuRepository.decrementMenuItemStock(tx, {
+        id: menuItemId,
+        quantity,
+      });
+      if (updated.count === 0) {
+        throw new Error('Insufficient stock');
+      }
+    }
+    //  Calculate total price
+    const totalPrice = cart.cartItems.reduce(
+      (sum: number, item: { price: number; quantity: number }) =>
+        sum + item.price * item.quantity,
+      0,
+    );
+    return { cart, totalPrice };
   }
 }
