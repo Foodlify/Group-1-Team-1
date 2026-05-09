@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { OrderService } from '../Services/order.service';
 import { sendSuccess, sendError } from '../../../utils/reponse';
 import asyncHandler from '../../../utils/asyncHandler';
+import { OrderTrackingService } from '../Services/orderTracking.service';
 import { StatusCodes } from 'http-status-codes';
 import { PriceNotMatch } from '../order.exception';
 import { successMessage } from '../../../shared_infrastructure/success/successMessages';
@@ -125,6 +126,27 @@ export class OrderController {
     }
   });
   // update order Tracking status 
+
+updateOrderTrackingStatus = asyncHandler(async (req: Request , res: Response) =>{
+const customerId = Number(req.params.customerId)
+const orderId = Number(req.params.orderId);
+const { newStatus} = req.body;
+try{
+ const updatedOrder = await OrderService.updateOrderStatus(customerId , orderId,newStatus); 
+ sendSuccess(
+  res,
+  `Order tracking status updated successfully `, 
+  StatusCodes.OK,
+  null 
+ )
+} catch(err){
+if (err instanceof NOT_FOUND) {
+        sendError(res, err.statusCode, err.code, err.message);
+      } else {
+        throw err;
+      }
+}
+});
   // static async updateOrderTrackingStatus(orderId: number, newStatus: OrderStatusEnum) {
   //   const order = await OrderTrackingRepository.findById(orderId)  as { status: OrderStatusEnum } | null;
 
