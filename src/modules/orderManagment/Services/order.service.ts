@@ -14,7 +14,6 @@ import { CartService } from '../../cartManagement/cart.service';
 import { PaymentStrategy } from '../../paymentManagement/PaymentStrategies/payment.strategy';
 import { TransactionService } from '../../paymentManagement/Services/transaction.service';
 import { OrderStatusEnum, PaymentTypeEnum, Prisma } from '@prisma/client';
-import { error } from 'console';
 const cart_service = new CartService();
 export class OrderService {
   static async getOrderStatus(
@@ -41,8 +40,6 @@ export class OrderService {
   static async placeOrder(input: CreateOrderInput): Promise<any> {
     const { customerId, addressId, paymentTypeId, preferredDate } = input;
     const cart = await cart_service.getCustomerCart(customerId);
-    console.log( cart?.isLocked)
-    console.log( cart?.id)
     // prevent duplicate place order of same cart
     if (cart?.isLocked) {
       throw new Error('This cart already placed');
