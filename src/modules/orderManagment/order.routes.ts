@@ -42,4 +42,10 @@ router.patch(
   '/orders/:orderId/tracking-status',
   orderController.updateOrderTrackingStatus,
 );
+
+// Get                     - get current order tracking status 
+router.get(
+'/orders/:orderId/get-current-status', 
+orderController.getTrackingStatus,
+); 
 export { router as orderRouter };

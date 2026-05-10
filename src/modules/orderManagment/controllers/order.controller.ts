@@ -174,4 +174,23 @@ if (err instanceof NOT_FOUND) {
 
   //   return await OrderRepository.updateStatus(orderId, newStatus);
   // }
+
+  getTrackingStatus = asyncHandler(async(req: Request , res: Response) => {
+  const orderId = Number(req.params.orderId); 
+  try{
+  const orderStatus = await OrderTrackingService.getCurrentStatus(orderId); 
+  sendSuccess(
+    res,
+    `${ENTITIES.ORDER} ${successMessage.RECORD_GET.message}`,
+        StatusCodes.OK,
+        orderStatus
+  )
+  }catch(err){
+  if (err instanceof NOT_FOUND) {
+        sendError(res, err.statusCode, err.code, err.message);
+      } else {
+        throw err;
+      }
+  }
+  }) ;
 }
