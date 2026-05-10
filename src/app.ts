@@ -8,9 +8,9 @@ import prisma from '../lib/prisma';
 import router from './routes';
 import { errorHandler } from './middlewares/error_handling/error-handling';
 import { webhookRouter } from './modules/paymentManagement/routes/webhook.route';
-import { resolve } from 'path';
-import path from 'path';
+import path, { join } from 'path';
 import 'dotenv/config';
+
 
 const app = express();
 app.use(cors());
@@ -37,7 +37,6 @@ app.use('/api/v1', router);
 
 // Swagger Docs Setup
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
-
 // Check db connection
 app.get('/api/health', async (req: Request, res: Response) => {
   try {

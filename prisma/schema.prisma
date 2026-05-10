@@ -2,9 +2,9 @@
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
-  provider        = "prisma-client-js"
-  output          = "../node_modules/.prisma/client"
-  previewFeatures = ["typedSql"]
+  provider = "prisma-client-js"
+  output   = "../node_modules/.prisma/client"
+  previewFeatures = ["relationJoins"]
 }
 
 datasource db {
@@ -138,6 +138,8 @@ model Cart {
   customer     Customer   @relation(fields: [customerId], references: [id])
   restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
   cartItems    CartItem[]
+
+  @@index([customerId])
 }
 
 // ───────────────────────────────────────────────────────────────────────────────────────────────────────
@@ -190,6 +192,8 @@ model Order {
   orderTrackings OrderTracking[]
   orderSummary   OrderSummary?
   transactions   Transaction[]
+
+  @@unique([id, customerId])
 }
 
 // ───────────────────────────────────────────────────────────────────────────────────────────────────────
