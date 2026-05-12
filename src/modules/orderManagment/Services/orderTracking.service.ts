@@ -1,19 +1,18 @@
+import prisma from '../../../../lib/prisma';
 import { OrderTrackingRepository } from '../Repositories/orderTracking.repository';
-import { OrderStatusEnum } from '@prisma/client' ;
+import { OrderStatusEnum, Prisma } from '@prisma/client';
 export class OrderTrackingService {
- static async addOrderTrackingStatus(
-  orderId: number,
-  statusId: number
-) {
-
-  //////
-
+  static async addOrderTrackingStatus(
+    orderId: number,
+    statusId: number,
+    db: Prisma.TransactionClient = prisma,
+  ) {
     return OrderTrackingRepository.addOrderTrackingStatus(
       orderId,
-      statusId
+      statusId,
+      db,
     );
   }
-
 
   // 3. transition rules
   // const allowedTransitions: Record<
@@ -63,32 +62,36 @@ export class OrderTrackingService {
   // }
 
   // 5. add new tracking
-//   return OrderTrackingRepository.addOrderTrackingStatus(
-//     orderId,
-//     newStatus
-//   );
+  //   return OrderTrackingRepository.addOrderTrackingStatus(
+  //     orderId,
+  //     newStatus
+  //   );
 
   /** Get order tracking history for timeline  */
-  static async getOrderTrackingHistory(orderId: number) {
-    ///// validate order id 
-  const trackings =
-    await OrderTrackingRepository.getOrderTrackingsByOrderId(orderId);
+  static async getOrderTrackingHistory(
+    orderId: number,
+    db: Prisma.TransactionClient = prisma,
+  ) {
+    ///// validate order id
+    const trackings = await OrderTrackingRepository.getOrderTrackingsByOrderId(
+      orderId,
+      db,
+    );
 
-  if (trackings.length == 0) {
-    throw new Error('No tracking found for this order');
+    if (trackings.length == 0) {
+      throw new Error('No tracking found for this order');
+    }
+
+    return trackings;
   }
+  /** Get latest status by order id  */
+  static async getCurrentStatus(orderId: number) {
+    const latest = await OrderTrackingRepository.getLatestStatus(orderId);
 
-  return trackings;
-}
-/** Get latest status by order id  */
-static async getCurrentStatus(orderId: number) {
-  const latest = await OrderTrackingRepository.getLatestStatus(orderId);
+    if (!latest) {
+      throw new Error('Order has no status yet');
+    }
 
-  if (!latest) {
-    throw new Error('Order has no status yet');
+    return latest;
   }
-
-  return latest;
-}
-
 }

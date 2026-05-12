@@ -1,14 +1,9 @@
 import prisma from '../../../../lib/prisma';
-// @ts-ignore
-//import { getSingleOrderView } from '../../../../prisma/sql/getSingleOrderView.sql';
-import { getSingleOrderView } from '@prisma/client'; 
-import { OrderStatusEnum } from '@prisma/client';
-import { Prisma } from '@prisma/client/extension';
+import { OrderStatusEnum, Prisma } from '@prisma/client';
 
 export class OrderRepository {
   /** Add order with details using transaction */
   static async createOrderAndDetails(
-    tx: Prisma.TransactionClient,
     data: {
       customerId: number;
       addressId: number;
@@ -18,8 +13,9 @@ export class OrderRepository {
       totalPrice: number;
       cart: any;
     },
+    db: Prisma.TransactionClient = prisma,
   ) {
-    const order = await tx.order.create({
+    const order = await db.order.create({
       data: {
         customerId: data.customerId,
         restaurantId: data.cart.restaurantId,
@@ -55,13 +51,20 @@ export class OrderRepository {
   }
 
   // Check if order in order  table
-  static async getSingleOrderById(customerId: number, orderId: number) {
-    return await prisma.order.findUnique({
+  static async getSingleOrderById(
+    customerId: number,
+    orderId: number,
+    db: Prisma.TransactionClient = prisma,
+  ) {
+    return await db.order.findUnique({
       where: { id: orderId, customerId },
     });
   }
-  static async getSingleOrderAndDetailsById(orderId: number) {
-    const order = await prisma.order.findUnique({
+  static async getSingleOrderAndDetailsById(
+    orderId: number,
+    db: Prisma.TransactionClient = prisma,
+  ) {
+    const order = await db.order.findUnique({
       relationLoadStrategy: 'join',
       where: { id: orderId },
       select: {
@@ -108,8 +111,9 @@ export class OrderRepository {
   static async getOrdersByCustomerAndOrderStatus(
     customerId: number,
     orderStatus: OrderStatusEnum,
+    db: Prisma.TransactionClient = prisma,
   ) {
-    return await prisma.order.findMany({
+    return await db.order.findMany({
       relationLoadStrategy: 'join',
       where: {
         customerId,
@@ -155,17 +159,20 @@ export class OrderRepository {
   }
 
   /** Get order status by ID */
-  static async getOrderStatusById(statusId: number) {
-    return prisma.orderStatus.findUnique({
+  static async getOrderStatusById(
+    statusId: number,
+    db: Prisma.TransactionClient = prisma,
+  ) {
+    return db.orderStatus.findUnique({
       where: { id: statusId },
     });
   }
   // Get order status name
   static async getOrderStatusByName(
-    tx: Prisma.TransactionClient,
     statusName: OrderStatusEnum,
+    db: Prisma.TransactionClient = prisma,
   ) {
-    return tx.orderStatus.findFirst({
+    return db.orderStatus.findFirst({
       where: { name: statusName },
       select: { id: true, name: true },
     });
@@ -174,14 +181,15 @@ export class OrderRepository {
   static async updateOrderStatusByName(
     orderId: number,
     statusName: OrderStatusEnum,
+    db: Prisma.TransactionClient = prisma,
   ) {
-    const status = await prisma.orderStatus.findFirst({
+    const status = await db.orderStatus.findFirst({
       where: { name: statusName },
     });
     if (!status) {
       throw new Error(`Order status ${statusName} not found in database.`);
     }
-    return prisma.order.update({
+    return db.order.update({
       where: { id: orderId },
       data: { orderStatusId: status.id },
     });

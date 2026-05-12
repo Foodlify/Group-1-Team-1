@@ -2,22 +2,25 @@ import { Prisma } from '@prisma/client';
 import prisma from '../../../lib/prisma';
 import { MenuRepository } from './menu.repository';
 export class MenuService {
-  static async getMenuItem(itemId: number): Promise<any> {
-    const menuItem = await MenuRepository.findMenuItemById(prisma, itemId);
+  static async getMenuItem(
+    itemId: number,
+    db: Prisma.TransactionClient = prisma,
+  ): Promise<any> {
+    const menuItem = await MenuRepository.findMenuItemById(itemId, db);
     return menuItem;
   }
   static async increaseMenuItemStock(
-    tx: Prisma.TransactionClient,
     item: any,
+    db: Prisma.TransactionClient = prisma,
   ): Promise<any> {
-    const menuItem = await MenuRepository.incrementMenuItemStock(tx, item);
+    const menuItem = await MenuRepository.incrementMenuItemStock(item, db);
     return menuItem;
   }
   static async decreaseMenuItemStock(
-    tx: Prisma.TransactionClient,
     item: any,
+    db: Prisma.TransactionClient = prisma,
   ): Promise<any> {
-    const menuItem = await MenuRepository.decrementMenuItemStock(tx, item);
+    const menuItem = await MenuRepository.decrementMenuItemStock(item, db);
     return menuItem;
   }
 }

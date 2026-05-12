@@ -2,10 +2,10 @@ import { Prisma } from '@prisma/client';
 import prisma from '../../../lib/prisma';
 export class RestaurantRepository {
   static async findRestaurantById(
-    tx: Prisma.TransactionClient,
     restaurantId: number,
+    db: Prisma.TransactionClient = prisma,
   ) {
-    return tx.menuItem.findUnique({
+    return db.menuItem.findUnique({
       where: { id: restaurantId },
     });
   }

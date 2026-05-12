@@ -2,8 +2,8 @@
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
-  provider = "prisma-client-js"
-  output   = "../node_modules/.prisma/client"
+  provider        = "prisma-client-js"
+  output          = "../node_modules/.prisma/client"
   previewFeatures = ["relationJoins"]
 }
 
@@ -157,6 +157,20 @@ model CartItem {
   @@unique([cartId, menuItemId])
 }
 
+model CartArchive {
+  id Int @id @default(autoincrement())
+
+  cartId       Int
+  customerId   Int
+  restaurantId Int
+  archivedAt DateTime @default(now())
+  cartData Json
+
+  @@index([cartId])
+  @@index([customerId])
+  @@index([restaurantId])
+}
+
 // -----------------------------------------------------------------------------------------------------
 //                                           ORDERS TABLES
 //------------------------------------------------------------------------------------------------------
@@ -271,10 +285,13 @@ model TransactionStatus {
 model Transaction {
   id                  Int     @id @default(autoincrement()) //PK
   orderId             Int     @map("order_id") //FK
+  receiptId           String  @unique @default(uuid())
   transactionStatusId Int     @map("status_id") //FK
   payTypeId           Int     @map("pay_type_id") //FK
   transactionNumber   String? @unique
   amount              Int
+  tax                 Int     @default(0)
+  discount            Int     @default(0)
 
   order             Order                  @relation(fields: [orderId], references: [id])
   paymentType       PaymentIntegrationType @relation(fields: [payTypeId], references: [id])

@@ -71,6 +71,8 @@ CREATE TABLE "Cart" (
     "id" SERIAL NOT NULL,
     "customer_id" INTEGER NOT NULL,
     "restaurantId" INTEGER NOT NULL,
+    "isLocked" BOOLEAN NOT NULL DEFAULT false,
+    "lockedAt" TIMESTAMP(3),
 
     CONSTRAINT "Cart_pkey" PRIMARY KEY ("id")
 );
@@ -175,10 +177,13 @@ CREATE TABLE "TransactionStatus" (
 CREATE TABLE "Transaction" (
     "id" SERIAL NOT NULL,
     "order_id" INTEGER NOT NULL,
+    "receiptId" TEXT NOT NULL,
     "status_id" INTEGER NOT NULL,
     "pay_type_id" INTEGER NOT NULL,
-    "transactionNumber" TEXT NOT NULL,
+    "transactionNumber" TEXT,
     "amount" INTEGER NOT NULL,
+    "tax" INTEGER NOT NULL DEFAULT 0,
+    "discount" INTEGER NOT NULL DEFAULT 0,
 
     CONSTRAINT "Transaction_pkey" PRIMARY KEY ("id")
 );
@@ -203,10 +208,19 @@ CREATE UNIQUE INDEX "Customer_user_id_key" ON "Customer"("user_id");
 CREATE UNIQUE INDEX "Address_customerId_key" ON "Address"("customerId");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "Address_id_customerId_key" ON "Address"("id", "customerId");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "Cart_customer_id_key" ON "Cart"("customer_id");
 
 -- CreateIndex
+CREATE INDEX "Cart_customer_id_idx" ON "Cart"("customer_id");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "CartItem_cart_id_menu_item_id_key" ON "CartItem"("cart_id", "menu_item_id");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Order_id_customer_id_key" ON "Order"("id", "customer_id");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "OrderSummary_order_id_key" ON "OrderSummary"("order_id");
@@ -215,13 +229,7 @@ CREATE UNIQUE INDEX "OrderSummary_order_id_key" ON "OrderSummary"("order_id");
 CREATE UNIQUE INDEX "PaymentConfiguration_pay_Type_id_key" ON "PaymentConfiguration"("pay_Type_id");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Transaction_order_id_key" ON "Transaction"("order_id");
-
--- CreateIndex
-CREATE UNIQUE INDEX "Transaction_status_id_key" ON "Transaction"("status_id");
-
--- CreateIndex
-CREATE UNIQUE INDEX "Transaction_pay_type_id_key" ON "Transaction"("pay_type_id");
+CREATE UNIQUE INDEX "Transaction_receiptId_key" ON "Transaction"("receiptId");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Transaction_transactionNumber_key" ON "Transaction"("transactionNumber");

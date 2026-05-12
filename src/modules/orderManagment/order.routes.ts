@@ -38,8 +38,8 @@ router.get(
   orderController.getOrdersByStatus,
 );
 
-router.patch(
-  '/orders/:orderId/tracking-status',
-  orderController.updateOrderTrackingStatus,
-);
+// router.patch(
+//   '/orders/:orderId/tracking-status',
+//   orderController.updateOrderTrackingStatus,
+// );
 export { router as orderRouter };

@@ -27,7 +27,7 @@ export class OrderController {
         paymentTypeId,
         preferredDate,
       });
-      const { client_secret } = paymentIntent;
+      const { client_secret } = paymentIntent.transaction;
       sendSuccess(
         res,
         `${ENTITIES.ORDER} ${successMessage.RECORD_ADDED.message}`,
@@ -125,53 +125,4 @@ export class OrderController {
       }
     }
   });
-  // update order Tracking status 
-
-updateOrderTrackingStatus = asyncHandler(async (req: Request , res: Response) =>{
-const customerId = Number(req.params.customerId)
-const orderId = Number(req.params.orderId);
-const { newStatus} = req.body;
-try{
- const updatedOrder = await OrderService.updateOrderStatus(customerId , orderId,newStatus); 
- sendSuccess(
-  res,
-  `Order tracking status updated successfully `, 
-  StatusCodes.OK,
-  null 
- )
-} catch(err){
-if (err instanceof NOT_FOUND) {
-        sendError(res, err.statusCode, err.code, err.message);
-      } else {
-        throw err;
-      }
-}
-});
-  // static async updateOrderTrackingStatus(orderId: number, newStatus: OrderStatusEnum) {
-  //   const order = await OrderTrackingRepository.findById(orderId)  as { status: OrderStatusEnum } | null;
-
-  //   if (!order) {
-  //     throw new Error("Order not found");
-  //   }
-
-  //   const currentStatus = order.status;
-
-  //   // transition rules
-  //   const allowedTransitions: Record<OrderStatusEnum, OrderStatusEnum[]> = {
-  //     pending: ["confirmed"],
-  //     confirmed: ["processed"],
-  //     processed: ["ready_to_pickup"],
-  //     ready_to_pickup: ["out_for_delivery"],
-  //     out_for_delivery: ["delivered"],
-  //     delivered: [],
-  //   };
-
-  //   if (!allowedTransitions[currentStatus]?.includes(newStatus)) {
-  //     throw new Error(
-  //       `Cannot change status from ${currentStatus} to ${newStatus}`
-  //     );
-  //   }
-
-  //   return await OrderRepository.updateStatus(orderId, newStatus);
-  // }
 }

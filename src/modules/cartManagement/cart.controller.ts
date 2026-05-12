@@ -11,7 +11,7 @@ import {
 } from './cart.execption';
 import {successMessage} from '../../shared_infrastructure/success/successMessages';
 
-const cartService = new CartService();
+
 
 export class CartController {
   // ─── Add To Cart ────────────────────────────────────────────────────────────
@@ -20,7 +20,7 @@ export class CartController {
     const customerId = req.customerId!;
     const { itemId, itemQuantity } = req.body;
     try {
-      const cart = await cartService.addToCart({
+      const cart = await CartService.addToCart({
         customerId,
         itemId,
         itemQuantity,
@@ -51,7 +51,7 @@ export class CartController {
     const customerId = req.customerId!;
 
     try {
-      const cart = await cartService.viewCart(customerId);
+      const cart = await CartService.viewCart(customerId);
       sendSuccess(
         res,
         successMessage.CART_VIEWED.message,
@@ -76,7 +76,7 @@ export class CartController {
     const itemId = Number(req.params.itemId);
     const { itemQuantity } = req.body;
     try {
-      const updatedItem = await cartService.updateQuantity({
+      const updatedItem = await CartService.updateQuantity({
         customerId,
         itemId,
         itemQuantity,
@@ -104,7 +104,7 @@ export class CartController {
     const customerId = req.customerId!;
     const itemId = Number(req.params.itemId);
     try {
-      const deletedItem = await cartService.deleteCartItem({
+      const deletedItem = await CartService.deleteCartItem({
         customerId,
         itemId,
       });
@@ -132,7 +132,7 @@ export class CartController {
     const customerId = req.customerId!;
 
     try {
-      const cart = await cartService.clearCart(customerId);
+      const cart = await CartService.clearCart(customerId);
       sendSuccess(
         res,
         successMessage.CART_CLEARED.message,
@@ -153,7 +153,7 @@ export class CartController {
   getTotalPriceAndQuantity = asyncHandler(async (req: Request, res: Response) => {
     const customerId = req.customerId!;
     try {
-      const totalPrice = await cartService.getTotalPriceAndQuantity(customerId);
+      const totalPrice = await CartService.getTotalPriceAndQuantity(customerId);
       sendSuccess(
         res,
         successMessage.TOTAL_PRICE_GET.message,
@@ -171,24 +171,4 @@ export class CartController {
     }
   });
   
-
-  //   const customerId = req.customerId!;
-  //   try {
-  //     const totalQuantity = await cartService.getTotalQuantity(customerId);
-  //     sendSuccess(
-  //       res,
-  //       successMessage.TOTAL_QUANTITY_GET.message,
-  //       StatusCodes.OK,
-  //       totalQuantity,
-  //     );
-  //   } catch (err) {
-  //     if (
-  //       err instanceof CartNotFound
-  //     ) {
-  //       sendError(res, err.statusCode, err.code, err.message);
-  //     } else {
-  //       throw err;
-  //     }
-  //   }
-  // });
 }
