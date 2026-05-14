@@ -75,11 +75,12 @@ export class OrderController {
 
   updateOrderStatus = asyncHandler(async (req: Request, res: Response) => {
     const customerId = req.customerId!;
+    const userId = req.userId!;
     const orderId = Number(req.params.orderId);
     const { status } = req.body;
 
     try {
-      await OrderService.updateOrderStatus(customerId, orderId, status);
+      await OrderService.updateOrderStatus(customerId, orderId, status, undefined, userId);
       sendSuccess(
         res,
         `Order status updated successfully`,
@@ -125,72 +126,33 @@ export class OrderController {
       }
     }
   });
-  // update order Tracking status 
 
-updateOrderTrackingStatus = asyncHandler(async (req: Request , res: Response) =>{
-const customerId = Number(req.params.customerId)
-const orderId = Number(req.params.orderId);
-const { newStatus} = req.body;
-try{
- const updatedOrder = await OrderService.updateOrderStatus(customerId , orderId,newStatus); 
- sendSuccess(
-  res,
-  `Order tracking status updated successfully `, 
-  StatusCodes.OK,
-  null 
- )
-} catch(err){
-if (err instanceof NOT_FOUND) {
-        sendError(res, err.statusCode, err.code, err.message);
-      } else {
-        throw err;
-      }
-}
-});
-  // static async updateOrderTrackingStatus(orderId: number, newStatus: OrderStatusEnum) {
-  //   const order = await OrderTrackingRepository.findById(orderId)  as { status: OrderStatusEnum } | null;
+  // ─── Checkout ──────────────────────────────────────────────────────────────
+  checkout = asyncHandler(async (req: Request, res: Response) => {
+    const customerId = req.customerId!;
 
-  //   if (!order) {
-  //     throw new Error("Order not found");
-  //   }
-
-  //   const currentStatus = order.status;
-
-  //   // transition rules
-  //   const allowedTransitions: Record<OrderStatusEnum, OrderStatusEnum[]> = {
-  //     pending: ["confirmed"],
-  //     confirmed: ["processed"],
-  //     processed: ["ready_to_pickup"],
-  //     ready_to_pickup: ["out_for_delivery"],
-  //     out_for_delivery: ["delivered"],
-  //     delivered: [],
-  //   };
-
-  //   if (!allowedTransitions[currentStatus]?.includes(newStatus)) {
-  //     throw new Error(
-  //       `Cannot change status from ${currentStatus} to ${newStatus}`
-  //     );
-  //   }
-
-  //   return await OrderRepository.updateStatus(orderId, newStatus);
-  // }
-
-  getTrackingStatus = asyncHandler(async(req: Request , res: Response) => {
-  const orderId = Number(req.params.orderId); 
-  try{
-  const orderStatus = await OrderTrackingService.getCurrentStatus(orderId); 
-  sendSuccess(
-    res,
-    `${ENTITIES.ORDER} ${successMessage.RECORD_GET.message}`,
+    try {
+      const result = await OrderService.checkout(customerId);
+      sendSuccess(
+        res,
+        successMessage.CHECKOUT_SUCCESSFUL.message,
         StatusCodes.OK,
-        orderStatus
-  )
-  }catch(err){
-  if (err instanceof NOT_FOUND) {
-        sendError(res, err.statusCode, err.code, err.message);
+        result,
+      );
+    } catch (err: any) {
+      if (
+        err instanceof NOT_FOUND ||
+        err instanceof PriceNotMatch ||
+        err instanceof QuantityExceed ||
+        err instanceof BAD_REQUEST ||
+        err.message.includes('MenuItemNotFound') ||
+        err.message.includes('RestaurantNotMatch')
+      ) {
+        sendError(res, err.statusCode || StatusCodes.BAD_REQUEST, err.code || 'BAD_REQUEST', err.message);
       } else {
         throw err;
       }
-  }
-  }) ;
+    }
+  });
+
 }
