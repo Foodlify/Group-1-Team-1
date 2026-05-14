@@ -193,4 +193,24 @@ if (err instanceof NOT_FOUND) {
       }
   }
   }) ;
+
+  cancelOrder = asyncHandler(async(req: Request , res: Response) => {
+  const orderId = Number(req.params.orderId); 
+  const customerId = Number(req.params.customerId); 
+  try{
+    const canceldOrder = await OrderTrackingService.cancelOrder(orderId,customerId); 
+    sendSuccess(
+      res,
+    `${ENTITIES.ORDER} ${successMessage.RECORD_GET.message}`,
+        StatusCodes.OK,
+        canceldOrder
+    )
+  } catch(err){
+    if (err instanceof NOT_FOUND){
+      sendError(res,err.statusCode , err.code, err.message);
+    }else {
+      throw err; 
+    }
+  }
+  });
 }

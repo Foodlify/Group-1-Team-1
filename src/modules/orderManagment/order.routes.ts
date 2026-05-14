@@ -48,4 +48,10 @@ router.get(
 '/orders/:orderId/get-current-status', 
 orderController.getTrackingStatus,
 ); 
+
+router.patch(
+  '/orders/:orderId/:customerId/cancel-order',
+  orderController.cancelOrder,
+); 
+
 export { router as orderRouter };

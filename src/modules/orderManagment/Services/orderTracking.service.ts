@@ -1,5 +1,7 @@
+import { CustomerRepository } from '../../customerManagement/customer.repository';
 import { OrderTrackingRepository } from '../Repositories/orderTracking.repository';
 import { OrderStatusEnum } from '@prisma/client' ;
+import { OrderRepository } from '../Repositories/order.repository';
 export class OrderTrackingService {
  static async addOrderTrackingStatus(
   orderId: number,
@@ -91,4 +93,31 @@ static async getCurrentStatus(orderId: number) {
   return latest;
 }
 
+
+static async cancelOrder(orderId: number , customerId: number){
+  const currentStatus = await OrderTrackingService.getCurrentStatus(orderId); 
+  const customer = await CustomerRepository.findCustomerById(customerId);
+  const blockedStatuses: OrderStatusEnum[] = [
+      OrderStatusEnum.DELIVERED,
+      OrderStatusEnum.CANCELLED,
+      OrderStatusEnum.OUT_FOR_DELIVERY,
+    ]; 
+  const currentStatusName = currentStatus.status.name; 
+   if(!customer){
+    throw new Error(`customer with ${customerId} id not found`); 
+   }
+   if (blockedStatuses.includes(currentStatusName))
+   {
+    throw new Error (`You can NOT cancel this order`); 
+   }
+    await OrderRepository.updateOrderStatusByName(
+      orderId,
+      OrderStatusEnum.CANCELLED,
+    );
+
+    return {
+      message: 'Order cancelled successfully',
+    };
+  }
+  
 }
