@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { OrderService } from '../Services/order.service';
 import { sendSuccess, sendError } from '../../../utils/reponse';
 import asyncHandler from '../../../utils/asyncHandler';
-import { OrderTrackingService } from '../Services/orderTracking.service';
+// import { OrderTrackingService } from '../Services/orderTracking.service'; // unused after cancelOrder moved to OrderService
 import { StatusCodes } from 'http-status-codes';
 import { PriceNotMatch } from '../order.exception';
 import { successMessage } from '../../../shared_infrastructure/success/successMessages';
@@ -174,7 +174,33 @@ export class OrderController {
   //   }
   // }
   // });
+    
+
+
+
+
+  cancelOrder = asyncHandler(async(req: Request , res: Response) => {
+  const orderId = Number(req.params.orderId);
+  const customerId = req.customerId!;
+  const userId = req.userId;
+  // const customerId = Number(req.params.customerId); // old: customerId from params, replaced by auth
+  try{
+    const cancelledOrder = await OrderService.cancelOrder(orderId, customerId, userId);
+    // const canceldOrder = await OrderTrackingService.cancelOrder(orderId,customerId); // old: used tracking service
+    sendSuccess(
+      res,
+      `${ENTITIES.ORDER} cancelled successfully`,
+      StatusCodes.OK,
+      cancelledOrder,
+    );
+  } catch(err: any){
+    if (err instanceof NOT_FOUND){
+      sendError(res,err.statusCode , err.code, err.message);
+    } else if (err.message && err.message.includes('Cannot') || err.message && err.message.includes('NOT cancel')) {
+      sendError(res, StatusCodes.BAD_REQUEST, 'INVALID_STATE_TRANSITION', err.message);
+    } else {
+      throw err;
     }
-
-
-
+  }
+  });
+}

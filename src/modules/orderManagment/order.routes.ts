@@ -56,4 +56,11 @@ router.get(
 // ); 
 
 
+// old: '/orders/:orderId/:customerId/cancel-order' — no auth, customerId from params
+router.patch(
+  '/:orderId/cancel-order',
+  authValidator,
+  orderController.cancelOrder,
+);
+
 export { router as orderRouter };

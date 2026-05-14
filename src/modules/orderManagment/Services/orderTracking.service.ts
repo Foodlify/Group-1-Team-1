@@ -4,6 +4,8 @@ import { OrderStatusEnum, Prisma } from '@prisma/client';
 import { OrderTrackingHistoryResponse } from '../order.model';
 import loggerService from '../../../shared_infrastructure/logger/logger';
 
+import { CustomerRepository } from '../../customerManagement/Repositories/customer.repository';
+import { OrderRepository } from '../Repositories/order.repository';
 export class OrderTrackingService {
   /**
    * Insert a tracking record.
@@ -50,14 +52,43 @@ export class OrderTrackingService {
     return trackings;
   }
 
-  /** Get the current (latest) status of an order */
-  // static async getCurrentStatus(orderId: number) {
-  //   const latest = await OrderTrackingRepository.getLatestStatus(orderId);
 
-  //   if (!latest) {
-  //     throw new Error('Order has no status yet');
-  //   }
+/** Get latest status by order id  */
+// static async getCurrentStatus(orderId: number) {
+//   const latest = await OrderTrackingRepository.getLatestStatus(orderId);
 
-  //   return latest;
-  // }
+//   if (!latest) {
+//     throw new Error('Order has no status yet');
+//   }
+
+//   return latest;
+// }
+
+
+// static async cancelOrder(orderId: number , customerId: number){
+//   const currentStatus = await OrderTrackingService.getCurrentStatus(orderId);
+//   const customer = await CustomerRepository.findCustomerById(customerId);
+//   const blockedStatuses: OrderStatusEnum[] = [
+//       OrderStatusEnum.DELIVERED,
+//       OrderStatusEnum.CANCELLED,
+//       OrderStatusEnum.OUT_FOR_DELIVERY,
+//     ];
+//   const currentStatusName = currentStatus.status.name;
+//    if(!customer){
+//     throw new Error(`customer with ${customerId} id not found`);
+//    }
+//    if (blockedStatuses.includes(currentStatusName))
+//    {
+//     throw new Error (`You can NOT cancel this order`);
+//    }
+//     await OrderRepository.updateOrderStatusByName(
+//       orderId,
+//       OrderStatusEnum.CANCELLED,
+//     );
+//     return {
+//       message: 'Order cancelled successfully',
+//     };
+//   }
+// moved to OrderService.cancelOrder — gets status from order table, adds tracking record after update
+  
 }

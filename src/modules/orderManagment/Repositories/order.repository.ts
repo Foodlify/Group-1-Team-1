@@ -1,5 +1,8 @@
 import prisma from '../../../../lib/prisma';
 import { OrderStatusEnum, Prisma } from '@prisma/client';
+// @ts-ignore
+//import { getSingleOrderView } from '../../../../prisma/sql/getSingleOrderView.sql';
+import { getSingleOrderView } from '@prisma/client'; 
 
 export class OrderRepository {
   /** Add order with details using transaction */

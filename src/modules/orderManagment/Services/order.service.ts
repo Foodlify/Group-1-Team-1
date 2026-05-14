@@ -382,6 +382,46 @@ export class OrderService {
     }));
   }
 
+  static async cancelOrder(
+    orderId: number,
+    customerId: number,
+    userId?: number,
+  ): Promise<{ message: string }> {
+    loggerService.info('Cancel order attempt', { orderId, customerId });
+
+    const order = await OrderRepository.getSingleOrderById(customerId, orderId);
+    if (!order) {
+      loggerService.warn('Cancel order failed: order not found', { orderId, customerId });
+      throw new NOT_FOUND(ENTITIES.ORDER);
+    }
+
+    const currentStatusEntity = await OrderRepository.getOrderStatusById(order.orderStatusId);
+    if (!currentStatusEntity) {
+      loggerService.warn('Cancel order failed: status not found', { orderId, orderStatusId: order.orderStatusId });
+      throw new BAD_REQUEST(ENTITIES.ORDER_STATUS);
+    }
+
+    const blockedStatuses: OrderStatusEnum[] = [
+      OrderStatusEnum.DELIVERED,
+      OrderStatusEnum.CANCELLED,
+      OrderStatusEnum.OUT_FOR_DELIVERY,
+    ];
+
+    if (blockedStatuses.includes(currentStatusEntity.name)) {
+      throw new Error('You can NOT cancel this order');
+    }
+
+    await OrderRepository.updateOrderStatusByName(orderId, OrderStatusEnum.CANCELLED);
+
+    const cancelledStatusEntity = await OrderRepository.getOrderStatusByName(OrderStatusEnum.CANCELLED);
+    if (cancelledStatusEntity) {
+      await OrderTrackingService.addOrderTrackingStatus(orderId, cancelledStatusEntity.id, userId);
+    }
+
+    loggerService.info('Order cancelled', { orderId, customerId });
+    return { message: 'Order cancelled successfully' };
+  }
+
   private static async insertOrderSummaryTrigger(
     customerId: number,
     orderId: number,
