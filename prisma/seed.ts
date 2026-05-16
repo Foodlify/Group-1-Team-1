@@ -23,18 +23,18 @@ async function main() {
   // USERS
   // ─────────────────────────────────────────
   const user1 = await prisma.user.create({
-    data: { name: 'Alice Johnson', email: 'alice@foodlify.com' },
+    data: { name: 'Alice Johnson', email: 'alice@foodlify.com', password: 'password123' },
   });
 
   const user2 = await prisma.user.create({
-    data: { name: 'Bob Smith', email: 'bob@foodlify.com' },
+    data: { name: 'Bob Smith', email: 'bob@foodlify.com', password: 'password123' },
   });
 
   const user3 = await prisma.user.create({
-    data: { name: 'Sara Ahmed', email: 'sara@foodlify.com' },
+    data: { name: 'Sara Ahmed', email: 'sara@foodlify.com', password: 'password123' },
   });
   const user4 = await prisma.user.create({
-    data: { name: 'John Baker', email: 'john@foodlify.com' },
+    data: { name: 'John Baker', email: 'john@foodlify.com', password: 'password123' },
   });
 
   console.log('✅ Users seeded');
@@ -44,10 +44,10 @@ async function main() {
   // ─────────────────────────────────────────
   await prisma.customer.createMany({
     data: [
-      { userId: user1.id },
-      { userId: user2.id },
-      { userId: user3.id },
-      { userId: user4.id },
+      { userId: user1.id, phone: '01000000001' },
+      { userId: user2.id, phone: '01000000002' },
+      { userId: user3.id, phone: '01000000003' },
+      { userId: user4.id, phone: '01000000004' },
     ],
   });
 

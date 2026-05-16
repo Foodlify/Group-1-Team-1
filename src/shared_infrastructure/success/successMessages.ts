@@ -1,4 +1,5 @@
 export const successMessage = {
+  // Existing messages
   lOGIN_SUCCEED: {
     message: 'Customer login successfully ',
   },
@@ -31,5 +32,24 @@ export const successMessage = {
   },
   CHECKOUT_SUCCESSFUL: {
     message: 'Checkout successful',
+  },
+  // Customer management messages
+  CUSTOMER_REGISTERED: {
+    message: 'Customer registered successfully',
+  },
+  TOKEN_REFRESHED: {
+    message: 'Token refreshed successfully',
+  },
+  CUSTOMER_LOGGED_OUT: {
+    message: 'Customer logged out successfully',
+  },
+  FORGOT_PASSWORD_LINK_SENT: {
+    message: 'If the email exists, a reset link will be sent',
+  },
+  PASSWORD_RESET_FROM_LINK_SUCCESS: {
+    message: 'Password reset successfully from link',
+  },
+  PASSWORD_CHANGED_SUCCESS: {
+    message: 'Password changed successfully',
   },
 };

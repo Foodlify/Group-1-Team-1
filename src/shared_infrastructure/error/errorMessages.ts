@@ -39,6 +39,30 @@ export const errorMessage = {
     code: 'PriceNotMatchException',
     message: 'price has changed, please confirm if proceed or remove the item'
   },
+  EMAIL_ALREADY_REGISTERED: {
+    code: 'EmailAlreadyRegisteredException',
+    message: 'Email already registered',
+  },
+  PHONE_ALREADY_REGISTERED: {
+    code: 'PhoneAlreadyRegisteredException',
+    message: 'Phone already registered',
+  },
+  INVALID_CREDENTIALS: {
+    code: 'InvalidCredentialsException',
+    message: 'Invalid email or password',
+  },
+  INVALID_TOKEN: {
+    code: 'InvalidTokenException',
+    message: 'Invalid or expired token',
+  },
+  CUSTOMER_NOT_FOUND: {
+    code: 'CustomerNotFoundException',
+    message: 'Customer not found',
+  },
+  PASSWORD_MISMATCH: {
+    code: 'PasswordMismatchException',
+    message: 'Passwords do not match',
+  },
 };
 
 
