@@ -1,25 +1,34 @@
 import { Prisma } from '@prisma/client';
 import prisma from '../../../lib/prisma';
 export class MenuRepository {
-  static async findMenuItemById(tx: Prisma.TransactionClient, itemId: number) {
-    return tx.menuItem.findUnique({
+  static async findMenuItemById(
+    itemId: number,
+    db: Prisma.TransactionClient = prisma,
+  ) {
+    return db.menuItem.findUnique({
       where: { id: itemId },
     });
   }
-  static async decrementMenuItemStock(tx: Prisma.TransactionClient, item: any) {
-    const updated = await tx.menuItem.updateMany({
+  static async decrementMenuItemStock(
+    item: any,
+    db: Prisma.TransactionClient = prisma,
+  ) {
+    const updated = await db.menuItem.updateMany({
       where: {
-        id: item.id,
+        id: item.menuItemId,
         stock: { gte: item.quantity }, // ensure enough stock
       },
       data: {
         stock: { decrement: item.quantity },
       },
     });
-    return updated
+    return updated;
   }
-  static async incrementMenuItemStock(tx: Prisma.TransactionClient, item: any) {
-    const updated = await tx.menuItem.updateMany({
+  static async incrementMenuItemStock(
+    item: any,
+    db: Prisma.TransactionClient = prisma,
+  ) {
+    const updated = await db.menuItem.updateMany({
       where: {
         id: item.id,
       },
@@ -27,6 +36,6 @@ export class MenuRepository {
         stock: { increment: item.quantity },
       },
     });
-    return updated
+    return updated;
   }
 }

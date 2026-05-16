@@ -11,6 +11,7 @@ export class PaymentStrategy {
   constructor(paymentType: PaymentTypeEnum) {
     this.strategy = PaymentStrategy.paymentFactory(paymentType);
   }
+
   static paymentFactory(strategy: PaymentTypeEnum): PaymentStrategyInterface {
     switch (strategy) {
       case PaymentTypeEnum.STRIPE:
@@ -23,7 +24,7 @@ export class PaymentStrategy {
     }
   }
   async createPayment(order: any): Promise<any> {
-    const transaction = this.strategy.createPayment(order);
+    const transaction = await  this.strategy.createPayment(order);
     if (!transaction) {
       throw new BAD_REQUEST(ENTITIES.TRANSACTION);
     }

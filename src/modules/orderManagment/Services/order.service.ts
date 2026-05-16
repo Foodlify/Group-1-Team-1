@@ -1,35 +1,42 @@
-import prisma from '../../../../lib/prisma';
 import {
   BAD_REQUEST,
   NOT_FOUND,
 } from '../../../shared_infrastructure/error/error.execption';
 import { ENTITIES } from '../../../../prisma/entities';
-import { CreateOrderInput, SingleOrderResponse, CustomerOrdersByStatusResponse } from '../order.model';
+import {
+  CreateOrderInput,
+  SingleOrderResponse,
+  CustomerOrdersByStatusResponse,
+} from '../order.model';
 import { OrderRepository } from '../Repositories/order.repository';
-import { PaymentService } from '../../paymentManagement/Services/payment.service';
 import { OrderContext } from '../States/OrderContext';
 import { OrderSummaryService } from './orderSummary.service';
-import { AddressService } from '../../customerManagement/Services/address.service';
+
 import { CartService } from '../../cartManagement/cart.service';
-import { PaymentStrategy } from '../../paymentManagement/PaymentStrategies/payment.strategy';
-import { TransactionService } from '../../paymentManagement/Services/transaction.service';
-import { OrderStatusEnum, PaymentTypeEnum, Prisma } from '@prisma/client';
-const cart_service = new CartService();
+import {
+  OrderStatusEnum,
+  PaymentTypeEnum,
+  Prisma,
+  PrismaClient,
+} from '@prisma/client';
+import { CreateOrder } from '../chainPattern/createOrder';
+import prisma from '../../../../lib/prisma';
+import { MenuService } from '../../restaurantManagemet/menu.service';
 export class OrderService {
   static async getOrderStatus(
-    tx: Prisma.TransactionClient,
     paymentName: PaymentTypeEnum,
+    db: Prisma.TransactionClient = prisma,
   ) {
     let orderStatus;
     if (paymentName === PaymentTypeEnum.CASH) {
       orderStatus = await OrderRepository.getOrderStatusByName(
-        tx,
         OrderStatusEnum.CONFIRMED,
+        db,
       );
     } else {
       orderStatus = await OrderRepository.getOrderStatusByName(
-        tx,
         OrderStatusEnum.PENDING,
+        db,
       );
     }
     if (!orderStatus) {
@@ -39,64 +46,44 @@ export class OrderService {
   }
   static async placeOrder(input: CreateOrderInput): Promise<any> {
     const { customerId, addressId, paymentTypeId, preferredDate } = input;
-    const cart = await cart_service.getCustomerCart(customerId);
-    // prevent duplicate place order of same cart
-    if (cart?.isLocked) {
-      throw new Error('This cart already placed');
-    }
-    // check if address belong to Customer
-    const address = await AddressService.getAddressByCustomerId(
-      customerId,
-      addressId,
-    );
-    // Check if Payment integration type exist in system
-    const paymentType = await PaymentService.getPaymentTypeById(paymentTypeId);
-
-    // Create Order and its details
-    return await prisma.$transaction(async (tx) => {
-      // lock Cart, Check price,deduct menu item stock
-      const { cart, totalPrice } = await CartService.validCartAntItemsForOrder(
-        tx,
-        customerId,
-      );
-      // create Order
-      const statusId = await OrderService.getOrderStatus(tx, paymentType.name);
-      const order = await OrderRepository.createOrderAndDetails(tx, {
-        customerId,
-        addressId: address.id,
-        paymentTypeId: paymentType.id,
-        preferredDate,
-        orderStatusId: statusId,
-        totalPrice,
-        cart,
-      });
-
-      if (!order) {
-        throw new BAD_REQUEST(ENTITIES.ORDER);
+    return await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+      try {
+        return await CreateOrder.processOrder().handle(
+          {
+            customerId,
+            addressId,
+            paymentTypeId,
+            preferredDate,
+          },
+          {
+            tx,
+            customerId: customerId,
+          },
+        );
+      } catch (error) {
+        throw error;
       }
-      // Create pending transaction
-      const paymentStrategy = new PaymentStrategy(paymentType.name);
-      const transaction = await paymentStrategy.createPayment(order);
-      await TransactionService.createTransaction(
-        tx,
-        order.id,
-        paymentType.id,
-        transaction.id,
-        order.totalPrice,
-      );
-      return transaction;
     });
   }
+
   // -------------------------------------------------------------------------------------------------------
   static async getSingleOrder(
     customerId: number,
     orderId: number,
+    db: Prisma.TransactionClient = prisma,
   ): Promise<SingleOrderResponse> {
-    const order = await OrderRepository.getSingleOrderById(customerId, orderId);
+    const order = await OrderRepository.getSingleOrderById(
+      customerId,
+      orderId,
+      db,
+    );
     if (!order) {
       throw new NOT_FOUND(ENTITIES.ORDER);
     }
-    const result = await OrderRepository.getSingleOrderAndDetailsById(orderId);
+    const result = await OrderRepository.getSingleOrderAndDetailsById(
+      orderId,
+      db,
+    );
     if (!result) {
       throw new NOT_FOUND(ENTITIES.ORDER);
     }
@@ -123,14 +110,20 @@ export class OrderService {
     customerId: number,
     orderId: number,
     newStatus: OrderStatusEnum,
+    db: Prisma.TransactionClient = prisma,
   ): Promise<void> {
-    const order = await OrderRepository.getSingleOrderById(customerId, orderId);
+    const order = await OrderRepository.getSingleOrderById(
+      customerId,
+      orderId,
+      db,
+    );
     if (!order) {
       throw new NOT_FOUND(ENTITIES.ORDER);
     }
 
     const currentStatusEntity = await OrderRepository.getOrderStatusById(
       order.orderStatusId,
+      db,
     );
     if (!currentStatusEntity) {
       throw new BAD_REQUEST(ENTITIES.ORDER_STATUS);
@@ -154,7 +147,7 @@ export class OrderService {
         break;
       case OrderStatusEnum.DELIVERED:
         context.deliver();
-        await OrderService.insertOrderSummaryTrigger(customerId, orderId);
+        await OrderService.insertOrderSummaryTrigger(customerId, orderId, db);
         break;
       case OrderStatusEnum.CANCELLED:
         context.cancel();
@@ -167,12 +160,13 @@ export class OrderService {
     }
 
     const resolvedStatus = context.getCurrentStatus();
-    await OrderRepository.updateOrderStatusByName(orderId, resolvedStatus);
+    await OrderRepository.updateOrderStatusByName(orderId, resolvedStatus, db);
   }
 
   static async getOrdersByStatus(
     customerId: number,
     status: OrderStatusEnum,
+    db: Prisma.TransactionClient = prisma,
   ): Promise<CustomerOrdersByStatusResponse[]> {
     const orders = await OrderRepository.getOrdersByCustomerAndOrderStatus(
       customerId,
@@ -200,6 +194,7 @@ export class OrderService {
   private static async insertOrderSummaryTrigger(
     customerId: number,
     orderId: number,
+    db: Prisma.TransactionClient = prisma,
   ) {
     const orderDetails = await OrderService.getSingleOrder(customerId, orderId);
 

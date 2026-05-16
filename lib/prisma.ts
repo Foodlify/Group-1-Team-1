@@ -27,8 +27,8 @@ if (process.env.NODE_ENV !== 'production') {
   globalForPrisma.prisma = prisma;
 }
 
-prisma.$on('query', async (e: any) => {
-  console.log(e.query, e.duration);
-});
+// prisma.$on('query', async (e: any) => {
+//   console.log(e.query, e.duration);
+// });
 
 export default prisma;

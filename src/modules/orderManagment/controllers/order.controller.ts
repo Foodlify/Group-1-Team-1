@@ -27,7 +27,7 @@ export class OrderController {
         paymentTypeId,
         preferredDate,
       });
-      const { client_secret } = paymentIntent;
+      const { client_secret } = paymentIntent.transaction;
       sendSuccess(
         res,
         `${ENTITIES.ORDER} ${successMessage.RECORD_ADDED.message}`,
