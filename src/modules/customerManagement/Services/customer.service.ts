@@ -94,7 +94,7 @@ export class CustomerService {
       { userId: user.id, customerId: user.customer.id },
       JWT_SECRET,
       { expiresIn: '2d' },
-    );
+    );  
 
     const refreshToken = jwt.sign(
       { userId: user.id, customerId: user.customer.id },

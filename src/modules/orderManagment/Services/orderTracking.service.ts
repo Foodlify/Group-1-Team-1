@@ -2,6 +2,7 @@ import prisma from '../../../../lib/prisma';
 import { OrderTrackingRepository } from '../Repositories/orderTracking.repository';
 import { OrderStatusEnum, Prisma } from '@prisma/client';
 import { OrderTrackingHistoryResponse } from '../order.model';
+import loggerService from '../../../shared_infrastructure/logger/logger';
 
 export class OrderTrackingService {
   /**
@@ -23,32 +24,29 @@ export class OrderTrackingService {
       createdBy = createdByOrDb;
       resolvedDb = db;
     } else if (createdByOrDb !== undefined) {
-      // it's a TransactionClient (legacy call)
       resolvedDb = createdByOrDb as Prisma.TransactionClient;
     }
 
-    return OrderTrackingRepository.addOrderTrackingStatus(
-      orderId,
-      statusId,
-      createdBy,
-      resolvedDb,
-    );
+    loggerService.info('Adding order tracking status', { orderId, statusId, createdBy });
+    const result = await OrderTrackingRepository.addOrderTrackingStatus(orderId, statusId, createdBy, resolvedDb);
+    loggerService.info('Order tracking status added', { orderId, statusId });
+    return result;
   }
 
-  /** Get tracking history for a timeline view */
   static async getOrderTrackingHistory(
     orderId: number,
     db: Prisma.TransactionClient = prisma,
   ): Promise<OrderTrackingHistoryResponse[]> {
-    const trackings = await OrderTrackingRepository.getOrderTrackingsByOrderId(
-      orderId,
-      db,
-    );
+    loggerService.info('Get order tracking history', { orderId });
+
+    const trackings = await OrderTrackingRepository.getOrderTrackingsByOrderId(orderId, db);
 
     if (trackings.length === 0) {
+      loggerService.warn('No tracking found for order', { orderId });
       throw new Error('No tracking found for this order');
     }
 
+    loggerService.info('Order tracking history retrieved', { orderId, count: trackings.length });
     return trackings;
   }
 
