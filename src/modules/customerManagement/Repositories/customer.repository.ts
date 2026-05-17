@@ -1,5 +1,5 @@
 import { Prisma } from '@prisma/client';
-import prisma from '../../../lib/prisma';
+import prisma from '../../../../lib/prisma';
 
 export class CustomerRepository {
   static async findCustomerById(
@@ -13,14 +13,20 @@ export class CustomerRepository {
     email: string,
     db: Prisma.TransactionClient = prisma,
   ) {
-    return db.user.findUnique({ where: { email }, include: { customer: true } });
+    return db.user.findUnique({
+      where: { email },
+      include: { customer: true },
+    });
   }
 
   static async findUserById(
     userId: number,
     db: Prisma.TransactionClient = prisma,
   ) {
-    return db.user.findUnique({ where: { id: userId }, include: { customer: true } });
+    return db.user.findUnique({
+      where: { id: userId },
+      include: { customer: true },
+    });
   }
 
   static async findCustomerByPhone(

@@ -1,13 +1,13 @@
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
-import { CustomerRepository } from '../customer.repository';
-import { 
-  EmailAlreadyRegistered, 
-  PhoneAlreadyRegistered, 
-  InvalidCredentials, 
-  InvalidToken, 
-  CustomerNotFound, 
-  PasswordMismatch 
+import { CustomerRepository } from '../Repositories/customer.repository';
+import {
+  EmailAlreadyRegistered,
+  PhoneAlreadyRegistered,
+  InvalidCredentials,
+  InvalidToken,
+  CustomerNotFound,
+  PasswordMismatch,
 } from '../customer.execption';
 import { CustomerMailService } from '../customer.mail';
 import {
@@ -27,19 +27,22 @@ import {
 } from '../customer.model';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'supersecret';
-const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || 'superrefreshsecret';
+const JWT_REFRESH_SECRET =
+  process.env.JWT_REFRESH_SECRET || 'superrefreshsecret';
 
 export class CustomerService {
   static async register(data: RegisterInput): Promise<RegisterResponse> {
     const { name, email, password, phone, dob, gender } = data;
-
+    console.log(data)
     // Check if email or phone already exists
     const existingUser = await CustomerRepository.findUserByEmail(email);
+    console.log(existingUser)
     if (existingUser) {
       throw new EmailAlreadyRegistered();
     }
 
-    const existingCustomer = await CustomerRepository.findCustomerByPhone(phone);
+    const existingCustomer =
+      await CustomerRepository.findCustomerByPhone(phone);
     if (existingCustomer) {
       throw new PhoneAlreadyRegistered();
     }
@@ -48,7 +51,11 @@ export class CustomerService {
 
     const user = await CustomerRepository.createUserWithCustomer(
       { name, email, password: hashedPassword },
-      { phone, dob: dob ? new Date(`${dob.substring(0, 10)}T00:00:00.000Z`) : null, gender }
+      {
+        phone,
+        dob: dob ? new Date(`${dob.substring(0, 10)}T00:00:00.000Z`) : null,
+        gender,
+      },
     );
 
     return {
@@ -79,15 +86,15 @@ export class CustomerService {
     const accessToken = jwt.sign(
       { userId: user.id, customerId: user.customer.id },
       JWT_SECRET,
-      { expiresIn: '15m' }
+      { expiresIn: '15m' },
     );
 
     const refreshToken = jwt.sign(
       { userId: user.id, customerId: user.customer.id },
       JWT_REFRESH_SECRET,
-      { expiresIn: '7d' }
+      { expiresIn: '7d' },
     );
-
+console.log(accessToken)
     // Save refresh token to user
     await CustomerRepository.updateUserRefreshToken(user.id, refreshToken);
 
@@ -97,7 +104,9 @@ export class CustomerService {
     };
   }
 
-  static async refreshToken(data: RefreshTokenInput): Promise<RefreshTokenResponse> {
+  static async refreshToken(
+    data: RefreshTokenInput,
+  ): Promise<RefreshTokenResponse> {
     const { refreshToken } = data;
 
     try {
@@ -112,7 +121,7 @@ export class CustomerService {
       const newAccessToken = jwt.sign(
         { userId: user.id, customerId: user.customer.id },
         JWT_SECRET,
-        { expiresIn: '15m' }
+        { expiresIn: '15m' },
       );
 
       return { accessToken: newAccessToken };
@@ -132,7 +141,9 @@ export class CustomerService {
     return {};
   }
 
-  static async forgotPassword(data: ForgotPasswordInput): Promise<ForgotPasswordResponse> {
+  static async forgotPassword(
+    data: ForgotPasswordInput,
+  ): Promise<ForgotPasswordResponse> {
     const { email } = data;
 
     const user = await CustomerRepository.findUserByEmail(email);
@@ -142,7 +153,9 @@ export class CustomerService {
     }
 
     // Generate a temporary reset token (one-time link token)
-    const resetToken = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: '1h' });
+    const resetToken = jwt.sign({ userId: user.id }, JWT_SECRET, {
+      expiresIn: '1h',
+    });
 
     // Construct the reset link
     const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
@@ -152,13 +165,17 @@ export class CustomerService {
     try {
       await CustomerMailService.sendResetPasswordEmail(email, resetLink);
     } catch (error) {
-      console.warn(`\n[ForgotPassword] SMTP sending failed, logging reset link here:\n👉 ${resetLink}\n`);
+      console.warn(
+        `\n[ForgotPassword] SMTP sending failed, logging reset link here:\n👉 ${resetLink}\n`,
+      );
     }
 
     return {};
   }
 
-  static async resetPasswordFromLink(data: ResetPasswordFromLinkInput): Promise<ResetPasswordFromLinkResponse> {
+  static async resetPasswordFromLink(
+    data: ResetPasswordFromLinkInput,
+  ): Promise<ResetPasswordFromLinkResponse> {
     const { token, newPassword } = data;
 
     try {
@@ -166,7 +183,10 @@ export class CustomerService {
 
       const hashedPassword = await bcrypt.hash(newPassword, 10);
 
-      await CustomerRepository.updateUserPassword(decoded.userId, hashedPassword);
+      await CustomerRepository.updateUserPassword(
+        decoded.userId,
+        hashedPassword,
+      );
 
       return {};
     } catch (error) {
@@ -174,7 +194,10 @@ export class CustomerService {
     }
   }
 
-  static async changePassword(userId: number, data: ChangePasswordInput): Promise<ChangePasswordResponse> {
+  static async changePassword(
+    userId: number,
+    data: ChangePasswordInput,
+  ): Promise<ChangePasswordResponse> {
     const { oldPassword, newPassword } = data;
 
     const user = await CustomerRepository.findUserById(userId);

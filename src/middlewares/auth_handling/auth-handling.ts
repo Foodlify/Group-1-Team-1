@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { StatusCodes } from 'http-status-codes';
-import { CustomerRepository } from '../../modules/customerManagement/customer.repository';
+import { CustomerRepository } from '../../modules/customerManagement/Repositories/customer.repository';
 import jwt from 'jsonwebtoken';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'supersecret';
