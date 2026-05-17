@@ -14,7 +14,6 @@ import {
 } from '../../../shared_infrastructure/error/error.execption';
 import { OrderStatusEnum } from '@prisma/client';
 
-
 export class OrderTrackingController {
   updateOrderTrackingStatus = asyncHandler(
     async (req: Request, res: Response) => {
@@ -43,6 +42,13 @@ export class OrderTrackingController {
     },
   );
 }
+
+// getOrderTrackingHistory controller
+
+
+
+
+
 
 // static async updateOrderTrackingStatus(orderId: number, newStatus: OrderStatusEnum) {
 //   const order = await OrderTrackingRepository.findById(orderId)  as { status: OrderStatusEnum } | null;
