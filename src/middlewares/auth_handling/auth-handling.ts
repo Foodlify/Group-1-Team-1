@@ -19,15 +19,13 @@ export const authValidator = async (
   res: Response,
   next: NextFunction,
 ) => {
-  const authHeader = req.headers.authorization;
+  const token = req.cookies?.accessToken;
 
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+  if (!token) {
     return res.status(StatusCodes.UNAUTHORIZED).json({
-      message: 'Token missing or invalid format',
+      message: 'Access token missing',
     });
   }
-
-  const token = authHeader.split(' ')[1];
 
   try {
     const decoded = jwt.verify(token, JWT_SECRET) as any;

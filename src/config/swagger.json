@@ -31,10 +31,11 @@
   ],
   "components": {
     "securitySchemes": {
-      "bearerAuth": {
-        "type": "http",
-        "scheme": "bearer",
-        "bearerFormat": "JWT"
+      "cookieAuth": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "accessToken",
+        "description": "Access token stored in HttpOnly cookie. Obtained via POST /api/v1/customers/login."
       }
     },
     "schemas": {
@@ -103,7 +104,7 @@
   },
   "security": [
     {
-      "bearerAuth": []
+      "cookieAuth": []
     }
   ],
   "paths": {
@@ -175,6 +176,7 @@
           "Customer"
         ],
         "summary": "Login customer",
+        "description": "Authenticates customer and sets `accessToken` (2d) and `refreshToken` (4d) as HttpOnly cookies.",
         "requestBody": {
           "required": true,
           "content": {
@@ -201,7 +203,15 @@
         },
         "responses": {
           "200": {
-            "description": "Login successful"
+            "description": "Login successful. Sets `accessToken` and `refreshToken` HttpOnly cookies.",
+            "headers": {
+              "Set-Cookie": {
+                "description": "accessToken (2d) and refreshToken (4d) HttpOnly cookies",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
           },
           "401": {
             "description": "Invalid credentials"
@@ -215,30 +225,52 @@
           "Customer"
         ],
         "summary": "Refresh access token",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "required": [
-                  "refreshToken"
-                ],
-                "properties": {
-                  "refreshToken": {
-                    "type": "string"
-                  }
+        "description": "Reads `refreshToken` from HttpOnly cookie. Issues a new `accessToken` cookie. No request body needed.",
+        "parameters": [
+          {
+            "name": "refreshToken",
+            "in": "cookie",
+            "required": true,
+            "description": "Refresh token cookie set during login",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Token refreshed. New `accessToken` cookie set.",
+            "headers": {
+              "Set-Cookie": {
+                "description": "New accessToken HttpOnly cookie (2d)",
+                "schema": {
+                  "type": "string"
                 }
               }
             }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Token refreshed successfully"
           },
           "401": {
-            "description": "Invalid refresh token"
+            "description": "Refresh token missing, invalid, or expired"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Customer"
+        ],
+        "summary": "Revoke refresh token",
+        "description": "Deletes refresh token from DB and clears both auth cookies. Requires valid `accessToken` cookie.",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Refresh token revoked and cookies cleared"
+          },
+          "401": {
+            "description": "Unauthorized"
           }
         }
       }
@@ -251,7 +283,7 @@
         "summary": "Logout customer",
         "security": [
           {
-            "bearerAuth": []
+            "cookieAuth": []
           }
         ],
         "responses": {
@@ -348,7 +380,7 @@
         "summary": "Change password while logged in",
         "security": [
           {
-            "bearerAuth": []
+            "cookieAuth": []
           }
         ],
         "requestBody": {

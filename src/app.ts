@@ -2,6 +2,7 @@ import express, { Request, Response } from 'express';
 import cors from 'cors';
 import morgan from 'morgan';
 import helmet from 'helmet';
+import cookieParser from 'cookie-parser';
 import swaggerUi from 'swagger-ui-express';
 import swaggerDocument from './config/swagger.json';
 import prisma from '../lib/prisma';
@@ -32,6 +33,7 @@ app.use(
   }),
 );
 
+app.use(cookieParser());
 app.use(express.static(path.join(__dirname, '../public')));
 
 app.use('/webhook', webhookRouter);

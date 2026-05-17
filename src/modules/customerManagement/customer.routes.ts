@@ -4,7 +4,6 @@ import { authValidator } from '../../middlewares/auth_handling/auth-handling';
 import {
   validateRegister,
   validateLogin,
-  validateRefreshToken,
   validateForgotPassword,
   validateResetPasswordFromLink,
   validateChangePassword,
@@ -15,7 +14,7 @@ const customerController = new CustomerController();
 
 router.post('/register', validateRegister, customerController.register);
 router.post('/login', validateLogin, customerController.login);
-router.post('/refresh-token', validateRefreshToken, customerController.refreshToken);
+router.post('/refresh-token', customerController.refreshToken);
 router.post('/forgot-password', validateForgotPassword, customerController.forgotPassword);
 router.post('/reset-password-from-link', validateResetPasswordFromLink, customerController.resetPasswordFromLink);
 
