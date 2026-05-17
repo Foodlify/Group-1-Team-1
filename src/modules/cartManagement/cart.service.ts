@@ -1,6 +1,7 @@
 import prisma from '../../../lib/prisma';
 import { CartRepository } from './cart.repository';
 import { MenuRepository } from '../restaurantManagemet/menu.repository';
+import { CartRedisRepository } from './cart.redis.repository';
 
 import {
   CartItemInput,
@@ -212,6 +213,7 @@ export class CartService {
       throw new CartNotFound(errorMessage.CART_NOT_FOUND.message);
     }
     await CartRepository.clearCart(cart.id, db);
+    await CartRedisRepository.clearCart(customerId);
   }
 
   static async getTotalPriceAndQuantity(
@@ -284,7 +286,11 @@ export class CartService {
     }
   }
   static async LockCart(cartId: number, db: Prisma.TransactionClient = prisma) {
-    return CartRepository.LockCart(cartId, db);
+    const lockedCart = await CartRepository.LockCart(cartId, db);
+    if (lockedCart) {
+      await CartRedisRepository.lockCart(lockedCart.customerId);
+    }
+    return lockedCart;
   }
   static async unLockCart(
     customerId: number,

@@ -584,9 +584,56 @@ sequenceDiagram
 - **Backend Framework:** Express.js
 - **Database:** PostgreSQL
 - **ORM:** Prisma
+- **Cache / Session Store:** Redis (cart management)
 - **API Documentation:** Swagger / OpenAPI
 - **Containerization:** Docker
 - **Version Control:** Git & GitHub
+
+---
+
+## 🗄️ Redis — Cart Management
+
+### Why Redis?
+
+The cart is a short-lived, frequently mutated data structure. Storing it in Redis instead of PostgreSQL gives:
+
+| Benefit | Detail |
+|---|---|
+| **Speed** | Sub-millisecond reads/writes vs DB round-trips |
+| **Simplicity** | No migration needed when cart schema changes |
+| **TTL support** | Carts can expire automatically (future feature) |
+| **Isolation** | Cart state is separate from order/payment data |
+
+### Redis Key Structure
+
+Each customer's cart uses **three keys**:
+
+```
+cart:{customerId}          → Hash  — restaurantId, isLocked
+cart:{customerId}:items    → Hash  — cartItemId → JSON item object
+cart:{customerId}:counter  → String — auto-increment for item IDs
+```
+
+### Architecture
+
+```
+POST /api/v1/cart  →  CartController
+                          │
+                          ▼
+                   CartRedisService          ← business logic
+                          │
+                          ▼
+                  CartRedisRepository        ← Redis read/write
+                          │
+                          ▼
+                     lib/redis.ts            ← singleton client
+                          │
+                          ▼
+                    Redis Server :6379
+```
+
+> **Note:** Menu item validation (stock, price) still reads from PostgreSQL via Prisma.  
+> The original `CartService` (Prisma-based) is kept intact and used exclusively by Order Management.
 
 ---
 
@@ -596,9 +643,10 @@ Follow these steps to set up the backend environment locally:
 
 ### Prerequisites
 
-- Node.js (v25.9.0) - _We provide an `.nvmrc` file for easy switching via `nvm use`_
+- Node.js (v25.9.0) — _We provide an `.nvmrc` file for easy switching via `nvm use`_
 - Docker & Docker Compose
 - Git
+- **Redis Server** (v6+) — required for cart endpoints to work
 
 ### Installation Steps (Local Environment)
 
@@ -629,46 +677,96 @@ Follow these steps to set up the backend environment locally:
    cp .env.example .env
    ```
 
-   _Make sure your `.env` contains the correct `DATABASE_URL` (e.g., `postgresql://user:password@localhost:5432/foodlify`)._
+   Update `.env` with your values:
 
+   ```env
+   PORT=3000
+   DATABASE_URL="postgresql://user:password@localhost:5432/foodlify"
+   REDIS_URL=redis://localhost:6379
+   ```
 
-5. **Database Migration:**
+5. **Install & Start Redis:**
 
-```bash
+   **Ubuntu / Debian:**
+   ```bash
+   sudo apt-get install -y redis-server
+   sudo service redis-server start
+   ```
+
+   **macOS (Homebrew):**
+   ```bash
+   brew install redis
+   brew services start redis
+   ```
+
+   **Verify Redis is running:**
+   ```bash
+   redis-cli ping   # should print: PONG
+   ```
+
+6. **Database Migration:**
+
+   ```bash
    npx prisma generate
    npx prisma migrate dev --name init
-```
+   ```
 
-6. **Database seed:**
-```bash
-  npx prisma db seed
-```
+7. **Database seed:**
+   ```bash
+   npx prisma db seed
+   ```
 
-7. **Start the Development Server:**
+8. **Start the Development Server:**
 
    ```bash
    npm run dev
    ```
 
+   You should see in the console:
+   ```
+   [Redis] Connected
+   [Redis] Ready
+   Server is running on http://localhost:3000/api/health
+   ```
 
-#### When run on docker 
-1. **Start the api and database (Docker):**
 
-```bash
-docker-compose up -d
-```
+#### When run on Docker
+
+1. **Start the API, database, and Redis (Docker):**
+
+   ```bash
+   docker-compose up -d
+   ```
+
+   > Make sure your `docker-compose.yml` includes a Redis service (see below).
+   > If not already present, add:
+   > ```yaml
+   > redis:
+   >   image: redis:alpine
+   >   ports:
+   >     - "6379:6379"
+   > ```
+   > And add `REDIS_URL=redis://redis:6379` to your API service environment.
 
 2. **Database Migration:**
 
    ```bash
-    docker exec -it foodlify_api prisma generate
-    docker exec -it foodlify_api npx prisma db push
+   docker exec -it foodlify_api prisma generate
+   docker exec -it foodlify_api npx prisma db push
    ```
 
 3. **Database seed:**
-```bash
+   ```bash
    docker exec -it foodlify_api npx prisma db seed
-```
+   ```
+
+### Troubleshooting Redis
+
+| Error | Cause | Fix |
+|---|---|---|
+| `client is closed` | Redis not running when server started | Start Redis, then restart the Node server |
+| `connect ECONNREFUSED 127.0.0.1:6379` | Redis server not running | Run `sudo service redis-server start` |
+| Cart endpoints return 500 | Redis unreachable | Check `redis-cli ping` returns `PONG` |
 ---
 
 

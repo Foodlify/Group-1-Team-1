@@ -4,10 +4,7 @@ import { sendSuccess, sendError } from '../../../utils/reponse';
 import asyncHandler from '../../../utils/asyncHandler';
 import { OrderTrackingService } from '../Services/orderTracking.service';
 import { StatusCodes } from 'http-status-codes';
-import { PriceNotMatch } from '../order.exception';
 import { successMessage } from '../../../shared_infrastructure/success/successMessages';
-import { QuantityExceed } from '../../cartManagement/cart.execption';
-import { ENTITIES } from '../../../../prisma/entities';
 import {
   BAD_REQUEST,
   NOT_FOUND,
@@ -15,65 +12,77 @@ import {
 import { OrderStatusEnum } from '@prisma/client';
 
 export class OrderTrackingController {
-  updateOrderTrackingStatus = asyncHandler(
+  /**
+   * PATCH /api/v1/orders/:customerId/:orderId/status
+   *
+   * Body: { newStatus: OrderStatusEnum }
+   *
+   * The authenticated user's ID (req.userId from auth middleware) is stored
+   * as createdBy in the OrderTracking record so we know who changed each status.
+   */
+  // updateOrderTrackingStatus = asyncHandler(
+  //   async (req: Request, res: Response) => {
+  //     const customerId = Number(req.params.customerId);
+  //     const orderId    = Number(req.params.orderId);
+  //     const { newStatus } = req.body;
+
+  //     // req.userId is the User.id of the authenticated actor (set by authValidator)
+  //     const createdBy = req.userId!;
+
+  //     try {
+  //       await OrderService.updateOrderStatus(
+  //         customerId,
+  //         orderId,
+  //         newStatus,
+  //         undefined, // use default prisma client (no outer tx)
+  //         createdBy,
+  //       );
+
+  //       sendSuccess(
+  //         res,
+  //         'Order tracking status updated successfully',
+  //         StatusCodes.OK,
+  //         null,
+  //       );
+  //     } catch (err) {
+  //       if (err instanceof NOT_FOUND || err instanceof BAD_REQUEST) {
+  //         sendError(res, err.statusCode, err.code, err.message);
+  //       } else {
+  //         throw err;
+  //       }
+  //     }
+  //   },
+  // );
+
+  /** GET /api/v1/orders/:orderId/tracking — full status history */
+  getOrderTrackingHistory = asyncHandler(
     async (req: Request, res: Response) => {
-      const customerId = Number(req.params.customerId);
       const orderId = Number(req.params.orderId);
-      const { newStatus } = req.body;
-      try {
-        const updatedOrder = await OrderService.updateOrderStatus(
-          customerId,
-          orderId,
-          newStatus,
-        );
-        sendSuccess(
-          res,
-          `Order tracking status updated successfully `,
-          StatusCodes.OK,
-          null,
-        );
-      } catch (err) {
-        if (err instanceof NOT_FOUND) {
-          sendError(res, err.statusCode, err.code, err.message);
-        } else {
-          throw err;
-        }
-      }
+
+      const history = await OrderTrackingService.getOrderTrackingHistory(orderId);
+
+      sendSuccess(
+        res,
+        'Order tracking history retrieved successfully',
+        StatusCodes.OK,
+        history,
+      );
     },
   );
+
+  /** GET /api/v1/orders/:orderId/tracking/current — latest status only */
+  // getCurrentStatus = asyncHandler(
+  //   async (req: Request, res: Response) => {
+  //     const orderId = Number(req.params.orderId);
+
+  //     const latest = await OrderTrackingService.getCurrentStatus(orderId);
+
+  //     sendSuccess(
+  //       res,
+  //       'Current order status retrieved successfully',
+  //       StatusCodes.OK,
+  //       latest,
+  //     );
+  //   },
+  // );
 }
-
-// getOrderTrackingHistory controller
-
-
-
-
-
-
-// static async updateOrderTrackingStatus(orderId: number, newStatus: OrderStatusEnum) {
-//   const order = await OrderTrackingRepository.findById(orderId)  as { status: OrderStatusEnum } | null;
-
-//   if (!order) {
-//     throw new Error("Order not found");
-//   }
-
-//   const currentStatus = order.status;
-
-//   // transition rules
-//   const allowedTransitions: Record<OrderStatusEnum, OrderStatusEnum[]> = {
-//     pending: ["confirmed"],
-//     confirmed: ["processed"],
-//     processed: ["ready_to_pickup"],
-//     ready_to_pickup: ["out_for_delivery"],
-//     out_for_delivery: ["delivered"],
-//     delivered: [],
-//   };
-
-//   if (!allowedTransitions[currentStatus]?.includes(newStatus)) {
-//     throw new Error(
-//       `Cannot change status from ${currentStatus} to ${newStatus}`
-//     );
-//   }
-
-//   return await OrderRepository.updateStatus(orderId, newStatus);
-// }

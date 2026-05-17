@@ -9,6 +9,14 @@ export class MenuRepository {
       where: { id: itemId },
     });
   }
+  static async findMenuItemsByIds(
+    itemIds: number[],
+    db: Prisma.TransactionClient = prisma,
+  ) {
+    return db.menuItem.findMany({
+      where: { id: { in: itemIds } },
+    });
+  }
   static async decrementMenuItemStock(
     item: any,
     db: Prisma.TransactionClient = prisma,

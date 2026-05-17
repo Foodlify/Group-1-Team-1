@@ -5,8 +5,14 @@ import { authValidator } from '../../middlewares/auth_handling/auth-handling';
 
 const router = express.Router();
 const orderController = new OrderController();
+// POST   /api/v1/orders/checkout — validate and sync cart before placing order
+router.post(
+  '/checkout',
+  authValidator,
+  orderController.checkout,
+);
 
-// POST   /api/v1/order — add order
+// POST   /api/v1/orders — add order
 router.post(
   '/',
   authValidator,
@@ -38,14 +44,5 @@ router.get(
   orderController.getOrdersByStatus,
 );
 
-router.patch(
-  '/orders/:orderId/tracking-status',
-  orderController.updateOrderTrackingStatus,
-);
 
-// Get                     - get current order tracking status 
-router.get(
-'/orders/:orderId/get-current-status', 
-orderController.getTrackingStatus,
-); 
 export { router as orderRouter };

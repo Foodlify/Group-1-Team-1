@@ -9,6 +9,12 @@ export class MenuService {
     const menuItem = await MenuRepository.findMenuItemById(itemId, db);
     return menuItem;
   }
+  static async getMenuItemsByIds(
+    itemIds: number[],
+    db: Prisma.TransactionClient = prisma,
+  ): Promise<any> {
+    return await MenuRepository.findMenuItemsByIds(itemIds, db);
+  }
   static async increaseMenuItemStock(
     item: any,
     db: Prisma.TransactionClient = prisma,

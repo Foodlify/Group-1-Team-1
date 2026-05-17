@@ -10,6 +10,12 @@ import { errorHandler } from './middlewares/error_handling/error-handling';
 import { webhookRouter } from './modules/paymentManagement/routes/webhook.route';
 import path, { join } from 'path';
 import 'dotenv/config';
+import { connectRedis } from '../lib/redis';
+
+// Connect to Redis on startup
+connectRedis().catch((err) =>
+  console.error('[Redis] Failed to connect at startup:', err),
+);
 
 
 const app = express();

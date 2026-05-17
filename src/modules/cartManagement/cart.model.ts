@@ -38,3 +38,23 @@ export interface CartItems {
   quantity: number;
   price: number;
 }
+
+// ─── Redis Cart Types ─────────────────────────────────────────────────────────
+
+export interface CartRedisItem {
+  id: number;
+  menuItemId: number;
+  name: string;
+  price: number;
+  quantity: number;
+}
+
+export interface CartRedisMeta {
+  customerId: number;
+  restaurantId: number;
+  isLocked: boolean;
+}
+
+export interface CartRedisData extends CartRedisMeta {
+  items: CartRedisItem[];
+}

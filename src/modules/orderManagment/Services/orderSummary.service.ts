@@ -1,5 +1,5 @@
-import { OrderSummaryRepository } from '../Repositories/orderSummary.repository';
-import { OrderSummaryResponse } from '../order.model';
+import { OrderSummaryRepository, OrderSummaryFilters } from '../Repositories/orderSummary.repository';
+import { OrderSummaryResponse, OrdersSummaryPaginatedResponse } from '../order.model';
 import { Prisma } from '@prisma/client';
 import prisma from '../../../../lib/prisma';
 
@@ -18,12 +18,16 @@ export class OrderSummaryService {
     return OrderSummaryRepository.addOrderSummary(summaryData);
   }
 
-  static async getByCustomerId(
+  static async getOrdersSummaryByCustomerId(
     customerId: number,
-  ): Promise<OrderSummaryResponse[]> {
-    const summaries = await OrderSummaryRepository.getByCustomerId(customerId);
+    filters: OrderSummaryFilters = {},
+  ): Promise<OrdersSummaryPaginatedResponse> {
+    const result = await OrderSummaryRepository.getOrdersSummaryByCustomerId(
+      customerId,
+      filters,
+    );
 
-    return summaries.map((s) => ({
+    const formatted: OrderSummaryResponse[] = result.data.map((s) => ({
       id: s.id,
       orderId: s.orderId,
       restaurantName: s.restaurantName,
@@ -31,5 +35,15 @@ export class OrderSummaryService {
       totalQuantity: s.totalQuantity,
       orderDate: new Date(s.orderDate).toISOString().split('T')[0],
     }));
+
+    return {
+      data: formatted,
+      pagination: {
+        total: result.total,
+        page: result.page,
+        limit: result.limit,
+        totalPages: result.totalPages,
+      },
+    };
   }
 }

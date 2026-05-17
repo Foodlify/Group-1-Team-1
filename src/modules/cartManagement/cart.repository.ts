@@ -51,6 +51,30 @@ export class CartRepository {
     return cartWithItems;
   }
 
+  /** Create new cart and add multiple items efficiently using nested createMany */
+  static async createCartWithManyItems(
+    customerId: number,
+    restaurantId: number,
+    items: { menuItemId: number; quantity: number; price: number; name: string }[],
+    db: Prisma.TransactionClient = prisma,
+  ) {
+    const cartWithItems = await db.cart.create({
+      data: {
+        customerId,
+        restaurantId,
+        cartItems: {
+          createMany: {
+            data: items,
+          },
+        },
+      },
+      include: {
+        cartItems: true,
+      },
+    });
+    return cartWithItems;
+  }
+
   /** Add item to existing cart */
   static async createCartItem(
     cartId: number,
