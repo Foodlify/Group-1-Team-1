@@ -55,4 +55,7 @@ export const successMessage = {
   PASSWORD_CHANGED_SUCCESS: {
     message: 'Password changed successfully',
   },
+  REFRESH_TOKEN_REVOKED: {
+    message: 'Refresh token revoked successfully',
+  },
 };

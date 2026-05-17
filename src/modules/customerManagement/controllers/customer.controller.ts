@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from 'express';
+import { Request, Response } from 'express';
 import { CustomerService } from '../Services/customer.service';
 import { StatusCodes } from 'http-status-codes';
 import { InvalidCredentials } from '../customer.execption';
@@ -20,20 +20,10 @@ export class CustomerController {
   login = asyncHandler(async (req: Request, res: Response) => {
     const result = await CustomerService.login(req.body);
 
-    //   res.cookie("refreshToken", refreshToken, {
-    //   httpOnly: true,
-    //   secure: true,
-    //   sameSite: "strict",
-    // });
-
-    sendSuccess(res, successMessage.lOGIN_SUCCEED.message, StatusCodes.OK, {
-      accessToken: result.accessToken,
-      // refreshToken: result.refreshToken
-    });
+    sendSuccess(res, successMessage.lOGIN_SUCCEED.message, StatusCodes.OK, result);
   });
 
   refreshToken = asyncHandler(async (req: Request, res: Response) => {
-    // const refreshToken = req.cookies.refreshToken;
     const result = await CustomerService.refreshToken(req.body);
     sendSuccess(
       res,
@@ -48,7 +38,7 @@ export class CustomerController {
     if (!customerId) {
       throw new InvalidCredentials('Unauthorized');
     }
-    const result = await CustomerService.logout(customerId);
+    await CustomerService.logout(customerId);
     sendSuccess(
       res,
       successMessage.CUSTOMER_LOGGED_OUT.message,
@@ -57,7 +47,7 @@ export class CustomerController {
   });
 
   forgotPassword = asyncHandler(async (req: Request, res: Response) => {
-    const result = await CustomerService.forgotPassword(req.body);
+    await CustomerService.forgotPassword(req.body);
     sendSuccess(
       res,
       successMessage.FORGOT_PASSWORD_LINK_SENT.message,
@@ -66,7 +56,7 @@ export class CustomerController {
   });
 
   resetPasswordFromLink = asyncHandler(async (req: Request, res: Response) => {
-    const result = await CustomerService.resetPasswordFromLink(req.body);
+    await CustomerService.resetPasswordFromLink(req.body);
     sendSuccess(
       res,
       successMessage.PASSWORD_RESET_FROM_LINK_SUCCESS.message,
@@ -79,10 +69,23 @@ export class CustomerController {
     if (!userId) {
       throw new InvalidCredentials('Unauthorized');
     }
-    const result = await CustomerService.changePassword(userId, req.body);
+    await CustomerService.changePassword(userId, req.body);
     sendSuccess(
       res,
       successMessage.PASSWORD_CHANGED_SUCCESS.message,
+      StatusCodes.OK,
+    );
+  });
+
+  revokeRefreshToken = asyncHandler(async (req: Request, res: Response) => {
+    const customerId = req.customerId;
+    if (!customerId) {
+      throw new InvalidCredentials('Unauthorized');
+    }
+    await CustomerService.revokeRefreshToken(customerId);
+    sendSuccess(
+      res,
+      successMessage.REFRESH_TOKEN_REVOKED.message,
       StatusCodes.OK,
     );
   });

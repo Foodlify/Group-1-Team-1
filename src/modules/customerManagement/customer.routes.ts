@@ -21,6 +21,7 @@ router.post('/reset-password-from-link', validateResetPasswordFromLink, customer
 
 // Protected routes
 router.post('/logout', authValidator, customerController.logout);
+router.delete('/refresh-token', authValidator, customerController.revokeRefreshToken);
 router.post('/change-password', authValidator, validateChangePassword, customerController.changePassword);
 
 export default router;

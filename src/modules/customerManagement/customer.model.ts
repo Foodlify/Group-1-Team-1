@@ -59,6 +59,10 @@ export interface LogoutResponse {
   // Empty as message is handled by controller
 }
 
+export interface RevokeRefreshTokenResponse {
+  // Empty as message is handled by controller
+}
+
 export interface ForgotPasswordResponse {
   // Empty as message is handled by controller
 }
