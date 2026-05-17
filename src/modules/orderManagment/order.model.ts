@@ -82,8 +82,8 @@ export interface OrderTrackingHistoryResponse {
   id: number;
   orderId: number;
   statusId: number;
+  createdBy: number | null;
   statusDate: Date;
-  createdBy: number;
   status: {
     id: number;
     name: string;
