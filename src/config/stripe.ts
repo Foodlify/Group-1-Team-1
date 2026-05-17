@@ -1,5 +1,3 @@
-
-
 import Stripe from 'stripe';
 
 type StripeClient = InstanceType<typeof Stripe>;
@@ -20,8 +18,10 @@ export function getStripe(): StripeClient {
   return _stripe;
 }
 
+// Keep a named export for backwards compatibility with any direct `stripe.X` usage
 export const stripe = new Proxy({} as StripeClient, {
   get(_target, prop) {
     return (getStripe() as any)[prop];
   },
 });
+

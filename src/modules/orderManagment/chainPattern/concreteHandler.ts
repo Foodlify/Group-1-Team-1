@@ -137,7 +137,7 @@ export class CreateOrderTrackingHandler extends OrderHandler {
     response: OrderResponse,
   ): Promise<OrderResponse> {
     const { tx, order } = response;
-    const createdBy = request.userId;
+    const createdBy = request.customerId;
     console.log('order tracking created');
     await OrderTrackingService.addOrderTrackingStatus(
       order.id,
