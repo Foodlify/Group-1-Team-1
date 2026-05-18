@@ -44,7 +44,6 @@ export class StripeStrategy implements PaymentStrategyInterface {
         orderId,
         OrderStatusEnum.CONFIRMED,
       );
-      await OrderTrackingService.addOrderTrackingStatus(orderId, 2);
     } else if (event.type === 'payment_intent.payment_failed') {
       const session = event.data.object;
       const orderId = Number(session.metadata!.orderId);
