@@ -45,19 +45,57 @@ enum PaymentTypeEnum {
   PAYPAL @map("paypal")
 }
 
+// ───────────────────────────────────────────────────────────────────────────────────────────────────────
+
+enum TicketStatus {
+  OPEN             @map("open")
+  IN_PROGRESS      @map("in_progress")
+  WAITING_CUSTOMER @map("waiting_customer")
+  RESOLVED         @map("resolved")
+  CLOSED           @map("closed")
+  ESCALATED        @map("escalated")
+}
+
+// ───────────────────────────────────────────────────────────────────────────────────────────────────────
+
+enum TicketPriority {
+  LOW    @map("low")
+  MEDIUM @map("medium")
+  HIGH   @map("high")
+  URGENT @map("urgent")
+}
+
+// ───────────────────────────────────────────────────────────────────────────────────────────────────────
+
+enum TicketCategory {
+  ORDER_ISSUE    @map("order_issue")
+  PAYMENT        @map("payment")
+  DELIVERY_DELAY @map("delivery_delay")
+  REFUND         @map("refund")
+  ACCOUNT        @map("account")
+  OTHERS         @map("others")
+}
+
+// ───────────────────────────────────────────────────────────────────────────────────────────────────────
+enum LoyaltyType {
+  EARN   @map("earn")
+  REDEEM @map("redeem")
+  EXPIRE @map("expire")
+}
+
 // -----------------------------------------------------------------------------------------------------
 //                                           USER TABLES
 //------------------------------------------------------------------------------------------------------
 
 model User {
   orderTrackings OrderTracking[]
-  id       Int       @id @default(autoincrement())
-  name         String
-  email        String    @unique
-  password     String
-  refreshToken String?
-  customer     Customer?
-  cartId       Int?
+  id             Int             @id @default(autoincrement())
+  name           String
+  email          String          @unique
+  password       String
+  refreshToken   String?
+  customer       Customer?
+  cartId         Int?
 }
 
 // -----------------------------------------------------------------------------------------------------
@@ -65,16 +103,20 @@ model User {
 //------------------------------------------------------------------------------------------------------
 
 model Customer {
-  id           Int            @id @default(autoincrement())
-  userId       Int            @unique @map("user_id")
-  phone        String         @unique
-  dob          DateTime?
-  gender       String?
-  user         User           @relation(fields: [userId], references: [id])
-  address      Address?
-  cart         Cart?
-  orders       Order[]
-  orderSummary OrderSummary[]
+  id                        Int                        @id @default(autoincrement())
+  userId                    Int                        @unique @map("user_id")
+  phone                     String                     @unique
+  dob                       DateTime?
+  gender                    String?
+  user                      User                       @relation(fields: [userId], references: [id])
+  address                   Address?
+  cart                      Cart?
+  orders                    Order[]
+  orderSummary              OrderSummary[]
+  supportTickets            SupportTicket[]
+  restaurantRates           RestaurantRate[]
+  loyaltyPoints             LoyaltyPoints[]
+  loyaltyPointsTransactions loyaltyPointsTransaction[]
 }
 
 // ───────────────────────────────────────────────────────────────────────────────────────────────────────
@@ -98,12 +140,13 @@ model Address {
 //------------------------------------------------------------------------------------------------------
 
 model Restaurant {
-  id        Int        @id @default(autoincrement())
-  name      String
-  menus     Menu[]
-  carts     Cart[]
-  menuItems MenuItem[]
-  orders    Order[]
+  id              Int              @id @default(autoincrement())
+  name            String
+  menus           Menu[]
+  carts           Cart[]
+  menuItems       MenuItem[]
+  orders          Order[]
+  restaurantRates RestaurantRate[]
 }
 
 // ───────────────────────────────────────────────────────────────────────────────────────────────────────
@@ -169,8 +212,8 @@ model CartArchive {
   cartId       Int
   customerId   Int
   restaurantId Int
-  archivedAt DateTime @default(now())
-  cartData Json
+  archivedAt   DateTime @default(now())
+  cartData     Json
 
   @@index([cartId])
   @@index([customerId])
@@ -208,10 +251,13 @@ model Order {
   paymentType PaymentIntegrationType @relation(fields: [paymentTypeId], references: [id])
   orderStatus OrderStatus            @relation(fields: [orderStatusId], references: [id])
 
-  orderDetails   OrderDetail[]
-  orderTrackings OrderTracking[]
-  orderSummary   OrderSummary?
-  transactions   Transaction[]
+  orderDetails             OrderDetail[]
+  orderTrackings           OrderTracking[]
+  orderSummary             OrderSummary?
+  transactions             Transaction[]
+  supportTickets           SupportTicket[]
+  restaurantRate           RestaurantRate[]
+  loyaltyPointsTransaction loyaltyPointsTransaction?
 
   @@unique([id, customerId])
 }
@@ -316,3 +362,91 @@ model TransactionStatusTracking {
   timestamp     DateTime              @default(now())
   transaction   Transaction           @relation(fields: [transactionId], references: [id])
 }
+
+// -----------------------------------------------------------------------------------------------------
+//                                         Customer Services TABLES
+//------------------------------------------------------------------------------------------------------
+
+model CustomerServiceEmployee {
+  id              Int             @id @default(autoincrement())
+  name            String
+  section         TicketCategory
+  assignedTickets Int
+  supportTickets  SupportTicket[]
+}
+
+// ───────────────────────────────────────────────────────────────────────────────────────────────────────
+
+model SupportTicket {
+  id              Int                     @id @default(autoincrement())
+  requestId       String                  @unique
+  customerId      Int
+  orderId         Int?
+  category        TicketCategory
+  priority        TicketPriority          @default(MEDIUM)
+  status          TicketStatus            @default(OPEN)
+  subject         String
+  description     String
+  assignedAgentId Int
+  createdAt       DateTime                @default(now())
+  updatedAt       DateTime?
+  resolution      String?
+  resolvedAt      DateTime?
+  customer        Customer                @relation(fields: [customerId], references: [id])
+  assignedAgent   CustomerServiceEmployee @relation(fields: [assignedAgentId], references: [id])
+  order           Order?                  @relation(fields: [orderId], references: [id])
+}
+
+// ───────────────────────────────────────────────────────────────────────────────────────────────────────
+
+model RestaurantRate {
+  id           Int @id @default(autoincrement())
+  restaurantId Int
+  orderId      Int @unique
+  customerId   Int
+
+  rating  Int // 1 to 5
+  comment String?
+
+  createdAt DateTime @default(now())
+
+  customer   Customer   @relation(fields: [customerId], references: [id])
+  order      Order?     @relation(fields: [orderId], references: [id])
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id])
+
+  @@index([customerId, orderId])
+}
+
+// ───────────────────────────────────────────────────────────────────────────────────────────────────────
+
+model LoyaltyPoints {
+  id                       Int                        @id @default(autoincrement())
+  customerId               Int                        @unique
+  orderId                  Int                        @unique
+  points                   Int                        @default(0)
+  expiresAt                DateTime
+  customer                 Customer                   @relation(fields: [customerId], references: [id])
+  loyaltyPointsTransaction loyaltyPointsTransaction[]
+
+  @@index([customerId])
+}
+
+// ───────────────────────────────────────────────────────────────────────────────────────────────────────
+
+model loyaltyPointsTransaction {
+  id         Int  @id @default(autoincrement())
+  pointsId   Int  @unique
+  customerId Int
+  orderId    Int? @unique
+
+  type   LoyaltyType
+  points Int
+
+  createdAt DateTime @default(now())
+
+  customer       Customer      @relation(fields: [customerId], references: [id])
+  order          Order?        @relation(fields: [orderId], references: [id])
+  pointsRelation LoyaltyPoints @relation(fields: [pointsId], references: [id])
+}
+
+// ───────────────────────────────────────────────────────────────────────────────────────────────────────

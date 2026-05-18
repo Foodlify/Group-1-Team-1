@@ -5,6 +5,7 @@ import { orderTrackingRouter } from '../modules/orderManagment/orderTracking.rou
 import { orderSummaryRouter } from '../modules/orderManagment/orderSummary.routes';
 import { webhookRouter } from '../modules/paymentManagement/routes/webhook.route';
 import customerRouter from '../modules/customerManagement/customer.routes';
+import { customerServiceRouter } from '../modules/customerServiceManagement/customerService.route';
 
 const router = express.Router();
 
@@ -14,5 +15,6 @@ router.use('/orders', orderTrackingRouter);
 router.use('/order-summary', orderSummaryRouter);
 router.use('/webhook', webhookRouter);
 router.use('/customers', customerRouter);
+router.use('/customer-service', customerServiceRouter);
 
 export default router;

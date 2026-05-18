@@ -16,8 +16,6 @@ import { connectRedis } from '../lib/redis';
 connectRedis().catch((err) =>
   console.error('[Redis] Failed to connect at startup:', err),
 );
-
-
 const app = express();
 app.use(cors());
 app.use(helmet());

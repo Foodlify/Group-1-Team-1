@@ -9,6 +9,9 @@ export const successMessage = {
   RECORD_GET: {
     message: 'retrieved successfully',
   },
+  RECORD_updated: {
+    message: 'updated successfully',
+  },
   CART_ITEM_ADDED: {
     message: 'Items added to cart successfully',
   },
