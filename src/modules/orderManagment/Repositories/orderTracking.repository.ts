@@ -1,21 +1,24 @@
 import prisma from '../../../../lib/prisma';
-import { OrderStatusEnum, Prisma } from '@prisma/client';
+import { Prisma } from '@prisma/client';
+
 export class OrderTrackingRepository {
-  /** Add order tracking status */
+  /** Add a tracking record — records who triggered the status change */
   static async addOrderTrackingStatus(
     orderId: number,
     statusId: number,
+    createdBy?: number, // undefined = system/automated trigger
     db: Prisma.TransactionClient = prisma,
   ) {
     return db.orderTracking.create({
       data: {
         orderId,
         statusId,
+        ...(createdBy !== undefined ? { createdBy } : {}),
       },
     });
   }
 
-  /** Get all order tracking columns by order id */
+  /** Get full tracking history for an order, newest first */
   static async getOrderTrackingsByOrderId(
     orderId: number,
     db: Prisma.TransactionClient = prisma,
@@ -24,20 +27,25 @@ export class OrderTrackingRepository {
       where: { orderId },
       include: {
         status: true,
+        user: {
+          select: { id: true, name: true, email: true },
+        },
       },
-      orderBy: {
-        statusDate: 'desc', // order by newest tracking first
-      },
+      orderBy: { statusDate: 'desc' },
     });
   }
-  /** get last status of an order */
+
+  /** Get the latest (current) status of an order */
   static async getLatestStatus(orderId: number) {
     return prisma.orderTracking.findFirst({
       where: { orderId },
-      include: { status: true },
-      orderBy: {
-        statusDate: 'desc',
+      include: {
+        status: true,
+        user: {
+          select: { id: true, name: true, email: true },
+        },
       },
+      orderBy: { statusDate: 'desc' },
     });
   }
 }

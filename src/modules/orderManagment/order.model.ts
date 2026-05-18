@@ -53,3 +53,44 @@ export interface OrderSummaryResponse {
   totalQuantity: number;
   orderDate: string; // formatted as YYYY-MM-DD
 }
+
+export interface CheckoutCartItem {
+  menuItemId: number;
+  quantity: number;
+  price: number;
+  name: string;
+}
+
+export interface CheckoutResponse {
+  customerId: number;
+  restaurantId: number;
+  itemsCount: number;
+  cartItems: CheckoutCartItem[];
+}
+
+export interface OrdersSummaryPaginatedResponse {
+  data: OrderSummaryResponse[];
+  pagination: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
+}
+
+export interface OrderTrackingHistoryResponse {
+  id: number;
+  orderId: number;
+  statusId: number;
+  statusDate: Date;
+  createdBy: number;
+  status: {
+    id: number;
+    name: string;
+  };
+  user: {
+    id: number;
+    name: string;
+    email: string;
+  } | null;
+}

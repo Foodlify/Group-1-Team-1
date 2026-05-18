@@ -29,4 +29,7 @@ export const successMessage = {
   TOTAL_QUANTITY_GET: {
     message: 'Total quantity returned successfully',
   },
+  CHECKOUT_SUCCESSFUL: {
+    message: 'Checkout successful',
+  },
 };

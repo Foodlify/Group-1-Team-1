@@ -50,6 +50,7 @@ enum PaymentTypeEnum {
 //------------------------------------------------------------------------------------------------------
 
 model User {
+  orderTrackings OrderTracking[]
   id       Int       @id @default(autoincrement())
   name     String
   email    String    @unique
@@ -230,10 +231,12 @@ model OrderTracking {
   id         Int      @id @default(autoincrement())
   orderId    Int      @map("order_id")
   statusId   Int      @map("status_id")
+  createdBy  Int?     @map("created_by")
   statusDate DateTime @default(now()) @map("status_date")
 
   order  Order       @relation(fields: [orderId], references: [id])
   status OrderStatus @relation(fields: [statusId], references: [id])
+  user   User?       @relation(fields: [createdBy], references: [id])
 }
 
 // ───────────────────────────────────────────────────────────────────────────────────────────────────────
