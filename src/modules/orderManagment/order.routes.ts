@@ -45,18 +45,4 @@ router.get(
 );
 
 
-<<<<<<< HEAD
-// Get                     - get current order tracking status 
-router.get(
-'/orders/:orderId/get-current-status', 
-orderController.getTrackingStatus,
-); 
-
-router.patch(
-  '/orders/:orderId/:customerId/cancel-order',
-  orderController.cancelOrder,
-); 
-
-=======
->>>>>>> a66ceec76d0d6f3537e174d148234b89195d707b
 export { router as orderRouter };
