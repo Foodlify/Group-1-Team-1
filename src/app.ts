@@ -11,14 +11,12 @@ import { errorHandler } from './middlewares/error_handling/error-handling';
 import { webhookRouter } from './modules/paymentManagement/routes/webhook.route';
 import path, { join } from 'path';
 import 'dotenv/config';
-import { redis_client } from '../lib/redis';
-// import { connectRedis } from '../lib/redis';
+import { connectRedis, healthCheckRedis } from '../lib/redis';
 import { retry } from './shared_infrastructure/retry/retry';
 
-// Connect to Redis on startup
-// connectRedis().catch((err) =>
-//   console.error('[Redis] Failed to connect at startup:', err),
-// );
+connectRedis().catch((err) =>
+  console.error('[Redis] Failed to connect at startup:', err),
+);
 const app = express();
 app.use(cors());
 app.use(helmet());
@@ -68,19 +66,13 @@ app.get('/api/db/health', async (req: Request, res: Response) => {
 });
 app.get('/api/redis/health', async (req: Request, res: Response) => {
   try {
-    // add retry to handle redis connection
-    await retry(
-      async () => await redis_client.connect(),
-      5,
-      2000,
-      'redis connection',
-    );
+    await healthCheckRedis();
     res.status(200).json({
       status: 'success',
       message: 'Redis is connected',
     });
   } catch (error) {
-    console.error('[Redis] Failed to connect at startup:', error);
+    console.error('[Redis] Health check failed:', error);
     res
       .status(500)
       .json({ status: 'error', message: 'Redis connection failed' });
