@@ -21,7 +21,7 @@ import {
   RestaurantNotMatch,
 } from './cart.execption';
 import { errorMessage } from '../../shared_infrastructure/error/errorMessages';
-import { MenuService } from '../restaurantManagemet/menu.service';
+import { MenuService } from '../restaurantManagemet/Services/menu.service';
 import {
   BAD_REQUEST,
   NOT_FOUND,
@@ -49,11 +49,17 @@ export class CartService {
   ) {
     const menuItem = await MenuService.getMenuItem(itemId, db);
     if (!menuItem) {
-      loggerService.warn('Menu item not found during quantity check', { itemId });
+      loggerService.warn('Menu item not found during quantity check', {
+        itemId,
+      });
       throw new MenuItemNotFound(errorMessage.MENU_ITEM_NOT_FOUND.message);
     }
     if (itemQuantity > menuItem.stock) {
-      loggerService.warn('Quantity exceeds stock', { itemId, requested: itemQuantity, stock: menuItem.stock });
+      loggerService.warn('Quantity exceeds stock', {
+        itemId,
+        requested: itemQuantity,
+        stock: menuItem.stock,
+      });
       throw new QuantityExceed(errorMessage.QUANTITY_EXCEED.message);
     }
     return menuItem;
@@ -62,14 +68,25 @@ export class CartService {
   // ─── Add To Cart ───────────────────────────────────────────────────────────
   static async addToCart(input: CartItemInput): Promise<CartItemResponse> {
     const { customerId, itemId, itemQuantity } = input;
-    loggerService.info('Add to cart attempt', { customerId, itemId, itemQuantity });
+    loggerService.info('Add to cart attempt', {
+      customerId,
+      itemId,
+      itemQuantity,
+    });
 
     return await prisma.$transaction(async (db: Prisma.TransactionClient) => {
       let cart = await CartRepository.findCartByCustomerId(customerId, db);
-      const menuItem = await CartService.checkQuantity(itemId, itemQuantity, db);
+      const menuItem = await CartService.checkQuantity(
+        itemId,
+        itemQuantity,
+        db,
+      );
 
       if (!cart || (cart === null && menuItem)) {
-        loggerService.info('Creating new cart with item', { customerId, itemId });
+        loggerService.info('Creating new cart with item', {
+          customerId,
+          itemId,
+        });
         cart = await CartRepository.createCartAndCartItems(
           customerId,
           itemQuantity,
@@ -78,7 +95,10 @@ export class CartService {
         );
       } else if (cart && cart.cartItems.length > 0) {
         if (cart.isLocked) {
-          loggerService.warn('Add to cart failed: cart is locked', { customerId, cartId: cart.id });
+          loggerService.warn('Add to cart failed: cart is locked', {
+            customerId,
+            cartId: cart.id,
+          });
           throw new Error("This cart is locked, you can't add anything to it");
         }
 
@@ -86,19 +106,38 @@ export class CartService {
           (ci: any) => ci.menuItemId === itemId,
         );
         if (existingItem) {
-          loggerService.warn('Add to cart failed: item already in cart', { customerId, itemId });
+          loggerService.warn('Add to cart failed: item already in cart', {
+            customerId,
+            itemId,
+          });
           throw new ItemIdempotency(errorMessage.ITEM_IDEMPOTENCY.message);
         }
 
         if (cart.restaurantId !== menuItem.restaurantId) {
-          loggerService.warn('Add to cart failed: restaurant mismatch', { customerId, cartRestaurantId: cart.restaurantId, itemRestaurantId: menuItem.restaurantId });
-          throw new RestaurantNotMatch(errorMessage.RESTAURANT_NOT_MATCH.message);
+          loggerService.warn('Add to cart failed: restaurant mismatch', {
+            customerId,
+            cartRestaurantId: cart.restaurantId,
+            itemRestaurantId: menuItem.restaurantId,
+          });
+          throw new RestaurantNotMatch(
+            errorMessage.RESTAURANT_NOT_MATCH.message,
+          );
         }
 
-        await CartRepository.createCartItem(cart.id, itemQuantity, menuItem, db);
+        await CartRepository.createCartItem(
+          cart.id,
+          itemQuantity,
+          menuItem,
+          db,
+        );
       }
 
-      loggerService.info('Item added to cart', { customerId, itemId, itemQuantity, itemName: menuItem.itemName });
+      loggerService.info('Item added to cart', {
+        customerId,
+        itemId,
+        itemQuantity,
+        itemName: menuItem.itemName,
+      });
       return { customerId, itemId, itemQuantity, itemName: menuItem.itemName };
     });
   }
@@ -114,7 +153,11 @@ export class CartService {
       loggerService.info('No cart found for customer', { customerId });
       return 'Customer has no cart';
     }
-    loggerService.info('Cart retrieved', { customerId, cartId: cart.id, itemCount: cart.cartItems.length });
+    loggerService.info('Cart retrieved', {
+      customerId,
+      cartId: cart.id,
+      itemCount: cart.cartItems.length,
+    });
     return {
       cartId: cart.id,
       cartItems: cart.cartItems.map((ci: any) => ({
@@ -129,26 +172,50 @@ export class CartService {
   // ─── Update Item Quantity ──────────────────────────────────────────────────
   static async updateQuantity(input: CartItemInput): Promise<CartItemResponse> {
     const { customerId, itemId, itemQuantity } = input;
-    loggerService.info('Update cart item quantity', { customerId, itemId, itemQuantity });
+    loggerService.info('Update cart item quantity', {
+      customerId,
+      itemId,
+      itemQuantity,
+    });
 
     return await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const cart = await CartRepository.findCartByCustomerId(customerId, tx);
       if (!cart) {
-        loggerService.warn('Update quantity failed: cart not found', { customerId });
+        loggerService.warn('Update quantity failed: cart not found', {
+          customerId,
+        });
         throw new NOT_FOUND(ENTITIES.CART);
       }
       const cartItem = cart.cartItems.find((ci: any) => ci.id === itemId);
       if (!cartItem) {
-        loggerService.warn('Update quantity failed: cart item not found', { customerId, itemId });
+        loggerService.warn('Update quantity failed: cart item not found', {
+          customerId,
+          itemId,
+        });
         throw new NOT_FOUND(ENTITIES.CART_ITEM);
       }
-      const menuItem = await CartService.checkQuantity(cartItem.menuItemId, itemQuantity, tx);
-      const updatedItem = await CartRepository.updateCartItem(cartItem.id, itemQuantity, tx);
+      const menuItem = await CartService.checkQuantity(
+        cartItem.menuItemId,
+        itemQuantity,
+        tx,
+      );
+      const updatedItem = await CartRepository.updateCartItem(
+        cartItem.id,
+        itemQuantity,
+        tx,
+      );
       if (!updatedItem) {
-        loggerService.warn('Update quantity failed: could not update item', { customerId, itemId });
+        loggerService.warn('Update quantity failed: could not update item', {
+          customerId,
+          itemId,
+        });
         throw new BAD_REQUEST(ENTITIES.CART_ITEM);
       }
-      loggerService.info('Cart item quantity updated', { customerId, itemId: updatedItem.id, itemQuantity: updatedItem.quantity });
+      loggerService.info('Cart item quantity updated', {
+        customerId,
+        itemId: updatedItem.id,
+        itemQuantity: updatedItem.quantity,
+      });
       return {
         customerId,
         itemId: updatedItem.id,
@@ -169,21 +236,33 @@ export class CartService {
     return await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const cart = await CartRepository.findCartByCustomerId(customerId, db);
       if (!cart) {
-        loggerService.warn('Delete cart item failed: cart not found', { customerId });
+        loggerService.warn('Delete cart item failed: cart not found', {
+          customerId,
+        });
         throw new NOT_FOUND(ENTITIES.CART);
       }
       const cartItem = cart.cartItems.find((ci: any) => ci.id === itemId);
       if (!cartItem) {
-        loggerService.warn('Delete cart item failed: item not found', { customerId, itemId });
+        loggerService.warn('Delete cart item failed: item not found', {
+          customerId,
+          itemId,
+        });
         throw new NOT_FOUND(ENTITIES.CART_ITEM);
       }
       if (cart.cartItems.length === 1) {
-        loggerService.info('Last item in cart — clearing entire cart', { customerId, cartId: cart.id });
+        loggerService.info('Last item in cart — clearing entire cart', {
+          customerId,
+          cartId: cart.id,
+        });
         await CartRepository.clearCart(cart.id, db);
       } else {
         await CartRepository.deleteCartItem(cart.id, cartItem.id, db);
       }
-      loggerService.info('Cart item deleted', { customerId, itemId: cartItem.id, itemName: cartItem.name });
+      loggerService.info('Cart item deleted', {
+        customerId,
+        itemId: cartItem.id,
+        itemName: cartItem.name,
+      });
       return { itemId: cartItem.id, itemName: cartItem.name };
     });
   }
@@ -225,7 +304,11 @@ export class CartService {
       { totalQuantity: 0, totalPrice: 0 },
     );
     const { totalQuantity, totalPrice } = result;
-    loggerService.info('Cart totals calculated', { customerId, totalPrice, totalQuantity });
+    loggerService.info('Cart totals calculated', {
+      customerId,
+      totalPrice,
+      totalQuantity,
+    });
     return { totalPrice, totalQuantity };
   }
 
@@ -236,27 +319,50 @@ export class CartService {
     loggerService.info('Validating cart for order', { customerId });
     const cart = await CartRepository.findCartByCustomerId(customerId, db);
     if (!cart || cart === null) {
-      loggerService.warn('Cart validation failed: cart not found', { customerId });
+      loggerService.warn('Cart validation failed: cart not found', {
+        customerId,
+      });
       throw new CartNotFound(errorMessage.CART_NOT_FOUND.message);
     }
-    const restaurant = await RestaurantRepository.findRestaurantById(cart.restaurantId, db);
+    const restaurant = await RestaurantRepository.findRestaurantById(
+      cart.restaurantId,
+      db,
+    );
     if (!restaurant) {
-      loggerService.warn('Cart validation failed: restaurant not found', { customerId, restaurantId: cart.restaurantId });
+      loggerService.warn('Cart validation failed: restaurant not found', {
+        customerId,
+        restaurantId: cart.restaurantId,
+      });
       throw new NOT_FOUND(ENTITIES.RESTAURANT);
     }
     for (const ci of cart.cartItems) {
       const { menuItemId, quantity, price } = ci;
       const menuItem = await MenuRepository.findMenuItemById(menuItemId, db);
       if (!menuItem) {
-        loggerService.warn('Cart validation failed: menu item not found', { customerId, menuItemId });
+        loggerService.warn('Cart validation failed: menu item not found', {
+          customerId,
+          menuItemId,
+        });
         throw new NOT_FOUND(ENTITIES.MENU_ITEM);
       }
       if (price != menuItem?.price) {
-        loggerService.warn('Cart validation failed: price mismatch', { customerId, menuItemId, cartPrice: price, currentPrice: menuItem.price });
-        throw new PriceNotMatch(`${menuItem.itemName}: ${errorMessage.PRICE_NOT_MATCH.message}`);
+        loggerService.warn('Cart validation failed: price mismatch', {
+          customerId,
+          menuItemId,
+          cartPrice: price,
+          currentPrice: menuItem.price,
+        });
+        throw new PriceNotMatch(
+          `${menuItem.itemName}: ${errorMessage.PRICE_NOT_MATCH.message}`,
+        );
       }
       if (quantity > menuItem.stock) {
-        loggerService.warn('Cart validation failed: quantity exceeds stock', { customerId, menuItemId, quantity, stock: menuItem.stock });
+        loggerService.warn('Cart validation failed: quantity exceeds stock', {
+          customerId,
+          menuItemId,
+          quantity,
+          stock: menuItem.stock,
+        });
         throw new QuantityExceed(errorMessage.QUANTITY_EXCEED.message);
       }
       const totalPrice = cart.cartItems.reduce(
@@ -264,7 +370,11 @@ export class CartService {
           sum + item.price * item.quantity,
         0,
       );
-      loggerService.info('Cart validated for order', { customerId, cartId: cart.id, totalPrice });
+      loggerService.info('Cart validated for order', {
+        customerId,
+        cartId: cart.id,
+        totalPrice,
+      });
       return { cart, totalPrice };
     }
   }
@@ -274,7 +384,10 @@ export class CartService {
     const lockedCart = await CartRepository.LockCart(cartId, db);
     if (lockedCart) {
       await CartRedisRepository.lockCart(lockedCart.customerId);
-      loggerService.info('Cart locked', { cartId, customerId: lockedCart.customerId });
+      loggerService.info('Cart locked', {
+        cartId,
+        customerId: lockedCart.customerId,
+      });
     }
     return lockedCart;
   }
@@ -290,7 +403,10 @@ export class CartService {
   }
 
   static async archiveCart(cart: any, db: Prisma.TransactionClient = prisma) {
-    loggerService.info('Archiving cart', { cartId: cart?.id, customerId: cart?.customerId });
+    loggerService.info('Archiving cart', {
+      cartId: cart?.id,
+      customerId: cart?.customerId,
+    });
     const result = await CartRepository.archiveCart(cart, db);
     loggerService.info('Cart archived', { cartId: cart?.id });
     return result;

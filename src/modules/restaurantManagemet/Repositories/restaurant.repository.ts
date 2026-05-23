@@ -1,5 +1,5 @@
 import { Prisma } from '@prisma/client';
-import prisma from '../../../lib/prisma';
+import prisma from '../../../../lib/prisma';
 export class RestaurantRepository {
   static async findRestaurantById(
     restaurantId: number,
@@ -7,6 +7,7 @@ export class RestaurantRepository {
   ) {
     return db.menuItem.findUnique({
       where: { id: restaurantId },
+      include: { menu: true },
     });
   }
 }

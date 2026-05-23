@@ -1,5 +1,5 @@
 import { CartRedisRepository } from './cart.redis.repository';
-import { MenuService } from '../restaurantManagemet/menu.service';
+import { MenuService } from '../restaurantManagemet/Services/menu.service';
 import loggerService from '../../shared_infrastructure/logger/logger';
 
 import {
@@ -35,7 +35,11 @@ export class CartRedisService {
       throw new MenuItemNotFound(errorMessage.MENU_ITEM_NOT_FOUND.message);
     }
     if (quantity > menuItem.stock) {
-      loggerService.warn('Quantity exceeds stock', { itemId, requested: quantity, stock: menuItem.stock });
+      loggerService.warn('Quantity exceeds stock', {
+        itemId,
+        requested: quantity,
+        stock: menuItem.stock,
+      });
       throw new QuantityExceed(errorMessage.QUANTITY_EXCEED.message);
     }
     return menuItem;
@@ -44,13 +48,23 @@ export class CartRedisService {
   // ─── Add To Cart ─────────────────────────────────────────────────────────────
   static async addToCart(input: CartItemInput): Promise<CartItemResponse> {
     const { customerId, itemId, itemQuantity } = input;
-    loggerService.info('Redis add to cart attempt', { customerId, itemId, itemQuantity });
+    loggerService.info('Redis add to cart attempt', {
+      customerId,
+      itemId,
+      itemQuantity,
+    });
 
-    const menuItem = await CartRedisService.validateMenuItem(itemId, itemQuantity);
+    const menuItem = await CartRedisService.validateMenuItem(
+      itemId,
+      itemQuantity,
+    );
     const cart = await CartRedisRepository.findCartByCustomerId(customerId);
 
     if (!cart) {
-      loggerService.info('Creating new Redis cart with item', { customerId, itemId });
+      loggerService.info('Creating new Redis cart with item', {
+        customerId,
+        itemId,
+      });
       await CartRedisRepository.createCartWithItem(
         customerId,
         menuItem.restaurantId,
@@ -63,16 +77,25 @@ export class CartRedisService {
       );
     } else {
       if (cart.isLocked) {
-        loggerService.warn('Redis add to cart failed: cart is locked', { customerId });
+        loggerService.warn('Redis add to cart failed: cart is locked', {
+          customerId,
+        });
         throw new Error("This cart is locked, you can't add anything to it");
       }
       if (cart.restaurantId !== menuItem.restaurantId) {
-        loggerService.warn('Redis add to cart failed: restaurant mismatch', { customerId, cartRestaurantId: cart.restaurantId, itemRestaurantId: menuItem.restaurantId });
+        loggerService.warn('Redis add to cart failed: restaurant mismatch', {
+          customerId,
+          cartRestaurantId: cart.restaurantId,
+          itemRestaurantId: menuItem.restaurantId,
+        });
         throw new RestaurantNotMatch(errorMessage.RESTAURANT_NOT_MATCH.message);
       }
       const duplicate = cart.items.find((ci) => ci.menuItemId === itemId);
       if (duplicate) {
-        loggerService.warn('Redis add to cart failed: item already in cart', { customerId, itemId });
+        loggerService.warn('Redis add to cart failed: item already in cart', {
+          customerId,
+          itemId,
+        });
         throw new ItemIdempotency(errorMessage.ITEM_IDEMPOTENCY.message);
       }
       await CartRedisRepository.addItemToCart(customerId, {
@@ -83,19 +106,28 @@ export class CartRedisService {
       });
     }
 
-    loggerService.info('Item added to Redis cart', { customerId, itemId, itemName: menuItem.itemName });
+    loggerService.info('Item added to Redis cart', {
+      customerId,
+      itemId,
+      itemName: menuItem.itemName,
+    });
     return { customerId, itemId, itemQuantity, itemName: menuItem.itemName };
   }
 
   // ─── View Cart ────────────────────────────────────────────────────────────────
-  static async viewCart(customerId: number): Promise<ViewCartResponse | String> {
+  static async viewCart(
+    customerId: number,
+  ): Promise<ViewCartResponse | String> {
     loggerService.info('Redis view cart', { customerId });
     const cart = await CartRedisRepository.findCartByCustomerId(customerId);
     if (!cart) {
       loggerService.info('No Redis cart found', { customerId });
       return 'Customer has no cart';
     }
-    loggerService.info('Redis cart retrieved', { customerId, itemCount: cart.items.length });
+    loggerService.info('Redis cart retrieved', {
+      customerId,
+      itemCount: cart.items.length,
+    });
     return {
       cartId: customerId,
       cartItems: cart.items.map((ci) => ({
@@ -110,29 +142,57 @@ export class CartRedisService {
   // ─── Update Item Quantity ─────────────────────────────────────────────────────
   static async updateQuantity(input: CartItemInput): Promise<CartItemResponse> {
     const { customerId, itemId, itemQuantity } = input;
-    loggerService.info('Redis update cart item quantity', { customerId, itemId, itemQuantity });
+    loggerService.info('Redis update cart item quantity', {
+      customerId,
+      itemId,
+      itemQuantity,
+    });
 
     const cart = await CartRedisRepository.findCartByCustomerId(customerId);
     if (!cart) {
-      loggerService.warn('Redis update quantity failed: cart not found', { customerId });
+      loggerService.warn('Redis update quantity failed: cart not found', {
+        customerId,
+      });
       throw new NOT_FOUND(ENTITIES.CART);
     }
 
     const cartItem = cart.items.find((ci) => ci.id === itemId);
     if (!cartItem) {
-      loggerService.warn('Redis update quantity failed: item not found', { customerId, itemId });
+      loggerService.warn('Redis update quantity failed: item not found', {
+        customerId,
+        itemId,
+      });
       throw new NOT_FOUND(ENTITIES.CART_ITEM);
     }
 
-    const menuItem = await CartRedisService.validateMenuItem(cartItem.menuItemId, itemQuantity);
-    const updated = await CartRedisRepository.updateCartItemQuantity(customerId, cartItem.id, itemQuantity);
+    const menuItem = await CartRedisService.validateMenuItem(
+      cartItem.menuItemId,
+      itemQuantity,
+    );
+    const updated = await CartRedisRepository.updateCartItemQuantity(
+      customerId,
+      cartItem.id,
+      itemQuantity,
+    );
     if (!updated) {
-      loggerService.warn('Redis update quantity failed: could not update', { customerId, itemId });
+      loggerService.warn('Redis update quantity failed: could not update', {
+        customerId,
+        itemId,
+      });
       throw new BAD_REQUEST(ENTITIES.CART_ITEM);
     }
 
-    loggerService.info('Redis cart item quantity updated', { customerId, itemId: updated.id, itemQuantity: updated.quantity });
-    return { customerId, itemId: updated.id, itemQuantity: updated.quantity, itemName: menuItem.itemName };
+    loggerService.info('Redis cart item quantity updated', {
+      customerId,
+      itemId: updated.id,
+      itemQuantity: updated.quantity,
+    });
+    return {
+      customerId,
+      itemId: updated.id,
+      itemQuantity: updated.quantity,
+      itemName: menuItem.itemName,
+    };
   }
 
   // ─── Delete Cart Item ─────────────────────────────────────────────────────────
@@ -144,24 +204,35 @@ export class CartRedisService {
 
     const cart = await CartRedisRepository.findCartByCustomerId(customerId);
     if (!cart) {
-      loggerService.warn('Redis delete item failed: cart not found', { customerId });
+      loggerService.warn('Redis delete item failed: cart not found', {
+        customerId,
+      });
       throw new NOT_FOUND(ENTITIES.CART);
     }
 
     const cartItem = cart.items.find((ci) => ci.id === itemId);
     if (!cartItem) {
-      loggerService.warn('Redis delete item failed: item not found', { customerId, itemId });
+      loggerService.warn('Redis delete item failed: item not found', {
+        customerId,
+        itemId,
+      });
       throw new NOT_FOUND(ENTITIES.CART_ITEM);
     }
 
     if (cart.items.length === 1) {
-      loggerService.info('Last item in Redis cart — clearing entire cart', { customerId });
+      loggerService.info('Last item in Redis cart — clearing entire cart', {
+        customerId,
+      });
       await CartRedisRepository.clearCart(customerId);
     } else {
       await CartRedisRepository.deleteCartItem(customerId, cartItem.id);
     }
 
-    loggerService.info('Redis cart item deleted', { customerId, itemId: cartItem.id, itemName: cartItem.name });
+    loggerService.info('Redis cart item deleted', {
+      customerId,
+      itemId: cartItem.id,
+      itemName: cartItem.name,
+    });
     return { itemId: cartItem.id, itemName: cartItem.name };
   }
 
@@ -170,7 +241,9 @@ export class CartRedisService {
     loggerService.info('Redis clear cart', { customerId });
     const cart = await CartRedisRepository.findCartByCustomerId(customerId);
     if (!cart) {
-      loggerService.warn('Redis clear cart failed: cart not found', { customerId });
+      loggerService.warn('Redis clear cart failed: cart not found', {
+        customerId,
+      });
       throw new CartNotFound(errorMessage.CART_NOT_FOUND.message);
     }
     await CartRedisRepository.clearCart(customerId);
@@ -184,7 +257,9 @@ export class CartRedisService {
     loggerService.info('Redis get cart totals', { customerId });
     const cart = await CartRedisRepository.findCartByCustomerId(customerId);
     if (!cart) {
-      loggerService.warn('Redis get totals failed: cart not found', { customerId });
+      loggerService.warn('Redis get totals failed: cart not found', {
+        customerId,
+      });
       throw new CartNotFound(errorMessage.CART_NOT_FOUND.message);
     }
 
@@ -199,7 +274,11 @@ export class CartRedisService {
       { totalQuantity: 0, totalPrice: 0 },
     );
 
-    loggerService.info('Redis cart totals calculated', { customerId, totalPrice, totalQuantity });
+    loggerService.info('Redis cart totals calculated', {
+      customerId,
+      totalPrice,
+      totalQuantity,
+    });
     return { totalPrice, totalQuantity };
   }
 }

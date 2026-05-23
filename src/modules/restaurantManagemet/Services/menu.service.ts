@@ -1,7 +1,11 @@
 import { Prisma } from '@prisma/client';
-import prisma from '../../../lib/prisma';
-import { MenuRepository } from './menu.repository';
+import prisma from '../../../../lib/prisma';
+import { MenuRepository } from '../Repositories/menu.repository';
 export class MenuService {
+  static async getMenu(menuId: number, db: Prisma.TransactionClient = prisma) {
+    const menu = await MenuRepository.getMenuById(menuId, db);
+    return menu;
+  }
   static async getMenuItem(
     itemId: number,
     db: Prisma.TransactionClient = prisma,
