@@ -1,12 +1,12 @@
-// export const errorMessage = {
-//     customer_not_found : 'CustomerNotFoundException',
-//     message : 'Customer with the specified ID does not exist'
-// }
 
 export const errorMessage = {
-  CUSTOMER_NOT_FOUND: {
-    code: 'CustomerNotFoundException',
-    message: 'Customer with the specified ID does not exist',
+  NOT_FOUND: {
+    code: 'NotFoundException',
+    message: 'with the specified ID does not exist',
+  },
+  BAD_REQUEST: {
+    code: 'BadRequestException',
+    message: 'failed to created',
   },
   CART_NOT_FOUND: {
     code: 'CartNotFoundException',
@@ -35,31 +35,10 @@ export const errorMessage = {
     code: 'QuantityExceedException',
     message: 'Requested exceeds available stock',
   },
+  PRICE_NOT_MATCH: {
+    code: 'PriceNotMatchException',
+    message: 'price has changed, please confirm if proceed or remove the item'
+  },
 };
 
-export const successMessage = {
-  CUSTOMER_FOUND: {
-    message: 'Customer login  successfully ',
-  },
-  CART_ITEM_ADDED: {
-    message: 'Items added to cart successfully',
-  },
-  CART_ITEM_QUANTITY_UPDATED: {
-    message: 'Item quantity updated successfully',
-  },
-  CART_ITEM_DELETED: {
-    message: 'Item deleted successfully',
-  },
-  CART_CLEARED: {
-    message: 'Cart cleared successfully',
-  },
-  CART_VIEWED: {
-    message: 'Cart retrieved successfully',
-  },
-  TOTAL_PRICE_GET: {
-    message: 'Total price returned successfully',
-  },
-  TOTAL_QUANTITY_GET: {
-    message: 'Total quantity returned successfully',
-  },
-};
+

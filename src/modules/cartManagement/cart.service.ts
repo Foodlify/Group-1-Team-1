@@ -1,6 +1,7 @@
 import prisma from '../../../lib/prisma';
 import { CartRepository } from './cart.repository';
 import { MenuRepository } from '../restaurantManagemet/menu.repository';
+import { CartRedisRepository } from './cart.redis.repository';
 
 import {
   CartItemInput,
@@ -12,7 +13,6 @@ import {
 } from './cart.model';
 
 import {
-  CartItemNotFound,
   CartNotFound,
   ItemIdempotency,
   MenuItemNotFound,
@@ -21,14 +21,29 @@ import {
 } from './cart.execption';
 import { errorMessage } from '../../shared_infrastructure/error/errorMessages';
 import { MenuService } from '../restaurantManagemet/menu.service';
+import {
+  BAD_REQUEST,
+  NOT_FOUND,
+} from '../../shared_infrastructure/error/error.execption';
+import { ENTITIES } from '../../../prisma/entities';
+import { RestaurantRepository } from '../restaurantManagemet/restaurant.repository';
+import { PriceNotMatch } from '../orderManagment/order.exception';
+import { Prisma } from '@prisma/client/extension';
 
 export class CartService {
-  async getCustomerCart(customerId: number) {
-    const cart = await CartRepository.findCartByCustomerId(customerId);
+  static async getCustomerCart(
+    customerId: number,
+    db: Prisma.TransactionClient = prisma,
+  ) {
+    const cart = await CartRepository.findCartByCustomerId(customerId, db);
     return cart;
   }
-  async checkQuantity(itemId: number, itemQuantity: number) {
-    const menuItem = await MenuService.getMenuItem(itemId);
+  static async checkQuantity(
+    itemId: number,
+    itemQuantity: number,
+    db: Prisma.TransactionClient = prisma,
+  ) {
+    const menuItem = await MenuService.getMenuItem(itemId, db);
     // 2. Check if item already exists in menuItems table
     if (!menuItem) {
       throw new MenuItemNotFound(errorMessage.MENU_ITEM_NOT_FOUND.message);
@@ -42,55 +57,70 @@ export class CartService {
   }
 
   // ─── Add To Cart ───────────────────────────────────────────────────────────
-  async addToCart(input: CartItemInput): Promise<CartItemResponse> {
+  static async addToCart(input: CartItemInput): Promise<CartItemResponse> {
     // add transaction
     const { customerId, itemId, itemQuantity } = input;
+    return await prisma.$transaction(async (db: Prisma.TransactionClient) => {
+      // 1. Check if cart already exists for this user
+      let cart = await CartRepository.findCartByCustomerId(customerId, db);
+      const menuItem = await CartService.checkQuantity(
+        itemId,
+        itemQuantity,
+        db,
+      );
+      // 3. if cart not exist and menuitem exist create new cart and add item to it
+      if (!cart || (cart === null && menuItem)) {
+        cart = await CartRepository.createCartAndCartItems(
+          customerId,
+          itemQuantity,
+          menuItem,
+          db,
+        );
+      }
+      // 4. If cart exists and has items, enforce single-restaurant rule
+      else if (cart && cart.cartItems.length > 0) {
+        if (cart.isLocked) {
+          throw new Error("This cart is locked, you can't add anything to it");
+        }
+        // avoid idempotency of entering same item again
+        const existingItem = cart.cartItems.find(
+          (ci: any) => ci.menuItemId === itemId,
+        );
+        console.log(existingItem);
+        if (existingItem) {
+          throw new ItemIdempotency(errorMessage.ITEM_IDEMPOTENCY.message);
+        }
+        // enforce one restaurant rule
+        const existingRestaurantId = cart.restaurantId;
 
-    // 1. Check if cart already exists for this user
-    let cart = await this.getCustomerCart(customerId);
-    const menuItem = await this.checkQuantity(itemId, itemQuantity);
-    // 3. if cart not exist and menuitem exist create new cart and add item to it
-    if (!cart || (cart === null && menuItem)) {
-      cart = await CartRepository.createCartAndCartItems(
+        if (existingRestaurantId !== menuItem.restaurantId) {
+          throw new RestaurantNotMatch(
+            errorMessage.RESTAURANT_NOT_MATCH.message,
+          );
+        }
+
+        const cartItem = await CartRepository.createCartItem(
+          cart.id,
+          itemQuantity,
+          menuItem,
+          db,
+        );
+      }
+      return {
         customerId,
+        itemId,
         itemQuantity,
-        menuItem,
-      );
-    }
-    // 4. If cart exists and has items, enforce single-restaurant rule
-    else if (cart && cart.cartItems.length > 0) {
-      // avoid idempotency of entering same item again
-      const existingItem = await CartRepository.findCartItemByIdAndCartId(
-        cart.id,
-        menuItem.id,
-      );
-      if (existingItem) {
-        throw new ItemIdempotency(errorMessage.ITEM_IDEMPOTENCY.message);
-      }
-      // enforce one restaurant rule
-      const existingRestaurantId = cart.restaurantId;
-
-      if (existingRestaurantId !== menuItem.restaurantId) {
-        throw new RestaurantNotMatch(errorMessage.RESTAURANT_NOT_MATCH.message);
-      }
-
-      const cartItem = await CartRepository.createCartItem(
-        cart.id,
-        itemQuantity,
-        menuItem,
-      );
-    }
-    return {
-      customerId,
-      itemId,
-      itemQuantity,
-      itemName: menuItem.itemName,
-    };
+        itemName: menuItem.itemName,
+      };
+    });
   }
 
   // ─── View Cart ─────────────────────────────────────────────────────────────
-  async viewCart(customerId: number): Promise<ViewCartResponse | String> {
-    const cart = await this.getCustomerCart(customerId);
+  static async viewCart(
+    customerId: number,
+    db: Prisma.TransactionClient = prisma,
+  ): Promise<ViewCartResponse | String> {
+    const cart = await CartRepository.findCartByCustomerId(customerId, db);
     // customer may doesn't have a cart, so it isn't error
     if (!cart || cart === null) {
       return 'Customer has no cart';
@@ -108,43 +138,89 @@ export class CartService {
 
   // ─── Update Item Quantity ──────────────────────────────────────────────────
 
-  async updateQuantity(input: CartItemInput): Promise<CartItemResponse> {
+  static async updateQuantity(input: CartItemInput): Promise<CartItemResponse> {
     // add transaction
     const { customerId, itemId, itemQuantity } = input;
-    try {
-      const result = await CartRepository.updateQuantityTransaction(input);
-      return result;
-    } catch (error) {
-      throw error;
-    }
+    return await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+      const cart = await CartRepository.findCartByCustomerId(customerId, tx);
+      if (!cart) {
+        throw new NOT_FOUND(ENTITIES.CART);
+      }
+      const cartItem = cart.cartItems.find((ci: any) => ci.id === itemId);
+      if (!cartItem) {
+        throw new NOT_FOUND(ENTITIES.CART_ITEM);
+      }
+      const menuItem = await CartService.checkQuantity(
+        cartItem.menuItemId,
+        itemQuantity,
+        tx,
+      );
+      const updatedItem = await CartRepository.updateCartItem(
+        cartItem.id,
+        itemQuantity,
+        tx,
+      );
+      if (!updatedItem) {
+        throw new BAD_REQUEST(ENTITIES.CART_ITEM);
+      }
+      return {
+        customerId,
+        itemId: updatedItem.id,
+        itemQuantity: updatedItem.quantity,
+        itemName: menuItem.itemName,
+      };
+    });
   }
 
   // ─── Delete Cart Item ────────────────────────────────────────────────────────────
-  async deleteCartItem(
+  static async deleteCartItem(
     input: DeleteCartItemInput,
+    db: Prisma.TransactionClient = prisma,
   ): Promise<DeleteCartItemResponse> {
-    // add transaction
     const { customerId, itemId } = input;
-    try {
-      const result = await CartRepository.deleteCartItemTransaction(input);
-      return result;
-    } catch (error) {
-      throw error;
-    }
+    return await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+      const cart = await CartRepository.findCartByCustomerId(customerId, db);
+      if (!cart) {
+        throw new NOT_FOUND(ENTITIES.CART);
+      }
+      const cartItem = cart.cartItems.find((ci: any) => ci.id === itemId);
+      if (!cartItem) {
+        throw new NOT_FOUND(ENTITIES.CART_ITEM);
+      }
+      // 3. If last item → delete whole cart
+      if (cart.cartItems.length === 1) {
+        await CartRepository.clearCart(cart.id, db);
+      } else {
+        // 4. Otherwise delete only the item
+        await CartRepository.deleteCartItem(cart.id, cartItem.id, db);
+      }
+
+      return {
+        itemId: cartItem.id,
+        itemName: cartItem.name,
+      };
+    });
   }
 
   // ─── Clear Cart ────────────────────────────────────────────────────────────
 
-  async clearCart(customerId: number): Promise<void> {
-    const cart = await this.getCustomerCart(customerId);
+  static async clearCart(
+    customerId: number,
+    db: Prisma.TransactionClient = prisma,
+  ): Promise<void> {
+    const cart = await CartRepository.findCartByCustomerId(customerId, db);
     if (!cart || cart === null) {
       throw new CartNotFound(errorMessage.CART_NOT_FOUND.message);
     }
-    await CartRepository.clearCart(cart.id);
+    await CartRepository.clearCart(cart.id, db);
+    await CartRedisRepository.clearCart(customerId);
   }
 
-  async getTotalPriceAndQuantity(customerId: number): Promise<any> {
-    const cart = await this.getCustomerCart(customerId);
+  static async getTotalPriceAndQuantity(
+    customerId: number,
+    db: Prisma.TransactionClient = prisma,
+  ): Promise<any> {
+    const cart = await CartRepository.findCartByCustomerId(customerId, db);
     if (!cart || cart === null) {
       throw new CartNotFound(errorMessage.CART_NOT_FOUND.message);
     }
@@ -164,5 +240,65 @@ export class CartService {
     const { totalQuantity, totalPrice } = result;
 
     return { totalPrice, totalQuantity };
+  }
+  // Validate if cart exist and its items are valid to create order [is exist, is stock ok, is price changed]
+  static async validCartAntItemsForOrder(
+    customerId: number,
+    db: Prisma.TransactionClient = prisma,
+  ) {
+    const cart = await CartRepository.findCartByCustomerId(customerId, db);
+    if (!cart || cart === null) {
+      throw new CartNotFound(errorMessage.CART_NOT_FOUND.message);
+    }
+    // Check if  restaurant exist
+    const restaurant = await RestaurantRepository.findRestaurantById(
+      cart.restaurantId,
+      db,
+    );
+    if (!restaurant) {
+      throw new NOT_FOUND(ENTITIES.RESTAURANT);
+    }
+    // Check cart items
+    for (const ci of cart.cartItems) {
+      const { menuItemId, quantity, price } = ci;
+      // existence
+      const menuItem = await MenuRepository.findMenuItemById(menuItemId, db);
+      if (!menuItem) {
+        throw new NOT_FOUND(ENTITIES.MENU_ITEM);
+      }
+      // Price
+      if (price != menuItem?.price) {
+        throw new PriceNotMatch(
+          `${menuItem.itemName}: ${errorMessage.PRICE_NOT_MATCH.message}`,
+        );
+      }
+      // Quantity
+      if (quantity > menuItem.stock) {
+        throw new QuantityExceed(errorMessage.QUANTITY_EXCEED.message);
+      }
+      //  Calculate total price
+      const totalPrice = cart.cartItems.reduce(
+        (sum: number, item: { price: number; quantity: number }) =>
+          sum + item.price * item.quantity,
+        0,
+      );
+      return { cart, totalPrice };
+    }
+  }
+  static async LockCart(cartId: number, db: Prisma.TransactionClient = prisma) {
+    const lockedCart = await CartRepository.LockCart(cartId, db);
+    if (lockedCart) {
+      await CartRedisRepository.lockCart(lockedCart.customerId);
+    }
+    return lockedCart;
+  }
+  static async unLockCart(
+    customerId: number,
+    db: Prisma.TransactionClient = prisma,
+  ) {
+    return CartRepository.unLockCart(customerId, db);
+  }
+  static async archiveCart(cart: any, db: Prisma.TransactionClient = prisma) {
+    return CartRepository.archiveCart(cart, db);
   }
 }
