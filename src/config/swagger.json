@@ -23,14 +23,19 @@
     {
       "name": "Order Summary",
       "description": "Operations related to order summaries"
+    },
+    {
+      "name": "Customer",
+      "description": "Operations related to customer authentication and management"
     }
   ],
   "components": {
     "securitySchemes": {
-      "bearerAuth": {
-        "type": "http",
-        "scheme": "bearer",
-        "bearerFormat": "JWT"
+      "cookieAuth": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "accessToken",
+        "description": "Access token stored in HttpOnly cookie. Obtained via POST /api/v1/customers/login."
       }
     },
     "schemas": {
@@ -99,10 +104,327 @@
   },
   "security": [
     {
-      "bearerAuth": []
+      "cookieAuth": []
     }
   ],
   "paths": {
+    "/api/v1/customers/register": {
+      "post": {
+        "tags": [
+          "Customer"
+        ],
+        "summary": "Register a new customer",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "name",
+                  "email",
+                  "password",
+                  "phone"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "example": "John Doe"
+                  },
+                  "email": {
+                    "type": "string",
+                    "example": "john@example.com"
+                  },
+                  "password": {
+                    "type": "string",
+                    "example": "password123"
+                  },
+                  "phone": {
+                    "type": "string",
+                    "example": "01000000000"
+                  },
+                  "dob": {
+                    "type": "string",
+                    "format": "date",
+                    "example": "1990-01-01"
+                  },
+                  "gender": {
+                    "type": "string",
+                    "example": "male"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Customer registered successfully"
+          },
+          "400": {
+            "description": "Validation error"
+          },
+          "409": {
+            "description": "Email or phone already exists"
+          }
+        }
+      }
+    },
+    "/api/v1/customers/login": {
+      "post": {
+        "tags": [
+          "Customer"
+        ],
+        "summary": "Login customer",
+        "description": "Authenticates customer and sets `accessToken` (2d) and `refreshToken` (4d) as HttpOnly cookies.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "email",
+                  "password"
+                ],
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "example": "john@example.com"
+                  },
+                  "password": {
+                    "type": "string",
+                    "example": "password123"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Login successful. Sets `accessToken` and `refreshToken` HttpOnly cookies.",
+            "headers": {
+              "Set-Cookie": {
+                "description": "accessToken (2d) and refreshToken (4d) HttpOnly cookies",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid credentials"
+          }
+        }
+      }
+    },
+    "/api/v1/customers/refresh-token": {
+      "post": {
+        "tags": [
+          "Customer"
+        ],
+        "summary": "Refresh access token",
+        "description": "Reads `refreshToken` from HttpOnly cookie. Issues a new `accessToken` cookie. No request body needed.",
+        "parameters": [
+          {
+            "name": "refreshToken",
+            "in": "cookie",
+            "required": true,
+            "description": "Refresh token cookie set during login",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Token refreshed. New `accessToken` cookie set.",
+            "headers": {
+              "Set-Cookie": {
+                "description": "New accessToken HttpOnly cookie (2d)",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Refresh token missing, invalid, or expired"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Customer"
+        ],
+        "summary": "Revoke refresh token",
+        "description": "Deletes refresh token from DB and clears both auth cookies. Requires valid `accessToken` cookie.",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Refresh token revoked and cookies cleared"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        }
+      }
+    },
+    "/api/v1/customers/logout": {
+      "post": {
+        "tags": [
+          "Customer"
+        ],
+        "summary": "Logout customer",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Logged out successfully"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        }
+      }
+    },
+    "/api/v1/customers/forgot-password": {
+      "post": {
+        "tags": [
+          "Customer"
+        ],
+        "summary": "Request password reset link",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "email"
+                ],
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "example": "john@example.com"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Reset link sent if email exists"
+          }
+        }
+      }
+    },
+    "/api/v1/customers/reset-password-from-link": {
+      "post": {
+        "tags": [
+          "Customer"
+        ],
+        "summary": "Reset password using one-time token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "token",
+                  "newPassword",
+                  "confirmNewPassword"
+                ],
+                "properties": {
+                  "token": {
+                    "type": "string"
+                  },
+                  "newPassword": {
+                    "type": "string",
+                    "example": "newpassword123"
+                  },
+                  "confirmNewPassword": {
+                    "type": "string",
+                    "example": "newpassword123"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Password reset successful"
+          },
+          "400": {
+            "description": "Token expired or passwords don't match"
+          }
+        }
+      }
+    },
+    "/api/v1/customers/change-password": {
+      "post": {
+        "tags": [
+          "Customer"
+        ],
+        "summary": "Change password while logged in",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "oldPassword",
+                  "newPassword",
+                  "confirmNewPassword"
+                ],
+                "properties": {
+                  "oldPassword": {
+                    "type": "string",
+                    "example": "oldpassword123"
+                  },
+                  "newPassword": {
+                    "type": "string",
+                    "example": "newpassword123"
+                  },
+                  "confirmNewPassword": {
+                    "type": "string",
+                    "example": "newpassword123"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Password changed successfully"
+          },
+          "400": {
+            "description": "Invalid old password or passwords don't match"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        }
+      }
+    },
     "/api/v1/cart": {
       "post": {
         "tags": [

@@ -21,4 +21,9 @@ export const ENTITIES = {
 
   TRANSACTION: 'Transaction',
   TRANSACTION_STATUS: 'TransactionStatus',
+  TRANSACTION_DETAIL: 'TransactionDetail',
+
+  SUPPORT_TICKET: 'SupportTicket',
+  RESTAURANT_RATE: 'RestaurantRate',
+  LOYALTY_POINTS: 'LoyaltyPoints',
 } as const;

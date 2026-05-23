@@ -1,6 +1,9 @@
 import { Request, Response, NextFunction } from 'express';
 import { StatusCodes } from 'http-status-codes';
-import { CustomerRepository } from '../../modules/customerManagement/customer.repository';
+import { CustomerRepository } from '../../modules/customerManagement/Repositories/customer.repository';
+import jwt from 'jsonwebtoken';
+
+const JWT_SECRET = process.env.JWT_SECRET || 'supersecret';
 
 declare global {
   namespace Express {
@@ -16,26 +19,32 @@ export const authValidator = async (
   res: Response,
   next: NextFunction,
 ) => {
-  const id = req.headers.authorization;
+  const token = req.cookies?.accessToken;
 
-  if (!id) {
+  if (!token) {
     return res.status(StatusCodes.UNAUTHORIZED).json({
-      message: 'Token missing',
+      message: 'Access token missing',
     });
   }
 
-  const customer_id = Number(id.split(' ')[1]);
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET) as any;
+    
+    // Resolve the real User.id using the repository layer
+    const customer = await CustomerRepository.findCustomerById(decoded.customerId);
 
-  // Resolve the real User.id using the repository layer
-  const customer = await CustomerRepository.findCustomerById(customer_id);
+    if (!customer) {
+      return res.status(StatusCodes.UNAUTHORIZED).json({
+        message: 'Customer not found',
+      });
+    }
 
-  if (!customer) {
+    req.customerId = customer.id;
+    req.userId     = customer.userId; // actual User.id from the relation
+    next();
+  } catch (error) {
     return res.status(StatusCodes.UNAUTHORIZED).json({
-      message: 'Customer not found',
+      message: 'Invalid or expired token',
     });
   }
-
-  req.customerId = customer_id;
-  req.userId     = customer.userId; // actual User.id from the relation
-  next();
 };

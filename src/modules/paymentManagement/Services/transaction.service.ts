@@ -1,8 +1,7 @@
 import { Prisma, TransactionStatusEnum } from '@prisma/client';
-import { ENTITIES } from '../../../../prisma/entities';
-import { NOT_FOUND } from '../../../shared_infrastructure/error/error.execption';
 import { TransactionRepository } from '../Repositories/transaction.repository';
 import prisma from '../../../../lib/prisma';
+import loggerService from '../../../shared_infrastructure/logger/logger';
 
 export class TransactionService {
   static async createTransaction(
@@ -12,25 +11,36 @@ export class TransactionService {
     totalPrice: number,
     db: Prisma.TransactionClient = prisma,
   ) {
-    return await TransactionRepository.createTransaction(
+    loggerService.info('Creating transaction', { orderId, paymentId, totalPrice });
+
+    const result = await TransactionRepository.createTransaction(
       orderId,
       paymentId,
       sessionId,
       totalPrice,
-      db
+      db,
     );
+
+    loggerService.info('Transaction created', { orderId, sessionId });
+    return result;
   }
+
   static async updateTransaction(
     orderId: number,
     sessionId: string,
     transactionStatus: TransactionStatusEnum,
     db: Prisma.TransactionClient = prisma,
   ) {
-    return await TransactionRepository.updateTransactionAndTracking(
+    loggerService.info('Updating transaction', { orderId, sessionId, transactionStatus });
+
+    const result = await TransactionRepository.updateTransactionAndTracking(
       orderId,
       sessionId,
       transactionStatus,
-      db
+      db,
     );
+
+    loggerService.info('Transaction updated', { orderId, sessionId, transactionStatus });
+    return result;
   }
 }

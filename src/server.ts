@@ -3,6 +3,7 @@ import app from './app';
 const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
-  console.log(`Server is running on http://localhost:${PORT}/api/health`);
+  console.log(`Server is running on http://localhost:${PORT}/api/db/health`);
+  console.log(`Server is running on http://localhost:${PORT}/api/redis/health`);
   console.log(`Swagger Docs available at http://localhost:${PORT}/api-docs`);
 });

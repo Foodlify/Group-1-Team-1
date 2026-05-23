@@ -3,6 +3,7 @@ import {
   BAD_REQUEST,
   NOT_FOUND,
 } from '../../../shared_infrastructure/error/error.execption';
+import { retry } from '../../../shared_infrastructure/retry/retry';
 import { CartService } from '../../cartManagement/cart.service';
 import { AddressService } from '../../customerManagement/Services/address.service';
 import { PaymentStrategy } from '../../paymentManagement/PaymentStrategies/payment.strategy';
@@ -156,7 +157,13 @@ export class CreateTransactionsHandler extends OrderHandler {
   ): Promise<OrderResponse> {
     const { paymentType, order, tx } = response;
     const paymentStrategy = new PaymentStrategy(paymentType!.name);
-    const transaction = await paymentStrategy.createPayment(order);
+    // add retry for create payment method
+    const transaction = await retry(
+      async () => await paymentStrategy.createPayment(order),
+      3,
+      2000,
+      "create payment",
+    );
     const transactionCreated = await TransactionService.createTransaction(
       order.id,
       paymentType!.id,
