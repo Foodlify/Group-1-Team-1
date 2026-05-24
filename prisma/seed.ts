@@ -4,7 +4,9 @@ import {
   TransactionStatusEnum,
   PaymentTypeEnum,
   TicketCategory,
+  RoleEnum,
 } from '@prisma/client';
+import bcrypt from 'bcrypt';
 
 async function main() {
   console.log('🌱 Seeding database...');
@@ -15,24 +17,69 @@ async function main() {
   await prisma.cartItem.deleteMany();
   await prisma.cart.deleteMany();
   await prisma.address.deleteMany();
+  await prisma.userRole.deleteMany();
   await prisma.customer.deleteMany();
   await prisma.menuItem.deleteMany();
   await prisma.menu.deleteMany();
   await prisma.restaurant.deleteMany();
   await prisma.user.deleteMany();
+  await prisma.role.deleteMany();
+  await prisma.userType.deleteMany();
   await prisma.orderStatus.deleteMany();
   await prisma.transactionStatus.deleteMany();
   await prisma.paymentIntegrationType.deleteMany();
   await prisma.customerServiceEmployee.deleteMany();
 
   // ─────────────────────────────────────────
-  // USERS
+  // USER TYPES
+  // ─────────────────────────────────────────
+  await prisma.userType.createMany({
+    data: [
+      { name: 'Customer', code: 'customer' },
+      { name: 'Admin',    code: 'admin'    },
+    ],
+  });
+  console.log('✅ User types seeded');
+
+  // ─────────────────────────────────────────
+  // ROLES
+  // ─────────────────────────────────────────
+  await prisma.role.createMany({
+    data: [
+      { name: RoleEnum.SUPER_ADMIN      },
+      { name: RoleEnum.ADMIN            },
+      { name: RoleEnum.RESTAURANT_OWNER },
+      { name: RoleEnum.CUSTOMER_SERVICE },
+    ],
+  });
+  console.log('✅ Roles seeded');
+
+  const superAdminRole = await prisma.role.findUnique({ where: { name: RoleEnum.SUPER_ADMIN } });
+
+  // ─────────────────────────────────────────
+  // SUPER ADMIN USER
+  // ─────────────────────────────────────────
+  const adminPassword = await bcrypt.hash('Admin@1234', 10);
+  const superAdminUser = await prisma.user.create({
+    data: {
+      name: 'Super Admin',
+      email: 'admin@foodlify.com',
+      password: adminPassword,
+      userTypeCode: 'admin',
+      userRole: { create: { roleId: superAdminRole!.id } },
+    },
+  });
+  console.log('✅ Super admin seeded:', superAdminUser.email);
+
+  // ─────────────────────────────────────────
+  // CUSTOMER USERS
   // ─────────────────────────────────────────
   const user1 = await prisma.user.create({
     data: {
       name: 'Alice Johnson',
       email: 'alice@foodlify.com',
       password: 'password123',
+      userTypeCode: 'customer',
     },
   });
 
@@ -41,6 +88,7 @@ async function main() {
       name: 'Bob Smith',
       email: 'bob@foodlify.com',
       password: 'password123',
+      userTypeCode: 'customer',
     },
   });
 
@@ -49,6 +97,7 @@ async function main() {
       name: 'Sara Ahmed',
       email: 'sara@foodlify.com',
       password: 'password123',
+      userTypeCode: 'customer',
     },
   });
   const user4 = await prisma.user.create({
@@ -56,6 +105,7 @@ async function main() {
       name: 'John Baker',
       email: 'john@foodlify.com',
       password: 'password123',
+      userTypeCode: 'customer',
     },
   });
 
@@ -64,14 +114,12 @@ async function main() {
   // ─────────────────────────────────────────
   // CUSTOMERS  (1-to-1 with User)
   // ─────────────────────────────────────────
-  await prisma.customer.createMany({
-    data: [
-      { userId: user1.id, phone: '01000000001' },
-      { userId: user2.id, phone: '01000000002' },
-      { userId: user3.id, phone: '01000000003' },
-      { userId: user4.id, phone: '01000000004' },
-    ],
-  });
+  const [c1, c2, c3, c4] = await Promise.all([
+    prisma.customer.create({ data: { userId: user1.id, phone: '01000000001' } }),
+    prisma.customer.create({ data: { userId: user2.id, phone: '01000000002' } }),
+    prisma.customer.create({ data: { userId: user3.id, phone: '01000000003' } }),
+    prisma.customer.create({ data: { userId: user4.id, phone: '01000000004' } }),
+  ]);
 
   console.log('✅ Customers seeded');
 
@@ -253,46 +301,10 @@ async function main() {
   // ───────────────────────────────────────
   await prisma.address.createMany({
     data: [
-      {
-        customerId: 1,
-        street: '90 Street, New Cairo',
-        city: 'Cairo',
-        state: 'Cairo',
-        country: 'Egypt',
-        postalCode: '11835',
-      },
-      {
-        customerId: 2,
-        street: 'Nasr City, Abbas El Akkad Street',
-        city: 'Cairo',
-        state: 'Cairo',
-        country: 'Egypt',
-        postalCode: '11511',
-      },
-      {
-        customerId: 3,
-        street: 'Dokki, Tahrir Street',
-        city: 'Cairo',
-        state: 'Giza (Greater Cairo)',
-        country: 'Egypt',
-        postalCode: '12611',
-      },
-      {
-        customerId: 4,
-        street: 'Maadi, Road 9',
-        city: 'Cairo',
-        state: 'Cairo',
-        country: 'Egypt',
-        postalCode: '11728',
-      },
-      {
-        customerId: 5,
-        street: 'Maadi, Road 10',
-        city: 'Cairo',
-        state: 'Cairo',
-        country: 'Egypt',
-        postalCode: '11728',
-      },
+      { customerId: c1.id, street: '90 Street, New Cairo',              city: 'Cairo', state: 'Cairo',                  country: 'Egypt', postalCode: '11835' },
+      { customerId: c2.id, street: 'Nasr City, Abbas El Akkad Street',  city: 'Cairo', state: 'Cairo',                  country: 'Egypt', postalCode: '11511' },
+      { customerId: c3.id, street: 'Dokki, Tahrir Street',              city: 'Cairo', state: 'Giza (Greater Cairo)',    country: 'Egypt', postalCode: '12611' },
+      { customerId: c4.id, street: 'Maadi, Road 9',                     city: 'Cairo', state: 'Cairo',                  country: 'Egypt', postalCode: '11728' },
     ],
     skipDuplicates: true,
   });

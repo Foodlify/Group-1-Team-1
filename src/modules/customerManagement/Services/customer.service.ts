@@ -1,5 +1,3 @@
-import bcrypt from 'bcrypt';
-import jwt from 'jsonwebtoken';
 import { CustomerRepository } from '../Repositories/customer.repository';
 import {
   EmailAlreadyRegistered,
@@ -26,10 +24,15 @@ import {
   ChangePasswordResponse,
 } from '../customer.model';
 import loggerService from '../../../shared_infrastructure/logger/logger';
-
-const JWT_SECRET = process.env.JWT_SECRET || 'supersecret';
-const JWT_REFRESH_SECRET =
-  process.env.JWT_REFRESH_SECRET || 'superrefreshsecret';
+import { USER_TYPE } from '../../../shared_infrastructure/auth/user-type.constants';
+import {
+  signAccess,
+  signRefresh,
+  signResetToken,
+  verifyRefresh,
+  decodeUnsafe,
+} from '../../../shared_infrastructure/auth/jwt.helper';
+import { hashPassword, comparePassword } from '../../../shared_infrastructure/auth/password.helper';
 
 export class CustomerService {
   static async register(data: RegisterInput): Promise<RegisterResponse> {
@@ -42,17 +45,16 @@ export class CustomerService {
       throw new EmailAlreadyRegistered();
     }
 
-    const existingCustomer =
-      await CustomerRepository.findCustomerByPhone(phone);
+    const existingCustomer = await CustomerRepository.findCustomerByPhone(phone);
     if (existingCustomer) {
       loggerService.warn('Registration failed: phone already registered', { phone });
       throw new PhoneAlreadyRegistered();
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const hashedPassword = await hashPassword(password);
 
     const user = await CustomerRepository.createUserWithCustomer(
-      { name, email, password: hashedPassword },
+      { name, email, password: hashedPassword, userTypeCode: USER_TYPE.CUSTOMER },
       {
         phone,
         dob: dob ? new Date(`${dob.substring(0, 10)}T00:00:00.000Z`) : null,
@@ -84,51 +86,36 @@ export class CustomerService {
       throw new InvalidCredentials();
     }
 
-    const isPasswordValid = await bcrypt.compare(password, user.password);
+    const isPasswordValid = await comparePassword(password, user.password);
     if (!isPasswordValid) {
       loggerService.warn('Login failed: invalid password', { email });
       throw new InvalidCredentials();
     }
 
-    const accessToken = jwt.sign(
-      { userId: user.id, customerId: user.customer.id },
-      JWT_SECRET,
-      { expiresIn: '2d' },
-    );  
-
-    const refreshToken = jwt.sign(
-      { userId: user.id, customerId: user.customer.id },
-      JWT_REFRESH_SECRET,
-      { expiresIn: '4d' },
-    );
+    const accessToken  = signAccess({ userId: user.id, customerId: user.customer.id, userTypeCode: USER_TYPE.CUSTOMER });
+    const refreshToken = signRefresh({ userId: user.id });
 
     await CustomerRepository.updateUserRefreshToken(user.id, refreshToken);
     loggerService.info('Customer logged in successfully', { userId: user.id, customerId: user.customer.id });
 
-    return {
-      accessToken,
-      refreshToken,
-    };
+    return { accessToken, refreshToken };
   }
 
-  static async refreshToken(
-    data: RefreshTokenInput,
-  ): Promise<RefreshTokenResponse> {
+  static async refreshToken(data: RefreshTokenInput): Promise<RefreshTokenResponse> {
     const { refreshToken } = data;
     loggerService.info('Token refresh attempt');
 
     let decoded: any;
     try {
-      decoded = jwt.verify(refreshToken, JWT_REFRESH_SECRET);
+      decoded = verifyRefresh(refreshToken);
     } catch (error) {
-      // Refresh token expired — find user by token and clear it from DB to force logout
       try {
-        const expiredDecoded = jwt.decode(refreshToken) as any;
+        const expiredDecoded = decodeUnsafe(refreshToken) as any;
         if (expiredDecoded?.userId) {
           const user = await CustomerRepository.findUserById(expiredDecoded.userId);
           if (user?.refreshToken === refreshToken) {
             await CustomerRepository.updateUserRefreshToken(expiredDecoded.userId, null);
-            loggerService.info('Refresh token expired: cleared from DB, user logged out', { userId: expiredDecoded.userId });
+            loggerService.info('Refresh token expired: cleared from DB', { userId: expiredDecoded.userId });
           }
         }
       } catch {}
@@ -143,11 +130,7 @@ export class CustomerService {
       throw new InvalidToken();
     }
 
-    const newAccessToken = jwt.sign(
-      { userId: user.id, customerId: user.customer.id },
-      JWT_SECRET,
-      { expiresIn: '2d' },
-    );
+    const newAccessToken = signAccess({ userId: user.id, customerId: user.customer.id, userTypeCode: USER_TYPE.CUSTOMER });
 
     loggerService.info('Token refreshed successfully', { userId: user.id, customerId: user.customer.id });
     return { accessToken: newAccessToken };
@@ -168,9 +151,7 @@ export class CustomerService {
     return {};
   }
 
-  static async forgotPassword(
-    data: ForgotPasswordInput,
-  ): Promise<ForgotPasswordResponse> {
+  static async forgotPassword(data: ForgotPasswordInput): Promise<ForgotPasswordResponse> {
     const { email } = data;
     loggerService.info('Forgot password request', { email });
 
@@ -180,12 +161,9 @@ export class CustomerService {
       return {};
     }
 
-    const resetToken = jwt.sign({ userId: user.id }, JWT_SECRET, {
-      expiresIn: '1h',
-    });
-
-    const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
-    const resetLink = `${baseUrl}/reset-password.html?token=${resetToken}`;
+    const resetToken = signResetToken({ userId: user.id });
+    const baseUrl    = process.env.BASE_URL || 'http://localhost:3000';
+    const resetLink  = `${baseUrl}/reset-password.html?token=${resetToken}`;
 
     try {
       await CustomerMailService.sendResetPasswordEmail(email, resetLink);
@@ -197,22 +175,14 @@ export class CustomerService {
     return {};
   }
 
-  static async resetPasswordFromLink(
-    data: ResetPasswordFromLinkInput,
-  ): Promise<ResetPasswordFromLinkResponse> {
+  static async resetPasswordFromLink(data: ResetPasswordFromLinkInput): Promise<ResetPasswordFromLinkResponse> {
     const { token, newPassword } = data;
     loggerService.info('Password reset from link attempt');
 
     try {
-      const decoded = jwt.verify(token, JWT_SECRET) as any;
-
-      const hashedPassword = await bcrypt.hash(newPassword, 10);
-
-      await CustomerRepository.updateUserPassword(
-        decoded.userId,
-        hashedPassword,
-      );
-
+      const decoded      = decodeUnsafe(token) as any;
+      const hashedPassword = await hashPassword(newPassword);
+      await CustomerRepository.updateUserPassword(decoded.userId, hashedPassword);
       loggerService.info('Password reset from link successful', { userId: decoded.userId });
       return {};
     } catch (error) {
@@ -236,10 +206,13 @@ export class CustomerService {
     return {};
   }
 
-  static async changePassword(
-    userId: number,
-    data: ChangePasswordInput,
-  ): Promise<ChangePasswordResponse> {
+  static async resolveById(customerId: number): Promise<{ customerId: number; userId: number } | null> {
+    const customer = await CustomerRepository.findCustomerById(customerId);
+    if (!customer) return null;
+    return { customerId: customer.id, userId: customer.userId };
+  }
+
+  static async changePassword(userId: number, data: ChangePasswordInput): Promise<ChangePasswordResponse> {
     const { oldPassword, newPassword } = data;
     loggerService.info('Change password attempt', { userId });
 
@@ -249,13 +222,13 @@ export class CustomerService {
       throw new CustomerNotFound();
     }
 
-    const isPasswordValid = await bcrypt.compare(oldPassword, user.password);
+    const isPasswordValid = await comparePassword(oldPassword, user.password);
     if (!isPasswordValid) {
       loggerService.warn('Change password failed: old password mismatch', { userId });
       throw new PasswordMismatch('Invalid old password');
     }
 
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    const hashedPassword = await hashPassword(newPassword);
     await CustomerRepository.updateUserPassword(user.id, hashedPassword);
     loggerService.info('Password changed successfully', { userId });
 

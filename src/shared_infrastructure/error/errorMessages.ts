@@ -63,6 +63,18 @@ export const errorMessage = {
     code: 'PasswordMismatchException',
     message: 'Passwords do not match',
   },
+  USER_NOT_FOUND: {
+    code: 'UserNotFoundException',
+    message: 'User not found',
+  },
+  USER_EMAIL_TAKEN: {
+    code: 'UserEmailTakenException',
+    message: 'Email already registered',
+  },
+  ROLE_NOT_FOUND: {
+    code: 'RoleNotFoundException',
+    message: 'Role not found',
+  },
 };
 
 
