@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { CustomerController } from './controllers/customer.controller';
-import { authValidator } from '../../middlewares/auth_handling/auth-handling';
+import { authCustomer as authValidator } from '../../middlewares/auth_handling/auth.middleware';
 import {
   validateRegister,
   validateLogin,

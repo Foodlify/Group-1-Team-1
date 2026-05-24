@@ -1,5 +1,5 @@
 import express from 'express';
-import { authValidator } from '../../middlewares/auth_handling/auth-handling';
+import { authCustomer as authValidator } from '../../middlewares/auth_handling/auth.middleware';
 import { TicketController } from './Controllers/ticket.controller';
 import {
   validateCreateTicket,

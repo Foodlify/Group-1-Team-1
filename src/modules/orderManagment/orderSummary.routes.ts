@@ -1,6 +1,6 @@
 import express from 'express';
 import { OrderSummaryController } from './controllers/orderSummary.controller';
-import { authValidator } from '../../middlewares/auth_handling/auth-handling';
+import { authCustomer as authValidator } from '../../middlewares/auth_handling/auth.middleware';
 
 const router = express.Router();
 const orderSummaryController = new OrderSummaryController();

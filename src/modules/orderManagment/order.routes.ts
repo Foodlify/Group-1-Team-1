@@ -1,7 +1,7 @@
 import express from 'express';
 import { OrderController } from './controllers/order.controller';
 import { placeOrderValidator, getOrderValidator, updateOrderStatusValidator, getOrdersByStatusValidator } from './order.middleware';
-import { authValidator } from '../../middlewares/auth_handling/auth-handling';
+import { authCustomer as authValidator } from '../../middlewares/auth_handling/auth.middleware';
 
 const router = express.Router();
 const orderController = new OrderController();
