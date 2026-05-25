@@ -50,10 +50,10 @@ router.get(
 // orderController.getTrackingStatus,
 // ); 
 
-router.patch(
-  '/orders/:orderId/:customerId/cancel-order',
-  orderController.cancelOrder,
-); 
+// router.patch(
+//   '/orders/:orderId/:customerId/cancel-order',
+//   orderController.cancelOrder,
+// ); 
 
 
 export { router as orderRouter };

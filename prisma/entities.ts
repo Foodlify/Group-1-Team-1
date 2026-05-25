@@ -7,6 +7,8 @@ export const ENTITIES = {
   MENU: 'Menu',
   MENU_ITEM: 'MenuItem',
 
+  RESTAURANTS: 'Restaurants',
+
   CART: 'Cart',
   CART_ITEM: 'CartItem',
 

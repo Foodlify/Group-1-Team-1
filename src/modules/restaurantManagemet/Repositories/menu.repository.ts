@@ -2,12 +2,22 @@ import { Prisma } from '@prisma/client';
 import prisma from '../../../../lib/prisma';
 export class MenuRepository {
   static async getMenuById(
+    restaurantId: number,
     menuId: number,
     db: Prisma.TransactionClient = prisma,
   ) {
     return db.menu.findUnique({
-      where: { id: menuId },
+      where: { id: menuId, restaurantId },
       include: { menuItems: true },
+    });
+  }
+  static async getMenuItem(
+    menuId: number,
+    menuItemId: number,
+    db: Prisma.TransactionClient = prisma,
+  ) {
+    return db.menuItem.findUnique({
+      where: { id: menuItemId, menuId },
     });
   }
 

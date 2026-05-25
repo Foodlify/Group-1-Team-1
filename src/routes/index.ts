@@ -6,6 +6,7 @@ import { orderSummaryRouter } from '../modules/orderManagment/orderSummary.route
 import { webhookRouter } from '../modules/paymentManagement/routes/webhook.route';
 import customerRouter from '../modules/customerManagement/customer.routes';
 import { customerServiceRouter } from '../modules/customerServiceManagement/customerService.route';
+import { restaurantRouter } from '../modules/restaurantManagemet/restaurant.route';
 
 const router = express.Router();
 
@@ -16,5 +17,6 @@ router.use('/order-summary', orderSummaryRouter);
 router.use('/webhook', webhookRouter);
 router.use('/customers', customerRouter);
 router.use('/customer-service', customerServiceRouter);
+router.use('/restaurants', restaurantRouter);
 
 export default router;

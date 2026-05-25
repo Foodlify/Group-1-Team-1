@@ -1,6 +1,6 @@
 import prisma from '../../../lib/prisma';
 import { CartRepository } from './cart.repository';
-import { MenuRepository } from '../restaurantManagemet/menu.repository';
+import { MenuRepository } from '../restaurantManagemet/Repositories/menu.repository';
 import { CartRedisRepository } from './cart.redis.repository';
 import loggerService from '../../shared_infrastructure/logger/logger';
 
@@ -27,7 +27,7 @@ import {
   NOT_FOUND,
 } from '../../shared_infrastructure/error/error.execption';
 import { ENTITIES } from '../../../prisma/entities';
-import { RestaurantRepository } from '../restaurantManagemet/restaurant.repository';
+import { RestaurantRepository } from '../restaurantManagemet/Repositories/restaurant.repository';
 import { PriceNotMatch } from '../orderManagment/order.exception';
 import { Prisma } from '@prisma/client/extension';
 

@@ -2,10 +2,24 @@ import { Prisma } from '@prisma/client';
 import prisma from '../../../../lib/prisma';
 import { MenuRepository } from '../Repositories/menu.repository';
 export class MenuService {
-  static async getMenu(menuId: number, db: Prisma.TransactionClient = prisma) {
-    const menu = await MenuRepository.getMenuById(menuId, db);
+  static async getMenu(
+    restaurantId: number,
+    menuId: number,
+    db: Prisma.TransactionClient = prisma,
+  ) {
+    const menu = await MenuRepository.getMenuById(restaurantId, menuId, db);
     return menu;
   }
+  static async getMenuItemById(
+    menuId: number,
+    menuItemId: number,
+    db: Prisma.TransactionClient = prisma,
+  ): Promise<any> {
+    const menuItem = await MenuRepository.getMenuItem(menuId, menuItemId, db);
+    return menuItem;
+  }
+
+  
   static async getMenuItem(
     itemId: number,
     db: Prisma.TransactionClient = prisma,

@@ -152,32 +152,29 @@ export class OrderController {
       } else {
         throw err;
       }
-<<<<<<< HEAD
   }
   }) ;
 
-  cancelOrder = asyncHandler(async(req: Request , res: Response) => {
-  const orderId = Number(req.params.orderId); 
-  const customerId = Number(req.params.customerId); 
-  try{
-    const canceldOrder = await OrderTrackingService.cancelOrder(orderId,customerId); 
-    sendSuccess(
-      res,
-    `${ENTITIES.ORDER} ${successMessage.RECORD_GET.message}`,
-        StatusCodes.OK,
-        canceldOrder
-    )
-  } catch(err){
-    if (err instanceof NOT_FOUND){
-      sendError(res,err.statusCode , err.code, err.message);
-    }else {
-      throw err; 
+  // cancelOrder = asyncHandler(async(req: Request , res: Response) => {
+  // const orderId = Number(req.params.orderId); 
+  // const customerId = Number(req.params.customerId); 
+  // try{
+  //   const canceldOrder = await OrderTrackingService.cancelOrder(orderId,customerId); 
+  //   sendSuccess(
+  //     res,
+  //   `${ENTITIES.ORDER} ${successMessage.RECORD_GET.message}`,
+  //       StatusCodes.OK,
+  //       canceldOrder
+  //   )
+  // } catch(err){
+  //   if (err instanceof NOT_FOUND){
+  //     sendError(res,err.statusCode , err.code, err.message);
+  //   }else {
+  //     throw err; 
+  //   }
+  // }
+  // });
     }
-  }
-  });
-=======
-    }
-  });
 
->>>>>>> a66ceec76d0d6f3537e174d148234b89195d707b
-}
+
+
