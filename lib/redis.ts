@@ -32,5 +32,4 @@ export async function connectRedis(): Promise<void> {
   );
 }
 
-export { redisClient as redis_client };
 export default redisClient;
