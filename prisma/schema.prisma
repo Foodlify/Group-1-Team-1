@@ -95,7 +95,6 @@ model User {
   password       String
   refreshToken   String?
   customer       Customer?
-  cartId         Int?
 }
 
 // -----------------------------------------------------------------------------------------------------

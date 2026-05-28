@@ -11,9 +11,9 @@ import { errorHandler } from './middlewares/error_handling/error-handling';
 import { webhookRouter } from './modules/paymentManagement/routes/webhook.route';
 import path, { join } from 'path';
 import 'dotenv/config';
-import { connectRedis } from '../lib/redis';
+import { connectRedis, healthCheckRedis } from '../lib/redis';
+import { retry } from './shared_infrastructure/retry/retry';
 
-// Connect to Redis on startup
 connectRedis().catch((err) =>
   console.error('[Redis] Failed to connect at startup:', err),
 );
@@ -44,19 +44,38 @@ app.use('/api/v1', router);
 // Swagger Docs Setup
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 // Check db connection
-app.get('/api/health', async (req: Request, res: Response) => {
+app.get('/api/db/health', async (req: Request, res: Response) => {
   try {
-    // Check DB connection
-    await prisma.$queryRaw`SELECT 1`;
+    // add retry to handle db connection
+    await retry(
+      async () => await prisma.$queryRaw`SELECT 1`,
+      3,
+      1000,
+      'Database connection',
+    );
     res.status(200).json({
       status: 'success',
-      message: 'API and Database are running sequentially',
+      message: 'Database are running sequentially',
     });
   } catch (error) {
     console.error('Database connection failed', error);
     res
       .status(500)
       .json({ status: 'error', message: 'Database connection failed' });
+  }
+});
+app.get('/api/redis/health', async (req: Request, res: Response) => {
+  try {
+    await healthCheckRedis();
+    res.status(200).json({
+      status: 'success',
+      message: 'Redis is connected',
+    });
+  } catch (error) {
+    console.error('[Redis] Health check failed:', error);
+    res
+      .status(500)
+      .json({ status: 'error', message: 'Redis connection failed' });
   }
 });
 
