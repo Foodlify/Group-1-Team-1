@@ -1,5 +1,13 @@
 import { Prisma } from '@prisma/client';
 import prisma from '../../../../lib/prisma';
+import { DbNull } from '@prisma/client/runtime/client';
+
+export interface createAddressData{
+  country: string,
+  city: string, 
+  street: string, 
+  postalCode: string
+}
 export class AddressRepository {
   static async findAddressByIdAndCustomerId(
     addressId: number,
@@ -15,4 +23,16 @@ export class AddressRepository {
       },
     });
   }
+  static async createAddress(
+    customerId:number,
+    data: createAddressData
+  ){
+    return await prisma.address.create({
+      data: {
+        ...data, 
+        customerId, 
+      },
+    }); 
+  }
+
 }

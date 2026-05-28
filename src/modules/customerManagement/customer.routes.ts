@@ -8,10 +8,11 @@ import {
   validateResetPasswordFromLink,
   validateChangePassword,
 } from './customer.middleware';
+import { AddressController } from './controllers/address.controller';
 
 const router = Router();
 const customerController = new CustomerController();
-
+const addressController = new AddressController(); 
 router.post('/register', validateRegister, customerController.register);
 router.post('/login', validateLogin, customerController.login);
 router.post('/refresh-token', customerController.refreshToken);
@@ -22,5 +23,9 @@ router.post('/reset-password-from-link', validateResetPasswordFromLink, customer
 router.post('/logout', authValidator, customerController.logout);
 router.delete('/refresh-token', authValidator, customerController.revokeRefreshToken);
 router.post('/change-password', authValidator, validateChangePassword, customerController.changePassword);
+
+
+// add address
+router.post('/log-address',authValidator, addressController.addAddress); 
 
 export default router;

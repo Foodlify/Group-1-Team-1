@@ -132,7 +132,7 @@ model Address {
   customer   Customer @relation(fields: [customerId], references: [id])
   orders     Order[]
 
-  @@unique([id, customerId])
+  @@unique([id, customerId], name:"id_customerId")
 }
 
 // -----------------------------------------------------------------------------------------------------

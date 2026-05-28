@@ -47,7 +47,7 @@ export class OrderTrackingService {
     }
 
     loggerService.info('Order tracking history retrieved', { orderId, count: trackings.length });
-    return trackings;
+    return trackings as any ;
   }
 
   /** Get the current (latest) status of an order */

@@ -58,4 +58,7 @@ export const successMessage = {
   REFRESH_TOKEN_REVOKED: {
     message: 'Refresh token revoked successfully',
   },
+  ADDRESS_CREATED:{
+    message: 'Adddress added sucessfully', 
+  },
 };
