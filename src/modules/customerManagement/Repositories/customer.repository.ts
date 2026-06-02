@@ -73,4 +73,15 @@ export class CustomerRepository {
       data: { password: passwordHash },
     });
   }
+
+  static async updateUserName(
+    userId: number,
+    name: string,
+    db: Prisma.TransactionClient = prisma,
+  ){
+    return db.user.update({
+      where: { id: userId }, 
+      data: { name: name},
+    })
+  }
 }

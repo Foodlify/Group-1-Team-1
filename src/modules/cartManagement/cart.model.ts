@@ -58,3 +58,10 @@ export interface CartRedisMeta {
 export interface CartRedisData extends CartRedisMeta {
   items: CartRedisItem[];
 }
+
+
+export interface ProfileData {
+  userId: number; 
+  name?: string; 
+  password?: string; 
+}

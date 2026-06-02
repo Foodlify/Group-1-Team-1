@@ -59,6 +59,9 @@ export const successMessage = {
     message: 'Refresh token revoked successfully',
   },
   ADDRESS_CREATED:{
-    message: 'Adddress added sucessfully', 
+    message: 'Adddress added successfully', 
   },
+  GET_PROFILE_INFO: {
+    message: 'Profile info returned successfully',
+  }
 };
