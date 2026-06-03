@@ -1,6 +1,7 @@
 import asyncHandler from '../../../utils/asyncHandler';
 import { Request, Response } from 'express';
 import { RestaurantRedisService } from '../Services/restaurant.redis.service';
+import { MenuService } from '../Services/menu.service';
 import { sendError, sendSuccess } from '../../../utils/reponse';
 import { NOT_FOUND } from '../../../shared_infrastructure/error/error.execption';
 import { successMessage } from '../../../shared_infrastructure/success/successMessages';
@@ -8,7 +9,7 @@ import { StatusCodes } from 'http-status-codes';
 import { ENTITIES } from '../../../../prisma/entities';
 
 export class RestaurantController {
-  getRestaurants = asyncHandler(async (req: Request, res: Response) => {
+  getRestaurants = asyncHandler(async (_req: Request, res: Response) => {
     try {
       const restaurants = await RestaurantRedisService.getRestaurants();
       sendSuccess(
@@ -75,6 +76,105 @@ export class RestaurantController {
         StatusCodes.OK,
         menuItem,
       );
+    } catch (err) {
+      if (err instanceof NOT_FOUND) {
+        sendError(res, err.statusCode, err.code, err.message);
+      } else {
+        throw err;
+      }
+    }
+  });
+
+  // ─── Menu mutations ───────────────────────────────────────────────────────────
+
+  createMenu = asyncHandler(async (req: Request, res: Response) => {
+    const restaurantId = Number(req.params.restaurantId);
+    const { name } = req.body;
+    try {
+      const menu = await MenuService.createMenu(restaurantId, name);
+      sendSuccess(res, `${ENTITIES.MENU} ${successMessage.RECORD_ADDED.message}`, StatusCodes.CREATED, menu);
+    } catch (err) {
+      if (err instanceof NOT_FOUND) {
+        sendError(res, err.statusCode, err.code, err.message);
+      } else {
+        throw err;
+      }
+    }
+  });
+
+  updateMenu = asyncHandler(async (req: Request, res: Response) => {
+    const restaurantId = Number(req.params.restaurantId);
+    const menuId = Number(req.params.menuId);
+    const { name } = req.body;
+    try {
+      const menu = await MenuService.updateMenu(menuId, restaurantId, name);
+      sendSuccess(res, `${ENTITIES.MENU} ${successMessage.RECORD_updated.message}`, StatusCodes.OK, menu);
+    } catch (err) {
+      if (err instanceof NOT_FOUND) {
+        sendError(res, err.statusCode, err.code, err.message);
+      } else {
+        throw err;
+      }
+    }
+  });
+
+  deleteMenu = asyncHandler(async (req: Request, res: Response) => {
+    const restaurantId = Number(req.params.restaurantId);
+    const menuId = Number(req.params.menuId);
+    try {
+      await MenuService.deleteMenu(menuId, restaurantId);
+      sendSuccess(res, `${ENTITIES.MENU} ${'deleted successfully'}`, StatusCodes.OK, null);
+    } catch (err) {
+      if (err instanceof NOT_FOUND) {
+        sendError(res, err.statusCode, err.code, err.message);
+      } else {
+        throw err;
+      }
+    }
+  });
+
+  // ─── MenuItem mutations ───────────────────────────────────────────────────────
+
+  createMenuItem = asyncHandler(async (req: Request, res: Response) => {
+    const restaurantId = Number(req.params.restaurantId);
+    const menuId = Number(req.params.menuId);
+    const { itemName, price, stock } = req.body;
+    try {
+      const item = await MenuService.createMenuItem({ menuId, restaurantId, itemName, price, stock: stock ?? 0 });
+      sendSuccess(res, `${ENTITIES.MENU_ITEM} ${successMessage.RECORD_ADDED.message}`, StatusCodes.CREATED, item);
+    } catch (err) {
+      if (err instanceof NOT_FOUND) {
+        sendError(res, err.statusCode, err.code, err.message);
+      } else {
+        throw err;
+      }
+    }
+  });
+
+  updateMenuItem = asyncHandler(async (req: Request, res: Response) => {
+    const restaurantId = Number(req.params.restaurantId);
+    const menuId = Number(req.params.menuId);
+    const menuItemId = Number(req.params.menuItemId);
+    const { itemName, price, stock } = req.body;
+    try {
+      const item = await MenuService.updateMenuItem(menuItemId, menuId, restaurantId, { itemName, price, stock });
+      sendSuccess(res, `${ENTITIES.MENU_ITEM} ${successMessage.RECORD_updated.message}`, StatusCodes.OK, item);
+    } catch (err) {
+      if (err instanceof NOT_FOUND) {
+        sendError(res, err.statusCode, err.code, err.message);
+      } else {
+        throw err;
+      }
+    }
+  });
+
+  deleteMenuItem = asyncHandler(async (req: Request, res: Response) => {
+    const restaurantId = Number(req.params.restaurantId);
+    const menuId = Number(req.params.menuId);
+    const menuItemId = Number(req.params.menuItemId);
+    try {
+      await MenuService.deleteMenuItem(menuItemId, menuId, restaurantId);
+      sendSuccess(res, `${ENTITIES.MENU_ITEM} ${'deleted successfully'}`, StatusCodes.OK, null);
     } catch (err) {
       if (err instanceof NOT_FOUND) {
         sendError(res, err.statusCode, err.code, err.message);
