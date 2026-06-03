@@ -5,7 +5,7 @@ Not for get their ids and used in update or delete operations
  */
 import { Prisma } from '@prisma/client';
 import prisma from '../../../../lib/prisma';
-import { redisClient } from '../../../../lib/redis';
+import redisClient from '../../../../lib/redis';
 import { ENTITIES } from '../../../../prisma/entities';
 import { NOT_FOUND } from '../../../shared_infrastructure/error/error.execption';
 import { RestaurantRepository } from '../Repositories/restaurant.repository';

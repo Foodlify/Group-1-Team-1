@@ -8,7 +8,6 @@ import customerRouter from '../modules/customerManagement/customer.routes';
 import { customerServiceRouter } from '../modules/customerServiceManagement/customerService.route';
 import { restaurantRouter } from '../modules/restaurantManagemet/restaurant.route';
 import dashboardRouter from '../modules/userManagement/user.routes';
-import { restaurantRouter } from '../modules/restaurantManagemet/restaurant.route';
 
 const router = express.Router();
 
