@@ -9,6 +9,7 @@ import {
   createUserSchema,
   updateUserSchema,
   updateProfileSchema,
+  updateEmailSchema,
 } from '../user.validation';
 
 function validate(schema: ZodType) {
@@ -31,3 +32,4 @@ export const validateChangePassword      = validate(changePasswordSchema);
 export const validateCreateUser          = validate(createUserSchema);
 export const validateUpdateUser          = validate(updateUserSchema);
 export const validateUpdateProfile       = validate(updateProfileSchema);
+export const validateUpdateEmail         = validate(updateEmailSchema);

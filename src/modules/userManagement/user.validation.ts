@@ -43,3 +43,5 @@ export const updateUserSchema = z.object({
 export const updateProfileSchema = z.object({
   name: z.string().min(2).optional(),
 });
+
+export { updateEmailSchema } from '../../shared_infrastructure/auth/email-update.helper';

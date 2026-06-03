@@ -1,4 +1,5 @@
 import { CustomerRepository } from '../Repositories/customer.repository';
+import { UserManagementRepository } from '../../userManagement/repositories/userManagement.repository';
 import {
   EmailAlreadyRegistered,
   PhoneAlreadyRegistered,
@@ -95,7 +96,7 @@ export class CustomerService {
     const accessToken  = signAccess({ userId: user.id, customerId: user.customer.id, userTypeCode: USER_TYPE.CUSTOMER });
     const refreshToken = signRefresh({ userId: user.id });
 
-    await CustomerRepository.updateUserRefreshToken(user.id, refreshToken);
+    await UserManagementRepository.updateRefreshToken(user.id, refreshToken);
     loggerService.info('Customer logged in successfully', { userId: user.id, customerId: user.customer.id });
 
     return { accessToken, refreshToken };
@@ -114,7 +115,7 @@ export class CustomerService {
         if (expiredDecoded?.userId) {
           const user = await CustomerRepository.findUserById(expiredDecoded.userId);
           if (user?.refreshToken === refreshToken) {
-            await CustomerRepository.updateUserRefreshToken(expiredDecoded.userId, null);
+            await UserManagementRepository.updateRefreshToken(expiredDecoded.userId, null);
             loggerService.info('Refresh token expired: cleared from DB', { userId: expiredDecoded.userId });
           }
         }
@@ -145,7 +146,7 @@ export class CustomerService {
       throw new CustomerNotFound();
     }
 
-    await CustomerRepository.updateUserRefreshToken(customer.userId, null);
+    await UserManagementRepository.updateRefreshToken(customer.userId, null);
     loggerService.info('Customer logged out successfully', { customerId, userId: customer.userId });
 
     return {};
@@ -182,7 +183,7 @@ export class CustomerService {
     try {
       const decoded      = decodeUnsafe(token) as any;
       const hashedPassword = await hashPassword(newPassword);
-      await CustomerRepository.updateUserPassword(decoded.userId, hashedPassword);
+      await UserManagementRepository.updatePassword(decoded.userId, hashedPassword);
       loggerService.info('Password reset from link successful', { userId: decoded.userId });
       return {};
     } catch (error) {
@@ -200,7 +201,7 @@ export class CustomerService {
       throw new CustomerNotFound();
     }
 
-    await CustomerRepository.updateUserRefreshToken(customer.userId, null);
+    await UserManagementRepository.updateRefreshToken(customer.userId, null);
     loggerService.info('Refresh token revoked successfully', { customerId, userId: customer.userId });
 
     return {};
@@ -229,7 +230,7 @@ export class CustomerService {
     }
 
     const hashedPassword = await hashPassword(newPassword);
-    await CustomerRepository.updateUserPassword(user.id, hashedPassword);
+    await UserManagementRepository.updatePassword(user.id, hashedPassword);
     loggerService.info('Password changed successfully', { userId });
 
     return {};

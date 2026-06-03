@@ -7,6 +7,8 @@ import {
   forgotPasswordSchema,
   resetPasswordFromLinkSchema,
   resetPasswordSchema,
+  updateCustomerProfileSchema,
+  updateEmailSchema,
 } from './customer.validation';
 
 export const validateRegister = (req: Request, res: Response, next: NextFunction) => {
@@ -66,6 +68,28 @@ export const validateResetPasswordFromLink = (req: Request, res: Response, next:
 
 export const validateChangePassword = (req: Request, res: Response, next: NextFunction) => {
   const result = resetPasswordSchema.safeParse(req.body);
+  if (!result.success) {
+    return res.status(StatusCodes.BAD_REQUEST).json({
+      message: 'Validation failed',
+      errors: result.error.issues,
+    });
+  }
+  next();
+};
+
+export const validateUpdateCustomerProfile = (req: Request, res: Response, next: NextFunction) => {
+  const result = updateCustomerProfileSchema.safeParse(req.body);
+  if (!result.success) {
+    return res.status(StatusCodes.BAD_REQUEST).json({
+      message: 'Validation failed',
+      errors: result.error.issues,
+    });
+  }
+  next();
+};
+
+export const validateUpdateEmail = (req: Request, res: Response, next: NextFunction) => {
+  const result = updateEmailSchema.safeParse(req.body);
   if (!result.success) {
     return res.status(StatusCodes.BAD_REQUEST).json({
       message: 'Validation failed',

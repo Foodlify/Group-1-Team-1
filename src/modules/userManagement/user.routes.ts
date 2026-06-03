@@ -13,6 +13,7 @@ import {
   validateCreateUser,
   validateUpdateUser,
   validateUpdateProfile,
+  validateUpdateEmail,
 } from './middlewares/userManagement.middleware';
 
 const router             = Router();
@@ -27,12 +28,14 @@ router.post('/auth/forgot-password',      validateForgotPassword,    authControl
 router.post('/auth/reset-password',       validateResetPasswordLink, authController.resetPasswordFromLink);
 
 // ─── Auth (protected) ────────────────────────────────────────────────────────
-router.post('/auth/logout',               authDashboard,                                          authController.logout);
-router.post('/auth/change-password',      authDashboard, validateChangePassword,                  authController.changePassword);
+router.post(  '/auth/logout',             authDashboard,                         authController.logout);
+router.delete('/auth/refresh-token',      authDashboard,                         authController.revokeRefreshToken);
+router.post(  '/auth/change-password',    authDashboard, validateChangePassword,  authController.changePassword);
 
 // ─── Profile ─────────────────────────────────────────────────────────────────
-router.get( '/profile',                   authDashboard,                                          profileController.getProfile);
+router.get(  '/profile',                  authDashboard,                                          profileController.getProfile);
 router.patch('/profile',                  authDashboard, validateUpdateProfile,                   profileController.updateProfile);
+router.patch('/profile/email',            authDashboard, validateUpdateEmail,                     profileController.updateEmail);
 
 // ─── User CRUD (ADMIN+) ───────────────────────────────────────────────────────
 router.get( '/users',                     authDashboard, requireRole(RoleEnum.SUPER_ADMIN, RoleEnum.ADMIN),       userController.getAll);

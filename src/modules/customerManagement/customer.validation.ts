@@ -39,3 +39,12 @@ export const resetPasswordFromLinkSchema = z.object({
   message: "Passwords don't match",
   path: ["confirmNewPassword"],
 });
+
+export const updateCustomerProfileSchema = z.object({
+  name:   z.string().min(2, 'Name must be at least 2 characters').optional(),
+  phone:  z.string().min(10, 'Phone must be at least 10 characters').optional(),
+  dob:    z.string().optional(),
+  gender: z.string().optional(),
+});
+
+export { updateEmailSchema } from '../../shared_infrastructure/auth/email-update.helper';

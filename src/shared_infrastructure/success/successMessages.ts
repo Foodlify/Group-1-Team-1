@@ -58,4 +58,13 @@ export const successMessage = {
   REFRESH_TOKEN_REVOKED: {
     message: 'Refresh token revoked successfully',
   },
+  CUSTOMER_PROFILE_RETRIEVED: {
+    message: 'Customer profile retrieved successfully',
+  },
+  CUSTOMER_PROFILE_UPDATED: {
+    message: 'Customer profile updated successfully',
+  },
+  EMAIL_UPDATED: {
+    message: 'Email updated successfully',
+  },
 };

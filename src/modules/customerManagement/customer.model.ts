@@ -74,3 +74,31 @@ export interface ResetPasswordFromLinkResponse {
 export interface ChangePasswordResponse {
   // Empty as message is handled by controller
 }
+
+// ─── Profile ──────────────────────────────────────────────────────────────────
+
+export interface UpdateCustomerProfileInput {
+  name?:   string;
+  phone?:  string;
+  dob?:    string;
+  gender?: string;
+}
+
+export interface CustomerAddressData {
+  id:         number;
+  street:     string;
+  city:       string;
+  state:      string | null;
+  country:    string;
+  postalCode: string | null;
+}
+
+export interface CustomerProfileResponse {
+  id:         number;
+  customerId: number;
+  name:       string;
+  email:      string;
+  phone:      string | null;
+  dob:        string | null;
+  gender:     string | null;
+}

@@ -52,25 +52,29 @@ export class CustomerRepository {
     });
   }
 
-  static async updateUserRefreshToken(
+  static async findUserWithCustomerById(
     userId: number,
-    refreshToken: string | null,
     db: Prisma.TransactionClient = prisma,
   ) {
-    return db.user.update({
+    return db.user.findUnique({
       where: { id: userId },
-      data: { refreshToken },
+      include: { customer: { include: { address: true } } },
     });
   }
 
-  static async updateUserPassword(
+  static async updateUserWithCustomer(
     userId: number,
-    passwordHash: string,
+    userData: { name?: string },
+    customerData: { phone?: string; dob?: Date | null; gender?: string },
     db: Prisma.TransactionClient = prisma,
   ) {
     return db.user.update({
       where: { id: userId },
-      data: { password: passwordHash },
+      data: {
+        ...userData,
+        customer: { update: customerData },
+      },
+      include: { customer: { include: { address: true } } },
     });
   }
 }

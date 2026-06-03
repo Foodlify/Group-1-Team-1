@@ -61,6 +61,13 @@ export class UserManagementRepository {
     });
   }
 
+  static async updateUserEmail(userId: number, email: string, db: Prisma.TransactionClient = prisma) {
+    return db.user.update({
+      where: { id: userId },
+      data:  { email },
+    });
+  }
+
   static async updateRefreshToken(userId: number, refreshToken: string | null, db: Prisma.TransactionClient = prisma) {
     return db.user.update({ where: { id: userId }, data: { refreshToken } });
   }

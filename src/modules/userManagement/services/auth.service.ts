@@ -129,6 +129,14 @@ export class UserAuthService {
     }
   }
 
+  static async revokeRefreshToken(userId: number): Promise<void> {
+    loggerService.info('Dashboard revoke refresh token', { userId });
+    const user = await UserManagementRepository.findUserById(userId);
+    if (!user) throw new UserNotFound();
+    await UserManagementRepository.updateRefreshToken(userId, null);
+    loggerService.info('Dashboard refresh token revoked', { userId });
+  }
+
   static async changePassword(userId: number, data: ChangePasswordInput): Promise<void> {
     const { oldPassword, newPassword } = data;
     loggerService.info('Dashboard change password', { userId });

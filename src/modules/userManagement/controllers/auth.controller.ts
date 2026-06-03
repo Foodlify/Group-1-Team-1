@@ -3,6 +3,7 @@ import { StatusCodes } from 'http-status-codes';
 import { UserAuthService } from '../services/auth.service';
 import { sendSuccess } from '../../../utils/reponse';
 import asyncHandler from '../../../utils/asyncHandler';
+import { successMessage } from '../../../shared_infrastructure/success/successMessages';
 
 const COOKIE_OPTS = {
   httpOnly: true,
@@ -48,6 +49,13 @@ export class UserAuthController {
   resetPasswordFromLink = asyncHandler(async (req: Request, res: Response) => {
     await UserAuthService.resetPasswordFromLink(req.body);
     sendSuccess(res, 'Password reset successfully', StatusCodes.OK);
+  });
+
+  revokeRefreshToken = asyncHandler(async (req: Request, res: Response) => {
+    await UserAuthService.revokeRefreshToken(req.userId!);
+    res.clearCookie('accessToken');
+    res.clearCookie('refreshToken');
+    sendSuccess(res, successMessage.REFRESH_TOKEN_REVOKED.message, StatusCodes.OK);
   });
 
   changePassword = asyncHandler(async (req: Request, res: Response) => {

@@ -109,4 +109,5 @@ export class CustomerController {
     res.clearCookie('refreshToken');
     sendSuccess(res, successMessage.REFRESH_TOKEN_REVOKED.message, StatusCodes.OK);
   });
+
 }
