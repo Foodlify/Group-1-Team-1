@@ -19,4 +19,38 @@ export class RestaurantRepository {
     });
     return restaurants;
   }
+
+  static async findRestaurantByName(restaurantName: string , db: Prisma.TransactionClient = prisma){
+   return db.restaurant.findFirst({
+    where: {name: restaurantName,
+         mode: "insensitive",
+    }, 
+   })
+  }
+  
+  static async create(
+    data: Prisma.RestaurantCreateInput
+  ) {
+    return prisma.restaurant.create({
+      data,
+    });
+  }
+
+  static async update(
+    id: number , 
+    data: Prisma.RestaurantUpdateInput, 
+    db: Prisma.TransactionClient = prisma){
+      return db.restaurant.update({
+        where: { id }, 
+        data,
+      }); 
+  }
+  
+  static async delete(id: number, 
+    db: Prisma.TransactionClient = prisma
+  ) {
+    return db.restaurant.delete({
+      where: { id }, 
+    }); 
+  }
 }

@@ -67,4 +67,13 @@ export const successMessage = {
   EMAIL_UPDATED: {
     message: 'Email updated successfully',
   },
+  CREATE_RESTAURANT: {
+    message: 'Restaurant created successfully', 
+  }, 
+  UPDATE_RESTAURANT: {
+    message: 'Restaurant updated successfully' ,
+  }, 
+  DELETE_RESTAURANT: {
+    message: 'Restaurant deleted successfully', 
+  }, 
 };

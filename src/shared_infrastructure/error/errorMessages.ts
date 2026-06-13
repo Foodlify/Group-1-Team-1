@@ -75,6 +75,10 @@ export const errorMessage = {
     code: 'RoleNotFoundException',
     message: 'Role not found',
   },
+  RESTAURANT_NAME_TAKEN: {
+    code: 'RestaurantNameTakenException',
+    message: 'Restaurant name is already exist',
+  }
 };
 
 

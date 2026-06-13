@@ -7,7 +7,9 @@ import { NOT_FOUND } from '../../../shared_infrastructure/error/error.execption'
 import { successMessage } from '../../../shared_infrastructure/success/successMessages';
 import { StatusCodes } from 'http-status-codes';
 import { ENTITIES } from '../../../../prisma/entities';
-
+import { RestaurantService } from '../Services/restaurant.service';
+import { STATUS_CODES } from 'node:http';
+import { errorMessage } from '../../../shared_infrastructure/error/errorMessages';
 export class RestaurantController {
   getRestaurants = asyncHandler(async (_req: Request, res: Response) => {
     try {
@@ -183,4 +185,41 @@ export class RestaurantController {
       }
     }
   });
+
+  createRestaurant = asyncHandler(async(req: Request, res: Response) => {
+     const { name } = req.body;
+     try {
+     const restaurant = await RestaurantService.createRestaurant(name);
+     sendSuccess(res, successMessage.CREATE_RESTAURANT.message , StatusCodes.CREATED , restaurant); 
+     } catch(err){
+       if (err){
+        sendError(res, StatusCodes.NOT_ACCEPTABLE, errorMessage.RESTAURANT_NAME_TAKEN.message, errorMessage.RESTAURANT_NAME_TAKEN.code); 
+       }
+     }
+    });
+
+  updateRestaurant = asyncHandler(async(req: Request , res: Response ) => {
+    const  restaurantId  = Number(req.params.restaurantId) ; 
+    const { restaurantName } = req.body ;
+    try {
+    const restaurant = await RestaurantService.updateRestaurant(restaurantId, restaurantName); 
+    sendSuccess(res,successMessage.UPDATE_RESTAURANT.message, StatusCodes.OK, restaurant)
+      } catch(err){
+       if (err){
+        sendError(res, StatusCodes.NOT_FOUND , errorMessage.NOT_FOUND.message, errorMessage.NOT_FOUND.code); 
+       }
+    }
+  }); 
+
+  deleteRestaurant = asyncHandler(async(req: Request , res: Response) => {
+    const restaurantId = Number(req.params.restaurantId) ;
+    try{
+     const deletedRestaurant = await RestaurantService.deleteRestaurant(restaurantId); 
+     sendSuccess(res, successMessage.DELETE_RESTAURANT.message, StatusCodes.OK , deletedRestaurant); 
+    } catch(err){
+     if (err){
+     sendError(res, StatusCodes.NOT_FOUND, errorMessage.NOT_FOUND.message, errorMessage.NOT_FOUND.code) ;
+     }
+    }
+  }); 
 }

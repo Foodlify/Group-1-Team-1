@@ -70,4 +70,24 @@ router.delete(
   restaurantController.deleteMenuItem,
 );
 
+// ─── RESTAURANT CRAD  ────────────────────────────
+
+router.post(
+'/restaurants/add-restaurant/',
+authDashboard, 
+requireRole(RoleEnum.SUPER_ADMIN, RoleEnum.RESTAURANT_OWNER), 
+ restaurantController.createRestaurant, 
+) ;
+
+router.patch(
+  '/restaurants/update/:restaurantId/', 
+  authDashboard, 
+  restaurantController.updateRestaurant,
+); 
+
+router.delete(
+'/restaurants/delete/:restaurantId/', 
+authDashboard, 
+restaurantController.deleteRestaurant, 
+); 
 export { router as restaurantRouter };
