@@ -13,8 +13,8 @@ import {
   ChangePasswordInput,
 } from '../user.model';
 import loggerService from '../../../shared_infrastructure/logger/logger';
-import { MailService } from '../../../utils/mailService';
 import { USER_TYPE } from '../../../shared_infrastructure/auth/user-type.constants';
+import { getResetPasswordTemplate } from '../../../shared_infrastructure/mail/mailTemplates';
 
 export class UserAuthService {
   static async login(data: DashboardLoginInput): Promise<DashboardLoginResponse> {
@@ -53,11 +53,10 @@ export class UserAuthService {
       data.email,
       (user) => user.userTypeCode === USER_TYPE.ADMIN,
       '/dashboard/reset-password',
-      (email, link) => MailService.sendMail({
-        to:      email,
+      {
         subject: 'Dashboard Password Reset | Foodlify',
-        html:    `<p>Reset your password: <a href="${link}">${link}</a></p><p>Link expires in 1 hour.</p>`,
-      }),
+        html: (link) => getResetPasswordTemplate(link),
+      },
     );
   }
 

@@ -10,6 +10,7 @@ import {
 } from '../../../shared_infrastructure/auth/jwt.helper';
 import { hashPassword, comparePassword } from '../../../shared_infrastructure/auth/password.helper';
 import loggerService from '../../../shared_infrastructure/logger/logger';
+import { MailService } from '../../../utils/mailService';
 
 type LoginUserRecord   = NonNullable<Awaited<ReturnType<typeof UserManagementRepository.findUserByEmail>>>;
 type RefreshUserRecord = NonNullable<Awaited<ReturnType<typeof UserManagementRepository.findUserById>>>;
@@ -66,14 +67,14 @@ export class SharedAuthService {
     email: string,
     validate: (user: LoginUserRecord) => boolean,
     resetPath: string,
-    sendEmail: (email: string, link: string) => Promise<unknown>,
+    emailOptions: { subject: string; html: (link: string) => string },
   ): Promise<void> {
     const user = await UserManagementRepository.findUserByEmail(email);
     if (!user || !validate(user)) return;
 
     const resetLink = SharedAuthService.buildResetLink(user.id, resetPath);
     try {
-      await sendEmail(email, resetLink);
+      await MailService.sendMail({ to: email, subject: emailOptions.subject, html: emailOptions.html(resetLink) });
       loggerService.info('Password reset email sent', { email, userId: user.id });
     } catch {
       loggerService.warn('SMTP failed for password reset email', { email });

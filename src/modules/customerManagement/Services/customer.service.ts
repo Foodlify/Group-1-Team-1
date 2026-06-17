@@ -9,7 +9,7 @@ import {
   InvalidToken,
   CustomerNotFound,
 } from '../customer.exception';
-import { CustomerMailService } from '../customer.mail';
+import { getResetPasswordTemplate } from '../../../shared_infrastructure/mail/mailTemplates';
 import {
   RegisterInput,
   RegisterResponse,
@@ -117,7 +117,10 @@ export class CustomerService {
       data.email,
       (user) => user.userTypeCode === USER_TYPE.CUSTOMER,
       '/reset-password.html',
-      (email, link) => CustomerMailService.sendResetPasswordEmail(email, link),
+      {
+        subject: 'Password Reset Request | Foodlify',
+        html: (link) => getResetPasswordTemplate(link),
+      },
     );
 
     return {};
