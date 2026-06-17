@@ -57,9 +57,3 @@ export interface DashboardUserResponse {
   role:  RoleEnum;
 }
 
-export interface ProfileResponse {
-  id:    number;
-  name:  string;
-  email: string;
-  role:  RoleEnum;
-}

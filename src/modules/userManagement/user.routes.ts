@@ -27,7 +27,7 @@ router.post('/auth/refresh-token',                                   authControl
 router.post('/auth/forgot-password',      validateForgotPassword,    authController.forgotPassword);
 router.post('/auth/reset-password',       validateResetPasswordLink, authController.resetPasswordFromLink);
 
-// ─── Auth (protected) ────────────────────────────────────────────────────────
+// ─── Authentic────────────────────────────────────────────────────────
 router.post(  '/auth/logout',             authDashboard,                         authController.logout);
 router.delete('/auth/refresh-token',      authDashboard,                         authController.revokeRefreshToken);
 router.post(  '/auth/change-password',    authDashboard, validateChangePassword,  authController.changePassword);

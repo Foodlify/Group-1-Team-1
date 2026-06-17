@@ -1,6 +1,7 @@
 import { RoleEnum, Prisma } from '@prisma/client';
 import prisma from '../../../../lib/prisma';
 import { USER_TYPE } from '../../../shared_infrastructure/auth/user-type.constants';
+import { decodeUnsafe } from '../../../shared_infrastructure/auth/jwt.helper';
 
 export class UserManagementRepository {
   // ── User queries ────────────────────────────────────────────────────────────
@@ -19,7 +20,19 @@ export class UserManagementRepository {
     });
   }
 
-  static async findAllDashboardUsers(db: Prisma.TransactionClient = prisma) {
+  static async cleanupExpiredRefreshToken(token: string): Promise<void> {
+    try {
+      const decoded = decodeUnsafe(token) as { userId?: number } | null;
+      if (decoded?.userId) {
+        const user = await UserManagementRepository.findUserById(decoded.userId);
+        if (user?.refreshToken === token) {
+          await UserManagementRepository.updateRefreshToken(decoded.userId, null);
+        }
+      }
+    } catch {}
+  }
+
+  static async findAllAdminUsers(db: Prisma.TransactionClient = prisma) {
     return db.user.findMany({
       where:   { userTypeCode: USER_TYPE.ADMIN },
       include: { userRole: { include: { role: true } } },
@@ -27,19 +40,15 @@ export class UserManagementRepository {
     });
   }
 
-  static async createDashboardUser(
-    data: { name: string; email: string; password: string },
-    roleId: number,
+  static async createUser(
+    data: { name: string; email: string; password: string; userTypeCode: string },
     db: Prisma.TransactionClient = prisma,
   ) {
-    return db.user.create({
-      data: {
-        ...data,
-        userTypeCode: USER_TYPE.ADMIN,
-        userRole: { create: { roleId } },
-      },
-      include: { userRole: { include: { role: true } } },
-    });
+    return db.user.create({ data });
+  }
+
+  static async assignRole(userId: number, roleId: number, db: Prisma.TransactionClient = prisma) {
+    return db.userRole.create({ data: { userId, roleId } });
   }
 
   static async updateUser(
@@ -58,13 +67,6 @@ export class UserManagementRepository {
     return prisma.$transaction(async (tx) => {
       await tx.userRole.deleteMany({ where: { userId } });
       return tx.user.delete({ where: { id: userId } });
-    });
-  }
-
-  static async updateUserEmail(userId: number, email: string, db: Prisma.TransactionClient = prisma) {
-    return db.user.update({
-      where: { id: userId },
-      data:  { email },
     });
   }
 

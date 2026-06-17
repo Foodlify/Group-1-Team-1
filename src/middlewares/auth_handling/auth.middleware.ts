@@ -1,9 +1,9 @@
 import { Request, Response, NextFunction } from 'express';
 import { StatusCodes } from 'http-status-codes';
-import { verifyAccess } from '../../shared_infrastructure/auth/jwt.helper';
+import { verifyAccess, CustomerTokenPayload, AdminTokenPayload } from '../../shared_infrastructure/auth/jwt.helper';
 import { USER_TYPE, UserTypeCode } from '../../shared_infrastructure/auth/user-type.constants';
-import { CustomerService } from '../../modules/customerManagement/Services/customer.service';
-import { UserService } from '../../modules/userManagement/services/user.service';
+import { CustomerRepository } from '../../modules/customerManagement/Repositories/customer.repository';
+import { UserManagementRepository } from '../../modules/userManagement/repositories/userManagement.repository';
 
 declare global {
   namespace Express {
@@ -26,24 +26,28 @@ export const authenticate = (type: UserTypeCode) =>
     try {
       const decoded = verifyAccess(token);
 
-      if (decoded.userTypeCode !== type) {
-        return res.status(StatusCodes.FORBIDDEN).json({ message: 'Forbidden' });
-      }
-
       if (type === USER_TYPE.CUSTOMER) {
-        const resolved = await CustomerService.resolveById(decoded.customerId!);
-        if (!resolved) {
+        const payload = decoded as CustomerTokenPayload;
+        if (!payload.customerId) {
+          return res.status(StatusCodes.FORBIDDEN).json({ message: 'Forbidden' });
+        }
+        const customer = await CustomerRepository.findCustomerById(payload.customerId);
+        if (!customer) {
           return res.status(StatusCodes.UNAUTHORIZED).json({ message: 'Customer not found' });
         }
-        req.customerId = resolved.customerId;
-        req.userId     = resolved.userId;
+        req.customerId = customer.id;
+        req.userId     = customer.userId;
       } else {
-        const resolved = await UserService.resolveByUserId(decoded.userId);
-        if (!resolved) {
+        const payload = decoded as AdminTokenPayload;
+        if (!payload.userId) {
+          return res.status(StatusCodes.FORBIDDEN).json({ message: 'Forbidden' });
+        }
+        const user = await UserManagementRepository.findUserById(payload.userId);
+        if (!user || !user.userRole) {
           return res.status(StatusCodes.UNAUTHORIZED).json({ message: 'User not found' });
         }
-        req.userId   = resolved.userId;
-        req.userRole = resolved.userRole;
+        req.userId   = user.id;
+        req.userRole = user.userRole.role.name;
       }
 
       next();

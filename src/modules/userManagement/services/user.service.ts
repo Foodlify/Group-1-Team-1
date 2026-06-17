@@ -1,48 +1,29 @@
 import { RoleEnum } from '@prisma/client';
+import prisma from '../../../../lib/prisma';
 import { UserManagementRepository } from '../repositories/userManagement.repository';
 import {
   UserNotFound,
   UserEmailTaken,
   RoleNotFound,
 } from '../user.exception';
-import {
-  CreateUserInput,
-  UpdateUserInput,
-  DashboardUserResponse,
-} from '../user.model';
+import { CreateUserInput, UpdateUserInput, DashboardUserResponse } from '../user.model';
+import { toUserResponse } from '../user.helpers';
 import { hashPassword } from '../../../shared_infrastructure/auth/password.helper';
 import loggerService from '../../../shared_infrastructure/logger/logger';
 import { USER_TYPE } from '../../../shared_infrastructure/auth/user-type.constants';
 
-type UserWithRole = NonNullable<Awaited<ReturnType<typeof UserManagementRepository.findUserById>>>;
-
-function toResponse(user: UserWithRole): DashboardUserResponse {
-  return {
-    id:    user.id,
-    name:  user.name,
-    email: user.email,
-    role:  user.userRole!.role.name,
-  };
-}
-
 export class UserService {
-  static async resolveByUserId(userId: number): Promise<{ userId: number; userRole: string } | null> {
-    const user = await UserManagementRepository.findUserById(userId);
-    if (!user || !user.userRole) return null;
-    return { userId: user.id, userRole: user.userRole.role.name };
-  }
-
   static async getAllUsers(): Promise<DashboardUserResponse[]> {
     loggerService.info('Fetching all dashboard users');
-    const users = await UserManagementRepository.findAllDashboardUsers();
-    return users.map(toResponse);
+    const users = await UserManagementRepository.findAllAdminUsers();
+    return users.map(toUserResponse);
   }
 
   static async getUser(userId: number): Promise<DashboardUserResponse> {
     loggerService.info('Fetching dashboard user', { userId });
     const user = await UserManagementRepository.findUserById(userId);
     if (!user || user.userTypeCode !== USER_TYPE.ADMIN) throw new UserNotFound();
-    return toResponse(user);
+    return toUserResponse(user);
   }
 
   static async createUser(data: CreateUserInput): Promise<DashboardUserResponse> {
@@ -56,13 +37,19 @@ export class UserService {
     if (!roleRecord) throw new RoleNotFound();
 
     const hashed = await hashPassword(password);
-    const user   = await UserManagementRepository.createDashboardUser(
-      { name, email, password: hashed },
-      roleRecord.id,
-    );
 
-    loggerService.info('Dashboard user created', { userId: user.id, role });
-    return toResponse(user);
+    const userId = await prisma.$transaction(async (tx) => {
+      const user = await UserManagementRepository.createUser(
+        { name, email, password: hashed, userTypeCode: USER_TYPE.ADMIN },
+        tx,
+      );
+      await UserManagementRepository.assignRole(user.id, roleRecord.id, tx);
+      return user.id;
+    });
+
+    const user = await UserManagementRepository.findUserById(userId);
+    loggerService.info('Dashboard user created', { userId, role });
+    return toUserResponse(user!);
   }
 
   static async updateUser(userId: number, data: UpdateUserInput): Promise<DashboardUserResponse> {
@@ -78,7 +65,7 @@ export class UserService {
 
     const user = await UserManagementRepository.updateUser(userId, data);
     loggerService.info('Dashboard user updated', { userId });
-    return toResponse(user);
+    return toUserResponse(user);
   }
 
   static async deleteUser(userId: number): Promise<void> {

@@ -4,21 +4,13 @@ import { UserAuthService } from '../services/auth.service';
 import { sendSuccess } from '../../../utils/reponse';
 import asyncHandler from '../../../utils/asyncHandler';
 import { successMessage } from '../../../shared_infrastructure/success/successMessages';
-
-const COOKIE_OPTS = {
-  httpOnly: true,
-  secure:   process.env.NODE_ENV === 'production',
-  sameSite: 'strict' as const,
-};
+import { setAuthCookies, setAccessTokenCookie, clearAuthCookies } from '../../../shared_infrastructure/http/cookie.utils';
 
 export class UserAuthController {
   login = asyncHandler(async (req: Request, res: Response) => {
     const result = await UserAuthService.login(req.body);
-
-    res.cookie('accessToken',  result.accessToken,  { ...COOKIE_OPTS, maxAge: 2 * 24 * 60 * 60 * 1000 });
-    res.cookie('refreshToken', result.refreshToken, { ...COOKIE_OPTS, maxAge: 4 * 24 * 60 * 60 * 1000 });
-
-    sendSuccess(res, 'Login successful', StatusCodes.OK);
+    setAuthCookies(res, result.accessToken, result.refreshToken);
+    sendSuccess(res, successMessage.DASHBOARD_LOGIN_SUCCEED.message, StatusCodes.OK);
   });
 
   refreshToken = asyncHandler(async (req: Request, res: Response) => {
@@ -27,39 +19,35 @@ export class UserAuthController {
       res.status(StatusCodes.UNAUTHORIZED).json({ message: 'Refresh token missing' });
       return;
     }
-
     const result = await UserAuthService.refreshToken(refreshToken);
-
-    res.cookie('accessToken', result.accessToken, { ...COOKIE_OPTS, maxAge: 2 * 24 * 60 * 60 * 1000 });
-    sendSuccess(res, 'Token refreshed', StatusCodes.OK);
+    setAccessTokenCookie(res, result.accessToken);
+    sendSuccess(res, successMessage.TOKEN_REFRESHED.message, StatusCodes.OK);
   });
 
   logout = asyncHandler(async (req: Request, res: Response) => {
     await UserAuthService.logout(req.userId!);
-    res.clearCookie('accessToken');
-    res.clearCookie('refreshToken');
-    sendSuccess(res, 'Logged out successfully', StatusCodes.OK);
+    clearAuthCookies(res);
+    sendSuccess(res, successMessage.DASHBOARD_LOGGED_OUT.message, StatusCodes.OK);
+  });
+
+  revokeRefreshToken = asyncHandler(async (req: Request, res: Response) => {
+    await UserAuthService.logout(req.userId!);
+    clearAuthCookies(res);
+    sendSuccess(res, successMessage.REFRESH_TOKEN_REVOKED.message, StatusCodes.OK);
   });
 
   forgotPassword = asyncHandler(async (req: Request, res: Response) => {
     await UserAuthService.forgotPassword(req.body);
-    sendSuccess(res, 'If the email exists, a reset link will be sent', StatusCodes.OK);
+    sendSuccess(res, successMessage.FORGOT_PASSWORD_LINK_SENT.message, StatusCodes.OK);
   });
 
   resetPasswordFromLink = asyncHandler(async (req: Request, res: Response) => {
     await UserAuthService.resetPasswordFromLink(req.body);
-    sendSuccess(res, 'Password reset successfully', StatusCodes.OK);
-  });
-
-  revokeRefreshToken = asyncHandler(async (req: Request, res: Response) => {
-    await UserAuthService.revokeRefreshToken(req.userId!);
-    res.clearCookie('accessToken');
-    res.clearCookie('refreshToken');
-    sendSuccess(res, successMessage.REFRESH_TOKEN_REVOKED.message, StatusCodes.OK);
+    sendSuccess(res, successMessage.PASSWORD_RESET_FROM_LINK_SUCCESS.message, StatusCodes.OK);
   });
 
   changePassword = asyncHandler(async (req: Request, res: Response) => {
     await UserAuthService.changePassword(req.userId!, req.body);
-    sendSuccess(res, 'Password changed successfully', StatusCodes.OK);
+    sendSuccess(res, successMessage.PASSWORD_CHANGED_SUCCESS.message, StatusCodes.OK);
   });
 }

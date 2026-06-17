@@ -3,12 +3,9 @@ import jwt from 'jsonwebtoken';
 const JWT_SECRET         = process.env.JWT_SECRET          || 'supersecret';
 const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET  || 'superrefreshsecret';
 
-export interface AccessTokenPayload {
-  userId:       number;
-  userTypeCode: string;
-  customerId?:  number;
-  role?:        string;
-}
+export type CustomerTokenPayload = { customerId: number };
+export type AdminTokenPayload    = { userId: number; role: string };
+export type AccessTokenPayload   = CustomerTokenPayload | AdminTokenPayload;
 
 export function signAccess(payload: AccessTokenPayload): string {
   return jwt.sign(payload, JWT_SECRET, { expiresIn: '2d' });
@@ -28,6 +25,10 @@ export function verifyAccess(token: string): AccessTokenPayload {
 
 export function verifyRefresh(token: string): { userId: number } {
   return jwt.verify(token, JWT_REFRESH_SECRET) as { userId: number };
+}
+
+export function verifyResetToken(token: string): { userId: number } {
+  return jwt.verify(token, JWT_SECRET) as { userId: number };
 }
 
 export function decodeUnsafe(token: string): any {
