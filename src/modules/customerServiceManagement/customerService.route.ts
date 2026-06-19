@@ -1,55 +1,55 @@
 import express from 'express';
 import { authCustomer as authValidator } from '../../middlewares/auth_handling/auth.middleware';
 import { TicketController } from './Controllers/ticket.controller';
-import {
-  validateCreateTicket,
-  validateGetTicket,
-  validateResolveTicket,
-  validateUpdateTicket,
-} from './Middlewares/ticket.middlewares';
-import { validateRateRestaurant } from './Middlewares/rate.middleware';
 import { RateController } from './Controllers/rate.controller';
 import { LoyaltyPointsController } from './Controllers/points.controller';
+import { validate } from '../../shared_infrastructure/middleware/validate';
+import {
+  createTicketSchema,
+  getTicketSchema,
+  updateTicketSchema,
+  resolveTicketSchema,
+} from './Validations/ticket.validation';
+import { createRateSchema } from './Validations/rate.validation';
 
 const router = express.Router();
+
 router.post(
   '/ticket',
   authValidator,
-  validateCreateTicket,
+  validate(createTicketSchema),
   TicketController.createSupportTicket,
 );
 
 router.get(
   '/ticket/:id',
   authValidator,
-  validateGetTicket,
+  validate(getTicketSchema, (req) => ({ ticketId: req.params.id })),
   TicketController.getSupportTicket,
 );
 
 router.patch(
   '/ticket/:id',
   authValidator,
-  validateUpdateTicket,
+  validate(updateTicketSchema, (req) => ({ ...req.body, ticketId: req.params.id })),
   TicketController.updateSupportTicketStatus,
 );
 
 router.patch(
   '/ticket/:id/resolve',
   authValidator,
-  validateResolveTicket,
+  validate(resolveTicketSchema, (req) => ({ ...req.body, ticketId: req.params.id })),
   TicketController.resolveSupportTicket,
 );
+
 router.post(
   '/rate/:orderId',
   authValidator,
-  validateRateRestaurant,
+  validate(createRateSchema, (req) => ({ ...req.body, orderId: req.params.orderId })),
   RateController.insertRestaurantRate,
 );
+
 router.get('/points', authValidator, LoyaltyPointsController.getPoints);
-router.get(
-  '/points/redeem',
-  authValidator,
-  LoyaltyPointsController.redeemPointsToMoney,
-);
+router.get('/points/redeem', authValidator, LoyaltyPointsController.redeemPointsToMoney);
 
 export { router as customerServiceRouter };

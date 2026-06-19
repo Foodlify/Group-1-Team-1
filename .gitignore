@@ -143,3 +143,5 @@ vite.config.ts.timestamp-*
 /generated/prisma
 
 stripe.seesion.ts
+# Agent skills
+.agents/

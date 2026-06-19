@@ -1,62 +1,53 @@
 import express from 'express';
 import { OrderController } from './controllers/order.controller';
-import { placeOrderValidator, getOrderValidator, updateOrderStatusValidator, getOrdersByStatusValidator } from './order.middleware';
 import { authCustomer as authValidator } from '../../middlewares/auth_handling/auth.middleware';
+import { validate } from '../../shared_infrastructure/middleware/validate';
+import {
+  PlaceOrderSchema,
+  GetOrderSchema,
+  UpdateOrderStatusSchema,
+  GetOrdersByStatusSchema,
+} from './order.validation';
 
 const router = express.Router();
 const orderController = new OrderController();
-// POST   /api/v1/orders/checkout — validate and sync cart before placing order
-router.post(
-  '/checkout',
-  authValidator,
-  orderController.checkout,
-);
 
-// POST   /api/v1/orders — add order
+// POST /api/v1/orders/checkout
+router.post('/checkout', authValidator, orderController.checkout);
+
+// POST /api/v1/orders
 router.post(
   '/',
   authValidator,
-  placeOrderValidator,
+  validate(PlaceOrderSchema),
   orderController.placeOrder,
 );
 
-// GET    /api/v1/order: — get single order details
+// GET /api/v1/orders/:orderId
 router.get(
   '/:orderId',
   authValidator,
-  getOrderValidator,
+  validate(GetOrderSchema, (req) => ({ orderId: req.params.orderId })),
   orderController.getSingleOrder,
 );
 
-// PATCH  /api/v1/order/:orderId/status — update order status
+// PATCH /api/v1/orders/:orderId/status
 router.patch(
   '/:orderId/status',
   authValidator,
-  updateOrderStatusValidator,
+  validate(UpdateOrderStatusSchema, (req) => ({ orderId: req.params.orderId, status: req.body.status })),
   orderController.updateOrderStatus,
 );
 
-// GET    /api/v1/order/status?status=PENDING — get all orders by status
+// GET /api/v1/orders/status?status=PENDING
 router.get(
   '/status',
   authValidator,
-  getOrdersByStatusValidator,
+  validate(GetOrdersByStatusSchema, (req) => ({ status: req.query.status })),
   orderController.getOrdersByStatus,
 );
 
-// // Get                     - get current order tracking status 
-// router.get(
-// '/orders/:orderId/get-current-status', 
-// orderController.getTrackingStatus,
-// ); 
-
-// router.patch(
-//   '/orders/:orderId/:customerId/cancel-order',
-//   orderController.cancelOrder,
-// ); 
-
-
-// old: '/orders/:orderId/:customerId/cancel-order' — no auth, customerId from params
+// PATCH /api/v1/orders/:orderId/cancel-order
 router.patch(
   '/:orderId/cancel-order',
   authValidator,

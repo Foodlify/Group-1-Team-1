@@ -18,7 +18,21 @@ connectRedis().catch((err) =>
   console.error('[Redis] Failed to connect at startup:', err),
 );
 const app = express();
-app.use(cors());
+const ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS
+  ? process.env.ALLOWED_ORIGINS.split(',')
+  : ['http://localhost:3000', 'http://localhost:5173', 'http://localhost:8080'];
+
+app.use(cors({
+  origin: (origin, callback) => {
+    // allow requests with no origin (Postman, Thunder Client, curl)
+    if (!origin) return callback(null, true);
+    if (ALLOWED_ORIGINS.includes(origin)) return callback(null, true);
+    callback(new Error(`CORS: origin ${origin} not allowed`));
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+}));
 app.use(helmet());
 app.use(morgan('dev'));
 
