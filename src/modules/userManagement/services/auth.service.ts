@@ -17,33 +17,33 @@ import { USER_TYPE } from '../../../shared_infrastructure/auth/user-type.constan
 import { getResetPasswordTemplate } from '../../../shared_infrastructure/mail/mailTemplates';
 
 export class UserAuthService {
-  static async login(data: DashboardLoginInput): Promise<DashboardLoginResponse> {
+  static async login(data: DashboardLoginInput, meta?: { ip?: string; deviceInfo?: string }): Promise<DashboardLoginResponse> {
     loggerService.info('Dashboard login attempt', { email: data.email });
 
     const tokens = await SharedAuthService.login(data.email, data.password, (user) => {
       if (!user.userRole) throw new InvalidCredentials();
       return { userId: user.id, role: user.userRole.role.name };
-    });
+    }, meta);
 
     loggerService.info('Dashboard login successful');
     return tokens;
   }
 
-  static async refreshToken(refreshToken: string): Promise<DashboardRefreshTokenResponse> {
+  static async refreshToken(refreshToken: string, meta?: { ip?: string; deviceInfo?: string }): Promise<DashboardRefreshTokenResponse> {
     loggerService.info('Dashboard token refresh attempt');
 
     const result = await SharedAuthService.refreshToken(refreshToken, (user) => {
       if (!user.userRole) throw new InvalidToken();
       return { userId: user.id, role: user.userRole.role.name };
-    });
+    }, meta);
 
     loggerService.info('Dashboard token refreshed');
     return result;
   }
 
-  static async logout(userId: number): Promise<void> {
+  static async logout(userId: number, refreshToken?: string): Promise<void> {
     loggerService.info('Dashboard logout', { userId });
-    await SharedAuthService.clearRefreshToken(userId, new UserNotFound());
+    await SharedAuthService.clearRefreshToken(userId, new UserNotFound(), refreshToken);
   }
 
   static async forgotPassword(data: ForgotPasswordInput): Promise<void> {

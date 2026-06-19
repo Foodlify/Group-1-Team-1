@@ -13,7 +13,8 @@ export interface DashboardLoginResponse {
 }
 
 export interface DashboardRefreshTokenResponse {
-  accessToken: string;
+  accessToken:  string;
+  refreshToken: string;
 }
 
 export interface ForgotPasswordInput {

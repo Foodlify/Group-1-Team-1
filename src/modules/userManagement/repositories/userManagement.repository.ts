@@ -1,7 +1,6 @@
 import { RoleEnum, Prisma } from '@prisma/client';
 import prisma from '../../../../lib/prisma';
 import { USER_TYPE } from '../../../shared_infrastructure/auth/user-type.constants';
-import { decodeUnsafe } from '../../../shared_infrastructure/auth/jwt.helper';
 
 export class UserManagementRepository {
   // ── User queries ────────────────────────────────────────────────────────────
@@ -18,18 +17,6 @@ export class UserManagementRepository {
       where:   { id: userId },
       include: { userRole: { include: { role: true } } },
     });
-  }
-
-  static async cleanupExpiredRefreshToken(token: string): Promise<void> {
-    try {
-      const decoded = decodeUnsafe(token) as { userId?: number } | null;
-      if (decoded?.userId) {
-        const user = await UserManagementRepository.findUserById(decoded.userId);
-        if (user?.refreshToken === token) {
-          await UserManagementRepository.updateRefreshToken(decoded.userId, null);
-        }
-      }
-    } catch {}
   }
 
   static async findAllAdminUsers(db: Prisma.TransactionClient = prisma) {
@@ -65,13 +52,10 @@ export class UserManagementRepository {
 
   static async deleteUser(userId: number) {
     return prisma.$transaction(async (tx) => {
+      await tx.refreshToken.deleteMany({ where: { userId } });
       await tx.userRole.deleteMany({ where: { userId } });
       return tx.user.delete({ where: { id: userId } });
     });
-  }
-
-  static async updateRefreshToken(userId: number, refreshToken: string | null, db: Prisma.TransactionClient = prisma) {
-    return db.user.update({ where: { id: userId }, data: { refreshToken } });
   }
 
   static async updatePassword(userId: number, passwordHash: string, db: Prisma.TransactionClient = prisma) {
@@ -82,5 +66,49 @@ export class UserManagementRepository {
 
   static async findRoleByName(name: RoleEnum, db: Prisma.TransactionClient = prisma) {
     return db.role.findUnique({ where: { name } });
+  }
+
+  // ── Refresh token queries ─────────────────────────────────────────────────────
+
+  static async createRefreshToken(
+    userId: number,
+    tokenHash: string,
+    expiresAt: Date,
+    meta?: { ip?: string; deviceInfo?: string },
+    db: Prisma.TransactionClient = prisma,
+  ) {
+    return db.refreshToken.create({
+      data: {
+        userId,
+        tokenHash,
+        expiresAt,
+        ipAddress:  meta?.ip,
+        deviceInfo: meta?.deviceInfo,
+      },
+    });
+  }
+
+  static async findActiveRefreshToken(tokenHash: string, db: Prisma.TransactionClient = prisma) {
+    return db.refreshToken.findFirst({
+      where: {
+        tokenHash,
+        revoked:   false,
+        expiresAt: { gt: new Date() },
+      },
+    });
+  }
+
+  static async revokeRefreshToken(tokenHash: string, db: Prisma.TransactionClient = prisma) {
+    return db.refreshToken.updateMany({
+      where: { tokenHash },
+      data:  { revoked: true },
+    });
+  }
+
+  static async revokeAllUserRefreshTokens(userId: number, db: Prisma.TransactionClient = prisma) {
+    return db.refreshToken.updateMany({
+      where: { userId, revoked: false },
+      data:  { revoked: true },
+    });
   }
 }

@@ -5,7 +5,7 @@ export interface RegisterInput {
   email: string;
   password: string;
   phone: string;
-  dob?: string;
+  dob?: Date;
   gender?: string;
 }
 
@@ -52,7 +52,8 @@ export interface LoginResponse {
 }
 
 export interface RefreshTokenResponse {
-  accessToken: string;
+  accessToken:  string;
+  refreshToken: string;
 }
 
 export interface LogoutResponse {
@@ -76,7 +77,7 @@ export interface ChangePasswordResponse {
 export interface UpdateCustomerProfileInput {
   name?:   string;
   phone?:  string;
-  dob?:    string;
+  dob?:    Date;
   gender?: string;
 }
 

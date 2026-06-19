@@ -57,7 +57,7 @@ export class CustomerService {
         user.id,
         {
           phone,
-          dob: dob ? new Date(`${dob.substring(0, 10)}T00:00:00.000Z`) : null,
+          dob: dob ?? null,
           gender,
         },
         tx,
@@ -78,35 +78,35 @@ export class CustomerService {
     };
   }
 
-  static async login(data: LoginInput): Promise<LoginResponse> {
+  static async login(data: LoginInput, meta?: { ip?: string; deviceInfo?: string }): Promise<LoginResponse> {
     loggerService.info('Customer login attempt', { email: data.email });
 
     const tokens = await SharedAuthService.login(data.email, data.password, async (user) => {
       const customer = await CustomerRepository.findCustomerByUserId(user.id);
       if (!customer) throw new InvalidCredentials();
       return { customerId: customer.id };
-    });
+    }, meta);
 
     loggerService.info('Customer logged in successfully');
     return tokens;
   }
 
-  static async refreshToken(data: RefreshTokenInput): Promise<RefreshTokenResponse> {
+  static async refreshToken(data: RefreshTokenInput, meta?: { ip?: string; deviceInfo?: string }): Promise<RefreshTokenResponse> {
     loggerService.info('Token refresh attempt');
 
     const result = await SharedAuthService.refreshToken(data.refreshToken, async (user) => {
       const customer = await CustomerRepository.findCustomerByUserId(user.id);
       if (!customer) throw new InvalidToken();
       return { customerId: customer.id };
-    });
+    }, meta);
 
     loggerService.info('Token refreshed successfully');
     return result;
   }
 
-  static async logout(userId: number): Promise<LogoutResponse> {
+  static async logout(userId: number, refreshToken?: string): Promise<LogoutResponse> {
     loggerService.info('Customer logout', { userId });
-    await SharedAuthService.clearRefreshToken(userId, new CustomerNotFound());
+    await SharedAuthService.clearRefreshToken(userId, new CustomerNotFound(), refreshToken);
     return {};
   }
 

@@ -50,7 +50,7 @@ export class CustomerProfileService {
       }
       const customerData = {
         ...(phone  !== undefined && { phone }),
-        ...(dob    !== undefined && { dob: new Date(`${dob.substring(0, 10)}T00:00:00.000Z`) }),
+        ...(dob    !== undefined && { dob }),
         ...(gender !== undefined && { gender }),
       };
       // skip customer update if no customer fields were provided

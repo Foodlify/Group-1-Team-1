@@ -135,10 +135,24 @@ model User {
   name           String
   email          String          @unique
   password       String
-  refreshToken   String?
   userTypeCode   String          @default("customer") @map("user_type_code")
   customer       Customer?
   userRole       UserRole?
+  refreshTokens  RefreshToken[]
+}
+
+model RefreshToken {
+  id         Int      @id @default(autoincrement())
+  tokenHash  String   @unique @map("token_hash")
+  expiresAt  DateTime @map("expires_at")
+  revoked    Boolean  @default(false)
+  userId     Int      @map("user_id")
+  createdAt  DateTime @default(now()) @map("created_at")
+  deviceInfo String?  @map("device_info")
+  ipAddress  String?  @map("ip_address")
+  user       User     @relation(fields: [userId], references: [id])
+
+  @@map("refresh_tokens")
 }
 
 // -----------------------------------------------------------------------------------------------------
