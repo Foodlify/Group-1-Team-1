@@ -14,9 +14,11 @@
 - [Sequence Diagrams](#sequence-diagrams)
 - [Assumptions](#assumptions)
 - [Tech Stack](#tech-stack)
+- [Project Structure](#️-project-structure)
+- [Design Patterns](#-design-patterns)
 - [Setup & Installation Guide](#setup--installation-guide)
 - [API Documentation](#api-documentation)
-- [Testing Suite](#testing-suite)
+- [Testing Suite](#-testing-suite)
 
 ---
 
@@ -580,14 +582,79 @@ sequenceDiagram
 
 ## Tech Stack
 
-- **Runtime & Environment:** Node.js
-- **Backend Framework:** Express.js
-- **Database:** PostgreSQL
-- **ORM:** Prisma
-- **Cache / Session Store:** Redis (cart management)
-- **API Documentation:** Swagger / OpenAPI
-- **Containerization:** Docker
-- **Version Control:** Git & GitHub
+| Layer | Technology |
+|---|---|
+| **Runtime** | Node.js v25 |
+| **Framework** | Express.js v5 |
+| **Language** | TypeScript |
+| **Database** | PostgreSQL (via Prisma ORM) |
+| **Cache** | Redis (cart + restaurant caching) |
+| **Auth** | JWT (access 2d / refresh 4d / reset 1h) + bcrypt |
+| **Validation** | Zod |
+| **Payment** | Stripe + Cash (Strategy pattern) |
+| **Email** | Nodemailer |
+| **Logging** | Winston |
+| **HTTP Security** | Helmet, CORS, rate-limiting |
+| **API Docs** | Swagger / OpenAPI (`/api-docs`) |
+| **Testing** | Jest + ts-jest + Supertest |
+| **Containerization** | Docker + Docker Compose |
+| **Version Control** | Git & GitHub |
+
+---
+
+## 🏗️ Project Structure
+
+```
+src/
+├── modules/
+│   ├── customerManagement/        # Customer auth + profile
+│   ├── userManagement/            # Dashboard (admin) auth + user CRUD + profile
+│   ├── restaurantManagemet/       # Restaurant + menu + menu-item CRUD
+│   ├── cartManagement/            # Redis-backed cart
+│   ├── orderManagment/            # Order lifecycle (State pattern + Chain of Responsibility)
+│   ├── paymentManagement/         # Stripe + Cash (Strategy pattern) + webhooks
+│   └── customerServiceManagement/ # Support tickets + ratings + loyalty points
+├── middlewares/
+│   ├── auth_handling/             # JWT auth + role guard
+│   ├── error_handling/            # Global error handler
+│   └── rate_limiting/             # Express rate-limit
+├── shared_infrastructure/
+│   ├── auth/                      # JWT helpers, password helpers, user-type constants
+│   ├── error/                     # Error classes + messages
+│   ├── http/                      # Cookie utils
+│   ├── logger/                    # Winston logger
+│   ├── mail/                      # Email templates
+│   ├── middleware/                 # Zod validate middleware
+│   └── success/                   # Success message constants
+├── utils/                         # asyncHandler, mailService, response helper
+├── routes/index.ts                # Central router
+├── app.ts
+└── server.ts
+lib/
+├── prisma.ts                      # Prisma singleton
+└── redis.ts                       # Redis singleton
+prisma/
+├── schema.prisma
+└── seed.ts
+tests/
+├── customerManagement/            # customer.service + customer.profile.service
+├── userManagement/                # auth.service + user.service + profile.service
+├── cart/
+├── order/
+└── health.test.ts
+```
+
+---
+
+## 🧩 Design Patterns
+
+| Pattern | Where Used | Purpose |
+|---|---|---|
+| **State** | `orderManagment/States/` | Order status transitions (PENDING → CONFIRMED → PROCESSED → DELIVERED / CANCELLED) |
+| **Chain of Responsibility** | `orderManagment/chainPattern/` | Order creation pipeline — each handler validates one concern and passes to next |
+| **Strategy** | `paymentManagement/PaymentStrategies/` | Swap payment providers (Stripe / Cash) without changing order logic |
+| **Repository** | All modules | Isolate DB queries from business logic |
+| **Service Layer** | All modules | Thin controllers, fat services |
 
 ---
 
@@ -775,10 +842,155 @@ Follow these steps to set up the backend environment locally:
 Once the server is running, explore the Swagger documentation at:
 `http://localhost:3000/api-docs`
 
+All routes are prefixed with `/api/v1`.
+
+### Customer Auth & Profile — `/api/v1/customers`
+
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| POST | `/register` | Public | Register new customer |
+| POST | `/login` | Public | Login, sets httpOnly cookies |
+| POST | `/refresh-token` | Public | Rotate refresh token |
+| POST | `/forgot-password` | Public | Send password reset email |
+| POST | `/reset-password-from-link` | Public | Reset password via token link |
+| POST | `/logout` | Customer | Revoke current refresh token |
+| DELETE | `/refresh-token` | Customer | Revoke refresh token explicitly |
+| POST | `/change-password` | Customer | Change password (old + new) |
+| GET | `/profile` | Customer | Get own profile |
+| PATCH | `/profile` | Customer | Update name, phone, dob, gender |
+| PATCH | `/profile/email` | Customer | Update email (requires password) |
+
+### Dashboard Auth & User Management — `/api/v1/dashboard`
+
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| POST | `/auth/login` | Public | Dashboard login |
+| POST | `/auth/refresh-token` | Public | Rotate refresh token |
+| POST | `/auth/forgot-password` | Public | Send reset email |
+| POST | `/auth/reset-password` | Public | Reset via link token |
+| POST | `/auth/logout` | Admin | Logout |
+| DELETE | `/auth/refresh-token` | Admin | Revoke refresh token |
+| POST | `/auth/change-password` | Admin | Change password |
+| GET | `/profile` | Admin | Get own profile |
+| PATCH | `/profile` | Admin | Update name |
+| PATCH | `/profile/email` | Admin | Update email |
+| GET | `/users` | SUPER_ADMIN / ADMIN | List all admin users |
+| GET | `/users/:id` | SUPER_ADMIN / ADMIN | Get admin user |
+| POST | `/users` | SUPER_ADMIN | Create admin user |
+| PATCH | `/users/:id` | SUPER_ADMIN / ADMIN | Update admin user |
+| DELETE | `/users/:id` | SUPER_ADMIN | Delete admin user |
+
+### Restaurants & Menus — `/api/v1/restaurants`
+
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| GET | `/` | Public | List restaurants |
+| GET | `/:restaurantId` | Public | Get single restaurant |
+| GET | `/:restaurantId/menus/:menuId` | Public | Get menu |
+| GET | `/menus/:menuId/menuItem/:menuItemId` | Public | Get menu item |
+| POST | `/restaurants/add-restaurant` | SUPER_ADMIN / RESTAURANT_OWNER | Create restaurant |
+| PATCH | `/restaurants/update/:restaurantId` | SUPER_ADMIN / RESTAURANT_OWNER | Update restaurant |
+| DELETE | `/restaurants/delete/:restaurantId` | SUPER_ADMIN / RESTAURANT_OWNER | Delete restaurant |
+| POST | `/:restaurantId/menus` | SUPER_ADMIN / RESTAURANT_OWNER | Create menu |
+| PATCH | `/:restaurantId/menus/:menuId` | SUPER_ADMIN / RESTAURANT_OWNER | Update menu |
+| DELETE | `/:restaurantId/menus/:menuId` | SUPER_ADMIN / RESTAURANT_OWNER | Delete menu |
+| POST | `/:restaurantId/menus/:menuId/items` | SUPER_ADMIN / RESTAURANT_OWNER | Create menu item |
+| PATCH | `/menus/:menuId/items/:menuItemId` | SUPER_ADMIN / RESTAURANT_OWNER | Update menu item |
+| DELETE | `/menus/:menuId/items/:menuItemId` | SUPER_ADMIN / RESTAURANT_OWNER | Delete menu item |
+
+### Cart — `/api/v1/cart`
+
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| POST | `/` | Customer | Add item to cart |
+| GET | `/` | Customer | View cart |
+| DELETE | `/` | Customer | Clear entire cart |
+| PATCH | `/:itemId` | Customer | Update item quantity |
+| DELETE | `/:itemId` | Customer | Remove single item |
+| GET | `/price-quantity` | Customer | Get cart total price + quantity |
+
+### Orders — `/api/v1/orders`
+
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| POST | `/checkout` | Customer | Checkout (prepare order) |
+| POST | `/` | Customer | Place order |
+| GET | `/:orderId` | Customer | Get single order |
+| PATCH | `/:orderId/status` | Customer | Update order status |
+| GET | `/status?status=` | Customer | Get orders by status |
+| PATCH | `/:orderId/cancel-order` | Customer | Cancel order |
+| GET | `/:orderId/tracking-history` | Customer | Get tracking history |
+
+### Order Summary — `/api/v1/order-summary`
+
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| GET | `/` | Customer | Get all order summaries |
+
+### Customer Service — `/api/v1/customer-service`
+
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| POST | `/ticket` | Customer | Create support ticket |
+| GET | `/ticket/:id` | Customer | Get support ticket |
+| PATCH | `/ticket/:id` | Customer | Update ticket status |
+| PATCH | `/ticket/:id/resolve` | Customer | Resolve ticket |
+| POST | `/rate/:orderId` | Customer | Rate restaurant |
+| GET | `/points` | Customer | Get loyalty points |
+| GET | `/points/redeem` | Customer | Redeem points to money |
+
+### Webhooks — `/api/v1/webhook`
+
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| POST | `/` | Stripe signature | Handle Stripe payment events |
+
 ---
 
-## 🧪Testing Suite
+## 🧪 Testing Suite
 
-<!-- Describe the testing strategy, tools used, and how to run the tests. -->
+### Tools
+
+| Tool | Purpose |
+|---|---|
+| **Jest** | Test runner + assertions |
+| **ts-jest** | TypeScript transform for Jest |
+| **Supertest** | HTTP integration tests |
+
+### Run Tests
+
+```bash
+# Run all tests
+npm test
+
+# Run with coverage report
+npx jest --coverage
+
+# Run specific module
+npx jest tests/customerManagement/
+npx jest tests/userManagement/
+```
+
+### Test Files
+
+| File | Tests | Coverage |
+|---|---|---|
+| `tests/customerManagement/customer.service.test.ts` | 27 | 100% stmts/branch |
+| `tests/customerManagement/customer.profile.service.test.ts` | 13 | 100% stmts/branch |
+| `tests/userManagement/auth.service.test.ts` | 27 | 100% stmts/branch |
+| `tests/userManagement/user.service.test.ts` | 22 | 100% stmts/branch |
+| `tests/userManagement/profile.service.test.ts` | 13 | 100% stmts/branch |
+| `tests/health.test.ts` | 1 | Health check integration |
+
+### Strategy
+
+- **Unit tests** mock all dependencies (repositories, shared services, Prisma, logger)
+- Every service method covered: happy path + all error branches
+- `jest.mocked()` for type-safe mocks
+- `describe` + `it` structure per function, all scenarios per block
+
+### Environment Variables for Tests
+
+Tests use in-memory mocks — no real DB or Redis required. JWT uses default fallback secrets (`supersecret` / `superrefreshsecret`) when env vars are absent.
 
 ---
