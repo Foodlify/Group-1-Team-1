@@ -21,7 +21,7 @@
     "tests/**/*",
     "prisma/**/*",
     "prisma.config.ts",
-    "jest.config.js",
+    "jest.config.ts",
     "lib",
     "prisma_db.ts"
   ]
