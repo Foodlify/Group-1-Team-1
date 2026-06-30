@@ -57,19 +57,22 @@ export class CartService {
   }
 
   // ─── Add To Cart ───────────────────────────────────────────────────────────
-  static async addToCart(input: CartItemInput): Promise<CartItemResponse> {
+  static async addToCart(
+    input: CartItemInput,
+    db: Prisma.TransactionClient = prisma,
+  ): Promise<CartItemResponse> {
     // add transaction
     const { customerId, itemId, itemQuantity } = input;
-    return await prisma.$transaction(async (db: Prisma.TransactionClient) => {
+    return await db.$transaction(async () => {
       // 1. Check if cart already exists for this user
-      let cart = await CartRepository.findCartByCustomerId(customerId, db);
+      let cart = await this.getCustomerCart(customerId, db);
       const menuItem = await CartService.checkQuantity(
         itemId,
         itemQuantity,
         db,
       );
       // 3. if cart not exist and menuitem exist create new cart and add item to it
-      if (!cart || (cart === null && menuItem)) {
+      if (cart == null && menuItem) {
         cart = await CartRepository.createCartAndCartItems(
           customerId,
           itemQuantity,
@@ -78,7 +81,7 @@ export class CartService {
         );
       }
       // 4. If cart exists and has items, enforce single-restaurant rule
-      else if (cart && cart.cartItems.length > 0) {
+      else if (cart !== null && cart.cartItems.length > 0) {
         if (cart.isLocked) {
           throw new Error("This cart is locked, you can't add anything to it");
         }
@@ -86,7 +89,6 @@ export class CartService {
         const existingItem = cart.cartItems.find(
           (ci: any) => ci.menuItemId === itemId,
         );
-        console.log(existingItem);
         if (existingItem) {
           throw new ItemIdempotency(errorMessage.ITEM_IDEMPOTENCY.message);
         }
@@ -108,7 +110,7 @@ export class CartService {
       }
       return {
         customerId,
-        itemId,
+        itemId: menuItem.id,
         itemQuantity,
         itemName: menuItem.itemName,
       };
