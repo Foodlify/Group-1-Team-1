@@ -8,7 +8,6 @@ import { CartService } from '../../../src/modules/cartManagement/cart.service';
 
 import { PostgreSqlContainer } from '@testcontainers/postgresql';
 import { errorMessage } from '../../../src/shared_infrastructure/error/errorMessages';
-import prisma from '../../../lib/prisma';
 import { MenuService } from '../../../src/modules/restaurantManagemet/menu.service';
 
 describe('Cart Service', () => {
