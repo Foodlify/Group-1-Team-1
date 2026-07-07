@@ -43,3 +43,6 @@ This document outlines SQL query performance improvements implemented across var
   - Created composite index : `CREATE INDEX idx_cartitem_cart_id_menu_item_id ON cartItem(cart_id, menu_item_id)`
 
 - **Time After Optimization**: 0.023 ms
+
+
+[Cart Optimization Report](https://raw.githack.com/Foodlify/Group-1-Team-1/optimization/optimization/cart.optimization%20report.html)
